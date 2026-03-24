@@ -62,7 +62,6 @@ async def run_training_task(
 
     except Exception as e:
         logger.error(f"Training failed: {e}")
-        raise
     finally:
         state.is_training = False
         state.current_epoch = 0
