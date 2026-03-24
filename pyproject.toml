@@ -1,17 +1,41 @@
 [project]
-name = "nvidia-lstm-forecast"
+name = "nvidia-mlops-platform"
 version = "0.1.0"
-description = ""
+description = "End-to-end MLOps platform for NVIDIA stock forecasting with LSTM, LLM agents, and RAG pipelines"
 authors = [
-    {name = "LucasTechAI",email = "lucas.mendestech@gmail.com"}
+    {name = "LucasTechAI", email = "lucas.mendestech@gmail.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "yfinance (==1.0)",
-    "pandas (==2.3.3)",
-    "numpy (==2.4.0)",
-    "black (==25.12.0)"
+    "yfinance>=0.2.36",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "python-dotenv>=1.0.1",
+    "torch>=2.6.0",
+    "scikit-learn>=1.4.0",
+    "mlflow>=3.5.0",
+    "optuna>=3.5.0",
+    "matplotlib>=3.8.0",
+    "seaborn>=0.13.0",
+    "scipy>=1.12.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.27.0",
+    "streamlit>=1.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.8.0",
+    "mypy>=1.8.0",
+    "bandit>=1.7.0",
+    "pre-commit>=3.6.0",
+    "pip-audit>=2.7.0",
+]
+test = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "httpx>=0.27.0",
 ]
 
 
@@ -21,7 +45,20 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 markers = [
     "integration: marks tests as integration tests",
     "slow: marks tests as slow running",
 ]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+warn_return_any = true
