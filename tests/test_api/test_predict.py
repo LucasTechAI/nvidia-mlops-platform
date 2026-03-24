@@ -2,12 +2,13 @@
 Tests for predict endpoints.
 """
 
-import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import MagicMock
 
-from src.api.main import app
+import pytest
+from fastapi.testclient import TestClient
+
 from src.api.dependencies import model_state
+from src.api.main import app
 
 
 @pytest.fixture
@@ -92,9 +93,7 @@ class TestInferenceEndpoint:
         """Test that inference fails when model not loaded."""
         model_state.model = None
 
-        response = client.post(
-            "/predict/inference", json={"sequence": [100.0] * 60, "steps": 5}
-        )
+        response = client.post("/predict/inference", json={"sequence": [100.0] * 60, "steps": 5})
         assert response.status_code == 503
 
     def test_inference_sequence_required(self, client):
@@ -109,9 +108,7 @@ class TestInferenceEndpoint:
 
     def test_inference_steps_validation(self, client):
         """Test steps must be positive."""
-        response = client.post(
-            "/predict/inference", json={"sequence": [100.0] * 10, "steps": 0}
-        )
+        response = client.post("/predict/inference", json={"sequence": [100.0] * 10, "steps": 0})
         assert response.status_code == 422
 
     def test_inference_without_loaded_model(self, client):
@@ -121,9 +118,7 @@ class TestInferenceEndpoint:
         # Ensure model not loaded
         model_state.model = None
 
-        response = client.post(
-            "/predict/inference", json={"sequence": [100.0] * 10, "steps": 1}
-        )
+        response = client.post("/predict/inference", json={"sequence": [100.0] * 10, "steps": 1})
 
         # Should return 503 service unavailable
         assert response.status_code == 503
@@ -146,9 +141,7 @@ class TestPredictRequestSchemas:
         """Test custom values are accepted."""
         from src.api.schemas import PredictRequest
 
-        request = PredictRequest(
-            horizon=7, with_uncertainty=False, n_samples=50, confidence_level=0.9
-        )
+        request = PredictRequest(horizon=7, with_uncertainty=False, n_samples=50, confidence_level=0.9)
 
         assert request.horizon == 7
         assert request.with_uncertainty is False

@@ -4,15 +4,16 @@ Model Metrics Component for Dashboard.
 Displays model performance metrics and training history.
 """
 
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from pathlib import Path
-import torch
-import sqlite3
 import json
+import sqlite3
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+import torch
+from plotly.subplots import make_subplots
 
 project_root = Path(__file__).resolve().parent.parent.parent.parent
 
@@ -77,9 +78,7 @@ def load_mlflow_metrics() -> pd.DataFrame:
 
 def load_hpo_results() -> dict:
     """Load HPO best parameters."""
-    hpo_paths = list(
-        (project_root / "data" / "outputs" / "hpo").glob("*/best_params.json")
-    )
+    hpo_paths = list((project_root / "data" / "outputs" / "hpo").glob("*/best_params.json"))
 
     if not hpo_paths:
         return None
@@ -162,9 +161,7 @@ def render_metrics_page():
         best_loss = training_info.get("Best Val Loss", checkpoint.get("loss", 0))
         st.metric(
             label="Best Validation Loss",
-            value=f"{best_loss:.6f}"
-            if isinstance(best_loss, (int, float))
-            else str(best_loss),
+            value=f"{best_loss:.6f}" if isinstance(best_loss, (int, float)) else str(best_loss),
         )
 
     with col3:
@@ -195,11 +192,7 @@ def render_metrics_page():
 
         with col1:
             r2 = test_results.get("r2_score", test_results.get("R2 Score", 0))
-            quality = (
-                "🟢 Excellent"
-                if r2 > 0.9
-                else ("🟡 Good" if r2 > 0.7 else "🔴 Needs Work")
-            )
+            quality = "🟢 Excellent" if r2 > 0.9 else ("🟡 Good" if r2 > 0.7 else "🔴 Needs Work")
             st.metric(
                 label="R² Score",
                 value=f"{r2:.4f}" if isinstance(r2, (int, float)) else str(r2),
@@ -239,36 +232,24 @@ def render_metrics_page():
             )
 
         with col2:
-            dir_acc = test_results.get(
-                "directional_accuracy", test_results.get("Directional Accuracy", 0)
-            )
+            dir_acc = test_results.get("directional_accuracy", test_results.get("Directional Accuracy", 0))
             st.metric(
                 label="Directional Accuracy",
-                value=f"{dir_acc:.1f}%"
-                if isinstance(dir_acc, (int, float))
-                else str(dir_acc),
+                value=f"{dir_acc:.1f}%" if isinstance(dir_acc, (int, float)) else str(dir_acc),
             )
 
         with col3:
-            sharpe = test_results.get(
-                "sharpe_ratio", test_results.get("Sharpe Ratio", 0)
-            )
+            sharpe = test_results.get("sharpe_ratio", test_results.get("Sharpe Ratio", 0))
             st.metric(
                 label="Sharpe Ratio",
-                value=f"{sharpe:.2f}"
-                if isinstance(sharpe, (int, float))
-                else str(sharpe),
+                value=f"{sharpe:.2f}" if isinstance(sharpe, (int, float)) else str(sharpe),
             )
 
         with col4:
-            max_dd = test_results.get(
-                "max_drawdown", test_results.get("Max Drawdown", 0)
-            )
+            max_dd = test_results.get("max_drawdown", test_results.get("Max Drawdown", 0))
             st.metric(
                 label="Max Drawdown",
-                value=f"{max_dd:.1f}%"
-                if isinstance(max_dd, (int, float))
-                else str(max_dd),
+                value=f"{max_dd:.1f}%" if isinstance(max_dd, (int, float)) else str(max_dd),
             )
     else:
         st.markdown(
@@ -347,9 +328,7 @@ def render_metrics_page():
         col1, col2 = st.columns(2)
 
         with col1:
-            params_df = pd.DataFrame(
-                [{"Parameter": k, "Value": v} for k, v in hpo_params.items()]
-            )
+            params_df = pd.DataFrame([{"Parameter": k, "Value": v} for k, v in hpo_params.items()])
             st.dataframe(params_df, width="stretch", hide_index=True)
 
         with col2:
@@ -391,9 +370,7 @@ def render_training_curves(metrics_df: pd.DataFrame):
                 & ~metrics_df["key"].str.contains("val|test", case=False)
             )
         ]
-        val_data = metrics_df[
-            metrics_df["key"].str.contains(f"val_{metric_key}", case=False)
-        ]
+        val_data = metrics_df[metrics_df["key"].str.contains(f"val_{metric_key}", case=False)]
 
         if not train_data.empty:
             fig.add_trace(
@@ -535,9 +512,7 @@ def render_metrics_interpretation(test_results: dict):
                     )
                 )
 
-        dir_acc = test_results.get(
-            "directional_accuracy", test_results.get("Directional Accuracy", 0)
-        )
+        dir_acc = test_results.get("directional_accuracy", test_results.get("Directional Accuracy", 0))
         if isinstance(dir_acc, (int, float)):
             if dir_acc > 55:
                 interpretations.append(
@@ -594,9 +569,7 @@ def render_hpo_radar(params: dict):
             val = params[param]
             # Normalize to 0-1
             if param == "learning_rate":
-                normalized = (np.log10(val) - np.log10(min_val)) / (
-                    np.log10(max_val) - np.log10(min_val)
-                )
+                normalized = (np.log10(val) - np.log10(min_val)) / (np.log10(max_val) - np.log10(min_val))
             else:
                 normalized = (val - min_val) / (max_val - min_val)
             categories.append(param.replace("_", " ").title())

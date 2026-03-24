@@ -5,11 +5,12 @@ This module provides a single source of truth for all configuration
 values, paths, and settings used throughout the application.
 """
 
-from dotenv import load_dotenv
-from pathlib import Path
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Optional
+
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
@@ -108,17 +109,13 @@ class MLflowConfig:
     """Configuration for MLflow experiment tracking."""
 
     # Tracking server - use SQLite database backend (filesystem backend deprecated Feb 2026)
-    tracking_uri: str = os.getenv(
-        "MLFLOW_TRACKING_URI", f"sqlite:///{MLRUNS_DIR}/mlflow.db"
-    )
+    tracking_uri: str = os.getenv("MLFLOW_TRACKING_URI", f"sqlite:///{MLRUNS_DIR}/mlflow.db")
 
     # Experiment settings
     experiment_name: str = "nvidia-lstm-forecast"
 
     # Artifact storage
-    artifact_location: Optional[str] = os.getenv(
-        "MLFLOW_ARTIFACT_ROOT", str(MLRUNS_DIR / "artifacts")
-    )
+    artifact_location: Optional[str] = os.getenv("MLFLOW_ARTIFACT_ROOT", str(MLRUNS_DIR / "artifacts"))
 
     # Run settings
     run_name_prefix: str = "lstm_run"
@@ -155,9 +152,7 @@ class HPOConfig:
     hidden_size_choices: List[int] = field(default_factory=lambda: [32, 64, 128, 256])
     learning_rate_range: tuple = (1e-5, 1e-2)  # Log scale
     dropout_range: tuple = (0.1, 0.5)
-    sequence_length_choices: List[int] = field(
-        default_factory=lambda: [30, 60, 90, 120]
-    )
+    sequence_length_choices: List[int] = field(default_factory=lambda: [30, 60, 90, 120])
     batch_size_choices: List[int] = field(default_factory=lambda: [16, 32, 64, 128])
 
     # Optuna sampler and pruner
@@ -165,9 +160,7 @@ class HPOConfig:
     pruner: str = "MedianPruner"  # Options: "MedianPruner", "HyperbandPruner", "None"
 
     # Storage
-    storage: Optional[str] = field(
-        default_factory=lambda: f"sqlite:///{MODELS_DIR}/optuna.db"
-    )
+    storage: Optional[str] = field(default_factory=lambda: f"sqlite:///{MODELS_DIR}/optuna.db")
 
     # Parallelization
     n_jobs: int = 1  # Number of parallel trials

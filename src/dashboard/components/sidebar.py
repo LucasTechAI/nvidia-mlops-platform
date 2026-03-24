@@ -2,8 +2,9 @@
 Sidebar Component for Dashboard Navigation.
 """
 
-import streamlit as st
 from datetime import datetime
+
+import streamlit as st
 
 
 def render_sidebar() -> str:
@@ -18,7 +19,7 @@ def render_sidebar() -> str:
         st.markdown(
             """
             <div style="text-align: center; padding: 1rem 0;">
-                <img src="https://upload.wikimedia.org/wikipedia/sco/thumb/2/21/Nvidia_logo.svg/1280px-Nvidia_logo.svg.png" 
+                <img src="https://upload.wikimedia.org/wikipedia/sco/thumb/2/21/Nvidia_logo.svg/1280px-Nvidia_logo.svg.png"
                      width="180" style="filter: brightness(1.1);">
             </div>
         """,
@@ -77,9 +78,7 @@ def render_sidebar() -> str:
             "🧠 Model Architecture": "Model Schema",
         }
 
-        selected = st.radio(
-            "Select a page:", list(pages.keys()), label_visibility="collapsed"
-        )
+        selected = st.radio("Select a page:", list(pages.keys()), label_visibility="collapsed")
 
         st.markdown("---")
 
@@ -138,13 +137,13 @@ def render_sidebar() -> str:
         with st.expander("ℹ️ About this Dashboard", expanded=False):
             st.markdown("""
             **NVIDIA Stock Predictor** uses advanced LSTM neural networks to forecast stock prices.
-            
+
             **Features:**
             - 🔮 Multi-horizon forecasting
             - 📊 Real-time performance metrics
             - 🏗️ Model architecture visualization
             - 📥 Data export capabilities
-            
+
             **Tech Stack:**
             - PyTorch & LSTM
             - MLflow tracking

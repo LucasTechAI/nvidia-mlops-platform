@@ -4,10 +4,11 @@ Model Schema Component for Dashboard.
 Displays model architecture and configuration details.
 """
 
-import streamlit as st
+from pathlib import Path
+
 import pandas as pd
 import plotly.graph_objects as go
-from pathlib import Path
+import streamlit as st
 import torch
 
 project_root = Path(__file__).resolve().parent.parent.parent.parent
@@ -624,9 +625,7 @@ def render_architecture_diagram(config: dict):
     colors = ["#4ECDC4", "#76B900", "#45B7D1", "#FF6B35", "#96CEB4"]
 
     # Add nodes
-    for i, (layer, x, size, color) in enumerate(
-        zip(layers, x_positions, sizes, colors)
-    ):
+    for i, (layer, x, size, color) in enumerate(zip(layers, x_positions, sizes, colors)):
         fig.add_trace(
             go.Scatter(
                 x=[x],
@@ -685,9 +684,7 @@ def render_architecture_diagram(config: dict):
             showarrow=False,
             font=dict(size=10, color="gray"),
         ),
-        dict(
-            x=4, y=0.5, text="(1,)", showarrow=False, font=dict(size=10, color="gray")
-        ),
+        dict(x=4, y=0.5, text="(1,)", showarrow=False, font=dict(size=10, color="gray")),
     ]
 
     if bidirectional:
@@ -703,9 +700,7 @@ def render_architecture_diagram(config: dict):
 
     fig.update_layout(
         annotations=annotations,
-        xaxis=dict(
-            showgrid=False, zeroline=False, showticklabels=False, range=[-0.5, 4.5]
-        ),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-0.5, 4.5]),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1, 1]),
         template="plotly_dark",
         height=250,

@@ -1,14 +1,15 @@
 """Tests for data preprocessing module."""
 
+import tempfile
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
-from pathlib import Path
-import tempfile
 
 from src.data.preprocessing import (
-    normalize_features,
     create_sequences,
+    normalize_features,
     train_val_test_split,
 )
 

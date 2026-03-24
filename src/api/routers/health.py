@@ -5,11 +5,11 @@ Health check endpoint.
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Depends
 import torch
+from fastapi import APIRouter, Depends
 
-from src.api.schemas import HealthResponse
 from src.api.dependencies import ModelState, get_model_state
+from src.api.schemas import HealthResponse
 from src.config import settings
 
 router = APIRouter(prefix="/health", tags=["Health"])

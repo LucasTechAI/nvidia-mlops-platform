@@ -5,14 +5,15 @@ This module performs Bayesian optimization to find the best
 hyperparameters for the LSTM model.
 """
 
-import optuna
-from optuna.integration.mlflow import MLflowCallback
-import mlflow
-import torch
-import numpy as np
 import logging
-from typing import Dict, Tuple
 import pickle
+from typing import Dict, Tuple
+
+import mlflow
+import numpy as np
+import optuna
+import torch
+from optuna.integration.mlflow import MLflowCallback
 
 from src.models.lstm_model import create_model
 from src.training.train import train_model
@@ -117,9 +118,7 @@ def objective(
             return best_val_rmse
 
         except Exception as e:
-            logger.error(
-                f"Trial {trial.number} failed with error: {str(e)}", exc_info=True
-            )
+            logger.error(f"Trial {trial.number} failed with error: {str(e)}", exc_info=True)
             # Report failed trial to Optuna
             # This allows Optuna to continue with other trials
             raise optuna.TrialPruned(f"Training failed: {str(e)}")

@@ -10,14 +10,14 @@ import pandas as pd
 import torch
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from src.api.dependencies import ModelState, get_model_state
 from src.api.schemas import (
-    PredictRequest,
-    PredictResponse,
-    PredictionItem,
     InferenceRequest,
     InferenceResponse,
+    PredictionItem,
+    PredictRequest,
+    PredictResponse,
 )
-from src.api.dependencies import ModelState, get_model_state
 from src.etl.preprocessing import load_data_from_db
 
 router = APIRouter(prefix="/predict", tags=["Prediction"])
@@ -74,9 +74,7 @@ def generate_forecast_with_uncertainty(
 
 @router.post("", response_model=PredictResponse)
 @router.post("/", response_model=PredictResponse)
-async def predict(
-    request: PredictRequest, state: ModelState = Depends(get_model_state)
-) -> PredictResponse:
+async def predict(request: PredictRequest, state: ModelState = Depends(get_model_state)) -> PredictResponse:
     """
     Generate stock price predictions for the next N days.
 
@@ -113,16 +111,12 @@ async def predict(
                 state.device,
             )
 
-            z_score = {0.90: 1.645, 0.95: 1.96, 0.99: 2.576}.get(
-                request.confidence_level, 1.96
-            )
+            z_score = {0.90: 1.645, 0.95: 1.96, 0.99: 2.576}.get(request.confidence_level, 1.96)
             lower = mean_preds - z_score * std_preds
             upper = mean_preds + z_score * std_preds
 
             # Inverse transform
-            predictions_real = state.scaler.inverse_transform(
-                mean_preds.reshape(-1, 1)
-            ).flatten()
+            predictions_real = state.scaler.inverse_transform(mean_preds.reshape(-1, 1)).flatten()
             lower_real = state.scaler.inverse_transform(lower.reshape(-1, 1)).flatten()
             upper_real = state.scaler.inverse_transform(upper.reshape(-1, 1)).flatten()
         else:
@@ -138,9 +132,7 @@ async def predict(
                 sequence = torch.cat([sequence[:, 1:, :], new_input], dim=1)
 
             predictions = np.array(predictions)
-            predictions_real = state.scaler.inverse_transform(
-                predictions.reshape(-1, 1)
-            ).flatten()
+            predictions_real = state.scaler.inverse_transform(predictions.reshape(-1, 1)).flatten()
             lower_real = None
             upper_real = None
 
@@ -176,9 +168,7 @@ async def predict(
 
 
 @router.post("/inference", response_model=InferenceResponse)
-async def inference(
-    request: InferenceRequest, state: ModelState = Depends(get_model_state)
-) -> InferenceResponse:
+async def inference(request: InferenceRequest, state: ModelState = Depends(get_model_state)) -> InferenceResponse:
     """
     Perform inference on a custom input sequence.
 
@@ -186,9 +176,7 @@ async def inference(
     for prediction instead of using historical data.
     """
     if not state.is_ready:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Model not loaded"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Model not loaded")
 
     try:
         # Normalize input
@@ -212,9 +200,7 @@ async def inference(
 
         # Inverse transform
         predictions = np.array(predictions)
-        predictions_real = state.scaler.inverse_transform(
-            predictions.reshape(-1, 1)
-        ).flatten()
+        predictions_real = state.scaler.inverse_transform(predictions.reshape(-1, 1)).flatten()
 
         return InferenceResponse(
             predictions=predictions_real.tolist(),

@@ -5,15 +5,16 @@ This module handles loading trained models from MLflow,
 generating forecasts, and visualizing predictions.
 """
 
+import logging
+from typing import Optional, Tuple
+
+import matplotlib.pyplot as plt
 import mlflow
 import mlflow.pytorch
-import torch
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import logging
-from typing import Tuple, Optional
 import seaborn as sns
+import torch
 
 from src.data.preprocessing import load_scaler
 
@@ -106,9 +107,7 @@ def generate_forecast(
     return predictions
 
 
-def inverse_transform_predictions(
-    predictions: np.ndarray, scaler_path: str
-) -> np.ndarray:
+def inverse_transform_predictions(predictions: np.ndarray, scaler_path: str) -> np.ndarray:
     """
     Inverse transform normalized predictions back to original scale.
 
@@ -125,9 +124,7 @@ def inverse_transform_predictions(
     original_scale = scaler.inverse_transform(predictions)
 
     logger.info("Inverse transformed predictions to original scale")
-    logger.info(
-        f"Prediction range: [{original_scale.min():.2f}, {original_scale.max():.2f}]"
-    )
+    logger.info(f"Prediction range: [{original_scale.min():.2f}, {original_scale.max():.2f}]")
 
     return original_scale
 

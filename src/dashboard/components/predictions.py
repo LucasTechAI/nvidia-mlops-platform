@@ -4,17 +4,17 @@ Predictions Component for Dashboard.
 Displays stock price predictions with configurable horizons.
 """
 
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
+import sqlite3
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-import torch
-import sqlite3
-import joblib
 
-import sys
+import joblib
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+import torch
 
 project_root = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
@@ -99,9 +99,7 @@ def load_model_and_scaler():
         return None, None, None
 
 
-def generate_predictions(
-    model, scaler, historical_data: pd.DataFrame, horizon: int
-) -> dict:
+def generate_predictions(model, scaler, historical_data: pd.DataFrame, horizon: int) -> dict:
     """Generate price predictions for the given horizon."""
     if model is None or scaler is None:
         return None
@@ -131,9 +129,7 @@ def generate_predictions(
 
                 # Update sequence
                 new_input = pred.view(1, 1, -1)
-                current_sequence = torch.cat(
-                    [current_sequence[:, 1:, :], new_input], dim=1
-                )
+                current_sequence = torch.cat([current_sequence[:, 1:, :], new_input], dim=1)
 
         # Inverse transform
         predictions_normalized = np.array(predictions_normalized).reshape(-1, 1)
@@ -231,9 +227,7 @@ def render_predictions_page():
         )
 
     with col4:
-        _generate_btn = st.button(
-            "🚀 Generate", type="primary", use_container_width=True
-        )
+        _generate_btn = st.button("🚀 Generate", type="primary", use_container_width=True)
 
     st.markdown("---")
 
@@ -339,9 +333,7 @@ def render_predictions_page():
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Create interactive chart
-    fig = create_forecast_chart(
-        historical_data, forecast, show_historical, show_confidence, horizon
-    )
+    fig = create_forecast_chart(historical_data, forecast, show_historical, show_confidence, horizon)
 
     st.plotly_chart(fig, width="stretch")
 
@@ -358,9 +350,7 @@ def render_predictions_page():
     tab1, tab2 = st.tabs(["📊 Table View", "📈 Daily Changes"])
 
     with tab1:
-        pred_df = pd.DataFrame(
-            {"Date": forecast["dates"], "Predicted Price ($)": forecast["predictions"]}
-        )
+        pred_df = pd.DataFrame({"Date": forecast["dates"], "Predicted Price ($)": forecast["predictions"]})
 
         pred_df["Day"] = range(1, len(pred_df) + 1)
         pred_df["Change from Current ($)"] = pred_df["Predicted Price ($)"] - last_price
@@ -390,15 +380,9 @@ def render_predictions_page():
             column_config={
                 "Day": st.column_config.NumberColumn("Day", width="small"),
                 "Date": st.column_config.TextColumn("Date", width="medium"),
-                "Predicted Price ($)": st.column_config.NumberColumn(
-                    "Predicted Price", format="$%.2f"
-                ),
-                "Change from Current ($)": st.column_config.NumberColumn(
-                    "Change ($)", format="$%.2f"
-                ),
-                "Change (%)": st.column_config.NumberColumn(
-                    "Change (%)", format="%.2f%%"
-                ),
+                "Predicted Price ($)": st.column_config.NumberColumn("Predicted Price", format="$%.2f"),
+                "Change from Current ($)": st.column_config.NumberColumn("Change ($)", format="$%.2f"),
+                "Change (%)": st.column_config.NumberColumn("Change (%)", format="%.2f%%"),
             },
         )
 
@@ -600,9 +584,7 @@ def create_forecast_chart(
                 activecolor="#76B900",
                 font=dict(color="white", size=11),
             ),
-            rangeslider=dict(
-                visible=True, bgcolor="rgba(38, 39, 48, 0.5)", thickness=0.05
-            ),
+            rangeslider=dict(visible=True, bgcolor="rgba(38, 39, 48, 0.5)", thickness=0.05),
             type="date",
         ),
         yaxis=dict(

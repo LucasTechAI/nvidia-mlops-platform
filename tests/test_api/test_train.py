@@ -5,8 +5,8 @@ Tests for train endpoints.
 import pytest
 from fastapi.testclient import TestClient
 
-from src.api.main import app
 from src.api.dependencies import model_state
+from src.api.main import app
 
 
 @pytest.fixture

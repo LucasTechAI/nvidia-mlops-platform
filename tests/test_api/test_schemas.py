@@ -2,21 +2,22 @@
 Tests for API schemas.
 """
 
-import pytest
-from pydantic import ValidationError
 from datetime import datetime
 
+import pytest
+from pydantic import ValidationError
+
 from src.api.schemas import (
+    DataResponse,
     HealthResponse,
-    PredictRequest,
-    PredictResponse,
-    PredictionItem,
     InferenceRequest,
     InferenceResponse,
+    PredictionItem,
+    PredictRequest,
+    PredictResponse,
+    StockDataItem,
     TrainRequest,
     TrainResponse,
-    DataResponse,
-    StockDataItem,
 )
 
 
@@ -251,9 +252,7 @@ class TestPredictResponse:
     def test_valid_response(self):
         """Test valid predict response."""
         response = PredictResponse(
-            predictions=[
-                PredictionItem(date=datetime(2024, 1, 1), predicted_price=150.0)
-            ],
+            predictions=[PredictionItem(date=datetime(2024, 1, 1), predicted_price=150.0)],
             last_known_price=148.0,
             last_known_date=datetime(2023, 12, 31),
             forecast_horizon=30,

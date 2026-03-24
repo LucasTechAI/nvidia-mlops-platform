@@ -4,8 +4,8 @@ Pydantic schemas for API request/response validation.
 
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, Field
 
+from pydantic import BaseModel, Field
 
 # ============== Health Check ==============
 
@@ -26,18 +26,10 @@ class HealthResponse(BaseModel):
 class PredictRequest(BaseModel):
     """Request for generating predictions."""
 
-    horizon: int = Field(
-        default=30, ge=1, le=365, description="Number of days to predict"
-    )
-    with_uncertainty: bool = Field(
-        default=True, description="Include confidence intervals"
-    )
-    n_samples: int = Field(
-        default=100, ge=10, le=500, description="Monte Carlo samples for uncertainty"
-    )
-    confidence_level: float = Field(
-        default=0.95, ge=0.5, le=0.99, description="Confidence level for intervals"
-    )
+    horizon: int = Field(default=30, ge=1, le=365, description="Number of days to predict")
+    with_uncertainty: bool = Field(default=True, description="Include confidence intervals")
+    n_samples: int = Field(default=100, ge=10, le=500, description="Monte Carlo samples for uncertainty")
+    confidence_level: float = Field(default=0.95, ge=0.5, le=0.99, description="Confidence level for intervals")
 
 
 class PredictionItem(BaseModel):
@@ -66,9 +58,7 @@ class PredictResponse(BaseModel):
 class InferenceRequest(BaseModel):
     """Request for single-step inference with custom sequence."""
 
-    sequence: List[float] = Field(
-        ..., min_length=1, description="Input sequence of prices"
-    )
+    sequence: List[float] = Field(..., min_length=1, description="Input sequence of prices")
     steps: int = Field(default=1, ge=1, le=30, description="Number of steps to predict")
 
 
@@ -86,27 +76,13 @@ class InferenceResponse(BaseModel):
 class TrainRequest(BaseModel):
     """Request to start training."""
 
-    epochs: Optional[int] = Field(
-        default=None, ge=1, le=500, description="Number of epochs"
-    )
-    batch_size: Optional[int] = Field(
-        default=None, ge=8, le=256, description="Batch size"
-    )
-    learning_rate: Optional[float] = Field(
-        default=None, ge=1e-6, le=1e-1, description="Learning rate"
-    )
-    hidden_size: Optional[int] = Field(
-        default=None, ge=32, le=512, description="LSTM hidden size"
-    )
-    num_layers: Optional[int] = Field(
-        default=None, ge=1, le=5, description="Number of LSTM layers"
-    )
-    sequence_length: Optional[int] = Field(
-        default=None, ge=10, le=120, description="Sequence length"
-    )
-    experiment_name: Optional[str] = Field(
-        default=None, description="MLflow experiment name"
-    )
+    epochs: Optional[int] = Field(default=None, ge=1, le=500, description="Number of epochs")
+    batch_size: Optional[int] = Field(default=None, ge=8, le=256, description="Batch size")
+    learning_rate: Optional[float] = Field(default=None, ge=1e-6, le=1e-1, description="Learning rate")
+    hidden_size: Optional[int] = Field(default=None, ge=32, le=512, description="LSTM hidden size")
+    num_layers: Optional[int] = Field(default=None, ge=1, le=5, description="Number of LSTM layers")
+    sequence_length: Optional[int] = Field(default=None, ge=10, le=120, description="Sequence length")
+    experiment_name: Optional[str] = Field(default=None, description="MLflow experiment name")
 
 
 class TrainResponse(BaseModel):
@@ -136,13 +112,9 @@ class TrainStatusResponse(BaseModel):
 class DataRequest(BaseModel):
     """Request for data retrieval."""
 
-    start_date: Optional[datetime] = Field(
-        default=None, description="Start date filter"
-    )
+    start_date: Optional[datetime] = Field(default=None, description="Start date filter")
     end_date: Optional[datetime] = Field(default=None, description="End date filter")
-    limit: Optional[int] = Field(
-        default=None, ge=1, le=10000, description="Max records to return"
-    )
+    limit: Optional[int] = Field(default=None, ge=1, le=10000, description="Max records to return")
     columns: Optional[List[str]] = Field(default=None, description="Columns to include")
 
 

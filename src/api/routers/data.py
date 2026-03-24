@@ -8,7 +8,7 @@ from typing import Optional
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query, status
 
-from src.api.schemas import DataResponse, StockDataItem, DataSummaryResponse
+from src.api.schemas import DataResponse, DataSummaryResponse, StockDataItem
 from src.etl.preprocessing import load_data_from_db
 
 router = APIRouter(prefix="/data", tags=["Data"])

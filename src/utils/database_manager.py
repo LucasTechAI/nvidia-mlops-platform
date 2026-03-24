@@ -1,5 +1,5 @@
-from typing import Any, List, Optional, Tuple
 import sqlite3
+from typing import Any, List, Optional, Tuple
 
 
 class DatabaseError(Exception):
@@ -44,11 +44,7 @@ class DatabaseManager:
                 cursor.execute(query, values)
                 conn.commit()
 
-                result_cursor = (
-                    cursor.fetchall()
-                    if query.strip().upper().startswith("SELECT")
-                    else None
-                )
+                result_cursor = cursor.fetchall() if query.strip().upper().startswith("SELECT") else None
                 lastrowid = cursor.lastrowid
                 rowcount = cursor.rowcount
 
@@ -97,9 +93,7 @@ class DatabaseManager:
         if not query.strip().upper().startswith("INSERT"):
             raise DatabaseError("Query must be an INSERT statement")
 
-        if not isinstance(values_list, list) or not all(
-            isinstance(item, tuple) for item in values_list
-        ):
+        if not isinstance(values_list, list) or not all(isinstance(item, tuple) for item in values_list):
             raise DatabaseError("Values must be a list of tuples")
 
         try:
@@ -147,9 +141,7 @@ class DatabaseManager:
 
         return row_id
 
-    def select(
-        self, query: str, values: Optional[Tuple[Any, ...]] = None
-    ) -> List[sqlite3.Row]:
+    def select(self, query: str, values: Optional[Tuple[Any, ...]] = None) -> List[sqlite3.Row]:
         """
         Execute a SELECT statement.
 

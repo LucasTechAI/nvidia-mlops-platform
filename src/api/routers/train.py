@@ -2,13 +2,13 @@
 Training endpoints.
 """
 
-from typing import Optional
 import logging
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 
-from src.api.schemas import TrainRequest, TrainResponse, TrainStatusResponse
 from src.api.dependencies import ModelState, get_model_state
+from src.api.schemas import TrainRequest, TrainResponse, TrainStatusResponse
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +26,8 @@ async def run_training_task(
     experiment_name: Optional[str] = None,
 ):
     """Background task to run model training."""
-    from src.training.train import train_model
     from src.config import settings
+    from src.training.train import train_model
 
     try:
         state.is_training = True
@@ -81,9 +81,7 @@ async def start_training(
     Training runs asynchronously. Use /train/status to check progress.
     """
     if state.is_training:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Training already in progress"
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Training already in progress")
 
     # Add training task to background
     background_tasks.add_task(
@@ -122,9 +120,7 @@ async def training_status(
 
 
 @router.post("/sync", response_model=TrainResponse)
-async def train_sync(
-    request: TrainRequest, state: ModelState = Depends(get_model_state)
-) -> TrainResponse:
+async def train_sync(request: TrainRequest, state: ModelState = Depends(get_model_state)) -> TrainResponse:
     """
     Run training synchronously (blocking).
 
@@ -132,13 +128,12 @@ async def train_sync(
     Use /train for async training.
     """
     if state.is_training:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Training already in progress"
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Training already in progress")
 
-    from src.training.train import train_model
-    from src.config import settings
     import time
+
+    from src.config import settings
+    from src.training.train import train_model
 
     try:
         state.is_training = True

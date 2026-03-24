@@ -2,14 +2,15 @@
 Tests for the FastAPI API endpoints.
 """
 
-import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pandas as pd
+import pytest
+from fastapi.testclient import TestClient
 
+from src.api.dependencies import ModelState, model_state
 from src.api.main import app
-from src.api.dependencies import model_state, ModelState
 
 
 @pytest.fixture
@@ -202,9 +203,7 @@ class TestPredictEndpoints:
 
         # Mock scaler transform/inverse_transform
         model_state.scaler.transform.return_value = np.random.uniform(0, 1, (100, 1))
-        model_state.scaler.inverse_transform.return_value = np.random.uniform(
-            100, 150, (30, 1)
-        )
+        model_state.scaler.inverse_transform.return_value = np.random.uniform(100, 150, (30, 1))
 
         # Mock model forward pass
         import torch
@@ -213,9 +212,7 @@ class TestPredictEndpoints:
         model_state.model.train = MagicMock()
         model_state.model.eval = MagicMock()
 
-        response = client.post(
-            "/predict", json={"horizon": 5, "with_uncertainty": False}
-        )
+        response = client.post("/predict", json={"horizon": 5, "with_uncertainty": False})
 
         # Should either succeed or fail with specific error
         assert response.status_code in [200, 500]
@@ -238,9 +235,7 @@ class TestPredictEndpoints:
         model_state.model = None
         model_state.scaler = None
 
-        response = client.post(
-            "/predict/inference", json={"sequence": [100.0] * 60, "steps": 5}
-        )
+        response = client.post("/predict/inference", json={"sequence": [100.0] * 60, "steps": 5})
         assert response.status_code == 503
 
 

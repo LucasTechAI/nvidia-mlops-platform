@@ -5,22 +5,20 @@ This module handles data loading from SQLite, normalization,
 sequence creation, and train/val/test splitting.
 """
 
-import sqlite3
 import logging
+import pickle
+import sqlite3
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
-import pickle
 
 logger = logging.getLogger(__name__)
 
 
-def load_data_from_db(
-    db_path: str, start_year: int = 2017, target_column: str = "Close"
-) -> pd.DataFrame:
+def load_data_from_db(db_path: str, start_year: int = 2017, target_column: str = "Close") -> pd.DataFrame:
     """
     Load NVIDIA stock data from SQLite database.
 
@@ -69,9 +67,7 @@ def load_data_from_db(
     if target_column not in df.columns:
         raise ValueError(f"Target column '{target_column}' not found in data")
 
-    logger.info(
-        f"Loaded {len(df)} records from {df['Date'].min()} to {df['Date'].max()}"
-    )
+    logger.info(f"Loaded {len(df)} records from {df['Date'].min()} to {df['Date'].max()}")
     logger.info(f"Available columns: {df.columns.tolist()}")
     logger.info(f"Data statistics:\n{df.describe()}")
 
@@ -118,9 +114,7 @@ def normalize_features(
         logger.info(f"Scaler saved to {scaler_path}")
 
     logger.info(f"Normalized data shape: {normalized_data.shape}")
-    logger.info(
-        f"Normalized data range: [{normalized_data.min():.4f}, {normalized_data.max():.4f}]"
-    )
+    logger.info(f"Normalized data range: [{normalized_data.min():.4f}, {normalized_data.max():.4f}]")
 
     return normalized_data, scaler
 
@@ -141,9 +135,7 @@ def create_sequences(
             X: Input sequences (n_sequences, sequence_length, n_features)
             y: Target values (n_sequences, n_features)
     """
-    logger.info(
-        f"Creating sequences (length={sequence_length}, horizon={forecast_horizon})"
-    )
+    logger.info(f"Creating sequences (length={sequence_length}, horizon={forecast_horizon})")
 
     X, y = [], []
 
@@ -186,9 +178,7 @@ def train_val_test_split(
         ValueError: If ratios don't sum to 1.0
     """
     if not np.isclose(train_ratio + val_ratio + test_ratio, 1.0):
-        raise ValueError(
-            f"Ratios must sum to 1.0, got {train_ratio + val_ratio + test_ratio}"
-        )
+        raise ValueError(f"Ratios must sum to 1.0, got {train_ratio + val_ratio + test_ratio}")
 
     n_samples = len(X)
     train_end = int(n_samples * train_ratio)
@@ -203,9 +193,7 @@ def train_val_test_split(
     X_test = X[val_end:]
     y_test = y[val_end:]
 
-    logger.info(
-        f"Split data - Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}"
-    )
+    logger.info(f"Split data - Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
 
     return X_train, y_train, X_val, y_val, X_test, y_test
 

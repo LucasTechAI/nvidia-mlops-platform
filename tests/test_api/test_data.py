@@ -2,11 +2,12 @@
 Tests for data endpoints.
 """
 
-import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import patch
+
 import numpy as np
 import pandas as pd
+import pytest
+from fastapi.testclient import TestClient
 
 from src.api.main import app
 

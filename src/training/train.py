@@ -5,17 +5,18 @@ This module handles model training, validation, early stopping,
 and MLflow experiment tracking.
 """
 
+import logging
+import time
+from typing import Dict, Optional, Tuple
+
+import matplotlib.pyplot as plt
+import mlflow
+import mlflow.pytorch
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
-import mlflow
-import mlflow.pytorch
-import numpy as np
-import matplotlib.pyplot as plt
-import logging
-from typing import Dict, Tuple, Optional
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -139,9 +140,7 @@ def validate_epoch(
     threshold = 1e-3
     mask = np.abs(targets) > threshold
     if mask.any():
-        mape = (
-            np.mean(np.abs((targets[mask] - predictions[mask]) / targets[mask])) * 100
-        )
+        mape = np.mean(np.abs((targets[mask] - predictions[mask]) / targets[mask])) * 100
     else:
         mape = 0.0  # If all values near zero, set MAPE to 0
 
@@ -150,9 +149,7 @@ def validate_epoch(
     return avg_loss, metrics
 
 
-def plot_training_history(
-    train_losses: list, val_losses: list, save_path: Optional[str] = None
-) -> None:
+def plot_training_history(train_losses: list, val_losses: list, save_path: Optional[str] = None) -> None:
     """
     Plot training and validation loss curves.
 
@@ -215,12 +212,8 @@ def train_model(
     train_dataset = TensorDataset(X_train, y_train)
     val_dataset = TensorDataset(X_val, y_val)
 
-    train_loader = DataLoader(
-        train_dataset, batch_size=config.get("batch_size", 32), shuffle=True
-    )
-    val_loader = DataLoader(
-        val_dataset, batch_size=config.get("batch_size", 32), shuffle=False
-    )
+    train_loader = DataLoader(train_dataset, batch_size=config.get("batch_size", 32), shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=config.get("batch_size", 32), shuffle=False)
 
     # Setup training
     criterion = nn.MSELoss()
@@ -367,8 +360,6 @@ def load_model_checkpoint(
     epoch = checkpoint["epoch"]
     loss = checkpoint["loss"]
 
-    logger.info(
-        f"Loaded checkpoint from {checkpoint_path} (epoch {epoch}, loss {loss:.6f})"
-    )
+    logger.info(f"Loaded checkpoint from {checkpoint_path} (epoch {epoch}, loss {loss:.6f})")
 
     return model, optimizer, epoch, loss

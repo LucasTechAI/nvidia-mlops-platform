@@ -4,9 +4,10 @@ LSTM model for NVIDIA stock price prediction.
 This module implements a configurable LSTM architecture using PyTorch.
 """
 
+import logging
+
 import torch
 import torch.nn as nn
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +54,7 @@ class NvidiaLSTM(nn.Module):
             input_size=input_size,
             hidden_size=hidden_size,
             num_layers=num_layers,
-            dropout=dropout
-            if num_layers > 1
-            else 0,  # Dropout only for multi-layer LSTM
+            dropout=dropout if num_layers > 1 else 0,  # Dropout only for multi-layer LSTM
             bidirectional=bidirectional,
             batch_first=True,
         )
@@ -110,9 +109,7 @@ class NvidiaLSTM(nn.Module):
 
         return output
 
-    def predict_sequence(
-        self, initial_sequence: torch.Tensor, n_steps: int, device: torch.device
-    ) -> torch.Tensor:
+    def predict_sequence(self, initial_sequence: torch.Tensor, n_steps: int, device: torch.device) -> torch.Tensor:
         """
         Generate multi-step predictions iteratively.
 

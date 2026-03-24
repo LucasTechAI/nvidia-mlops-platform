@@ -1,8 +1,10 @@
-from src.config import ROOT_DIR, LOG_FORMAT, LOG_LEVEL
-from logging import getLogger, basicConfig
+from logging import basicConfig, getLogger
+from pathlib import Path
+
 from pandas import DataFrame
 from yfinance import Ticker
-from pathlib import Path
+
+from src.config import LOG_FORMAT, LOG_LEVEL, ROOT_DIR
 
 basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
 logger = getLogger(__name__)
@@ -29,9 +31,7 @@ def extract_nvidia_data(period: str = "max", interval: str = "1d") -> DataFrame:
 
     nvidia: Ticker = Ticker(ticker)
 
-    logger.info(
-        f"Downloading historical data (period: {period}, interval: {interval})..."
-    )
+    logger.info(f"Downloading historical data (period: {period}, interval: {interval})...")
     data: DataFrame = nvidia.history(period=period, interval=interval)
     if data.empty:
         logger.warning("No data was returned. Check the parameters.")
@@ -53,9 +53,7 @@ def save_data(data: DataFrame, path: str = "nvidia_stock.csv") -> None:
         data: DataFrame with the data
         path: Path to save the file
     """
-    full_path = (
-        Path(path) if path.startswith("/") else Path(ROOT_DIR, "data", "raw", path)
-    )
+    full_path = Path(path) if path.startswith("/") else Path(ROOT_DIR, "data", "raw", path)
     dir_name = full_path.parent
     if not dir_name.exists():
         dir_name.mkdir(parents=True, exist_ok=True)

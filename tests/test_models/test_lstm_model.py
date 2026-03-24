@@ -25,9 +25,7 @@ class TestNvidiaLSTM:
 
     def test_model_forward_pass(self):
         """Test forward pass with correct shapes."""
-        model = NvidiaLSTM(
-            input_size=5, hidden_size=64, num_layers=2, dropout=0.2, output_size=5
-        )
+        model = NvidiaLSTM(input_size=5, hidden_size=64, num_layers=2, dropout=0.2, output_size=5)
 
         # Batch of 8, sequence length 10, 5 features
         x = torch.randn(8, 10, 5)
@@ -84,9 +82,7 @@ class TestNvidiaLSTM:
 
     def test_get_num_parameters(self):
         """Test parameter counting."""
-        model = NvidiaLSTM(
-            input_size=5, hidden_size=64, num_layers=2, dropout=0.2, output_size=5
-        )
+        model = NvidiaLSTM(input_size=5, hidden_size=64, num_layers=2, dropout=0.2, output_size=5)
 
         num_params = model.get_num_parameters()
 
@@ -95,17 +91,13 @@ class TestNvidiaLSTM:
 
     def test_predict_sequence(self):
         """Test multi-step prediction."""
-        model = NvidiaLSTM(
-            input_size=5, hidden_size=64, num_layers=2, dropout=0.2, output_size=5
-        )
+        model = NvidiaLSTM(input_size=5, hidden_size=64, num_layers=2, dropout=0.2, output_size=5)
 
         # Initial sequence: (1, sequence_length, input_size)
         initial_seq = torch.randn(1, 10, 5)
         n_steps = 5
 
-        predictions = model.predict_sequence(
-            initial_seq, n_steps=n_steps, device=torch.device("cpu")
-        )
+        predictions = model.predict_sequence(initial_seq, n_steps=n_steps, device=torch.device("cpu"))
 
         assert predictions.shape == (n_steps, 5)
 

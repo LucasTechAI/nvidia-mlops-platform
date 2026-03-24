@@ -8,18 +8,18 @@ This module provides utilities for:
 - Splitting data into train/validation/test sets
 """
 
-import sqlite3
 import logging
+import sqlite3
 from pathlib import Path
-from typing import Tuple, Optional, List, Dict, Any, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import torch
-from torch.utils.data import Dataset, DataLoader
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from torch.utils.data import DataLoader, Dataset
 
-from src.config import settings, DataConfig
+from src.config import DataConfig, settings
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -114,9 +114,7 @@ def load_data_from_db(
 
         # Parse dates with error handling for mixed timezones
         try:
-            df[date_column] = pd.to_datetime(df[date_column], utc=True).dt.tz_localize(
-                None
-            )
+            df[date_column] = pd.to_datetime(df[date_column], utc=True).dt.tz_localize(None)
         except Exception:
             # Fallback: try parsing without timezone
             df[date_column] = pd.to_datetime(df[date_column], errors="coerce")
@@ -232,9 +230,7 @@ def create_sequences(
         ValueError: If data is too short for sequence length.
     """
     if len(data) <= sequence_length:
-        raise ValueError(
-            f"Data length ({len(data)}) must be greater than sequence length ({sequence_length})"
-        )
+        raise ValueError(f"Data length ({len(data)}) must be greater than sequence length ({sequence_length})")
 
     sequences = []
     targets = []
@@ -279,9 +275,7 @@ def train_val_test_split(
     Raises:
         AssertionError: If ratios don't sum to 1.0
     """
-    assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6, (
-        "Ratios must sum to 1.0"
-    )
+    assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6, "Ratios must sum to 1.0"
 
     n_samples = len(X)
     train_end = int(n_samples * train_ratio)
@@ -294,9 +288,7 @@ def train_val_test_split(
     }
 
     logger.info("Data split:")
-    logger.info(
-        f"  Train: {len(splits['train'][0])} samples ({train_ratio * 100:.0f}%)"
-    )
+    logger.info(f"  Train: {len(splits['train'][0])} samples ({train_ratio * 100:.0f}%)")
     logger.info(f"  Val:   {len(splits['val'][0])} samples ({val_ratio * 100:.0f}%)")
     logger.info(f"  Test:  {len(splits['test'][0])} samples ({test_ratio * 100:.0f}%)")
 
@@ -336,9 +328,7 @@ def create_data_loaders(
             pin_memory=use_pin_memory,
         )
 
-        logger.info(
-            f"Created {split_name} DataLoader: {len(loaders[split_name])} batches"
-        )
+        logger.info(f"Created {split_name} DataLoader: {len(loaders[split_name])} batches")
 
     return loaders
 

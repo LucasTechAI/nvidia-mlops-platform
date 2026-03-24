@@ -1,12 +1,10 @@
-from logging import getLogger, basicConfig, INFO
-from sqlite3 import Connection, Error, connect
-from pandas import read_csv
+from logging import INFO, basicConfig, getLogger
 from os import path
+from sqlite3 import Connection, Error, connect
 
+from pandas import read_csv
 
-CSV_PATH = path.abspath(
-    path.join(path.dirname(__file__), "../../data/raw/nvidia_stock.csv")
-)
+CSV_PATH = path.abspath(path.join(path.dirname(__file__), "../../data/raw/nvidia_stock.csv"))
 DB_PATH = path.abspath(path.join(path.dirname(__file__), "../../data/nvidia_stock.db"))
 TABLE_NAME = "nvidia_stock"
 

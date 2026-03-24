@@ -3,14 +3,14 @@ Application dependencies and shared state.
 """
 
 import logging
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
 import torch
 from sklearn.preprocessing import MinMaxScaler
 
-from src.models.lstm_model import NvidiaLSTM
 from src.config import settings
+from src.models.lstm_model import NvidiaLSTM
 
 logger = logging.getLogger(__name__)
 
@@ -42,18 +42,14 @@ class ModelState:
 
         self._initialized = True
 
-    def load_model(
-        self, checkpoint_path: Optional[str] = None, scaler_path: Optional[str] = None
-    ) -> bool:
+    def load_model(self, checkpoint_path: Optional[str] = None, scaler_path: Optional[str] = None) -> bool:
         """Load model and scaler from checkpoint."""
         try:
             self.device = settings.get_device()
 
             # Default paths
             if checkpoint_path is None:
-                checkpoint_path = str(
-                    settings.models_dir / "checkpoints" / "best_model.pt"
-                )
+                checkpoint_path = str(settings.models_dir / "checkpoints" / "best_model.pt")
 
             if scaler_path is None:
                 # Try to find scaler in outputs
@@ -67,9 +63,7 @@ class ModelState:
 
             # Load model
             if Path(checkpoint_path).exists():
-                checkpoint = torch.load(
-                    checkpoint_path, map_location=self.device, weights_only=False
-                )
+                checkpoint = torch.load(checkpoint_path, map_location=self.device, weights_only=False)
                 self.model_config = checkpoint.get("model_config", {})
 
                 self.model = NvidiaLSTM(

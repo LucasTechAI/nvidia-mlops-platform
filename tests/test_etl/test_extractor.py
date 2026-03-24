@@ -1,8 +1,9 @@
 """Tests for ETL module."""
 
-from src.etl.extractor_nvidia import extract_nvidia_data
-from pandas import DataFrame, api
 import pytest
+from pandas import DataFrame, api
+
+from src.etl.extractor_nvidia import extract_nvidia_data
 
 
 class TestExtractNvidiaData:
