@@ -75,4 +75,3 @@ def show_statistics(data: DataFrame) -> None:
         "\nStatistical summary:\n%s",
         data[["Open", "High", "Low", "Close", "Volume"]].describe(),
     )
-

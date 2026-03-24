@@ -9,7 +9,7 @@ from src.dashboard.components.sidebar import render_sidebar
 
 __all__ = [
     "render_predictions_page",
-    "render_metrics_page", 
+    "render_metrics_page",
     "render_model_schema_page",
-    "render_sidebar"
+    "render_sidebar",
 ]

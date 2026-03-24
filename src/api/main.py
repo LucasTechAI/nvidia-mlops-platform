@@ -15,8 +15,7 @@ from src.api.dependencies import model_state
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -26,16 +25,16 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
     logger.info("Starting NVIDIA Stock Prediction API...")
-    
+
     # Load model on startup
     success = model_state.load_model()
     if success:
         logger.info("Model loaded successfully")
     else:
         logger.warning("Model not loaded - some endpoints may not work")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down API...")
 
@@ -68,7 +67,7 @@ with Monte Carlo Dropout for uncertainty estimation.
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
 )
 
 # CORS middleware
@@ -100,18 +99,15 @@ async def root():
             "inference": "/predict/inference",
             "train": "/train",
             "data": "/data",
-            "health": "/health"
-        }
+            "health": "/health",
+        },
     }
 
 
 # For running with: python -m api.main
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
-        "api.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
+        "api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info"
     )

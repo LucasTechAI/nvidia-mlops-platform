@@ -20,7 +20,7 @@ router = APIRouter(prefix="/health", tags=["Health"])
 async def health_check(state: ModelState = Depends(get_model_state)) -> HealthResponse:
     """
     Check the health status of the API.
-    
+
     Returns:
         HealthResponse with status of all components.
     """
@@ -31,24 +31,24 @@ async def health_check(state: ModelState = Depends(get_model_state)) -> HealthRe
         db_connected = db_path.exists()
     except Exception:
         pass
-    
+
     # Check GPU
     gpu_available = torch.cuda.is_available()
-    
+
     # Check model
     model_loaded = state.is_ready
-    
+
     # Overall status
     status = "healthy" if (model_loaded and db_connected) else "degraded"
     if not db_connected:
         status = "unhealthy"
-    
+
     return HealthResponse(
         status=status,
         model_loaded=model_loaded,
         database_connected=db_connected,
         gpu_available=gpu_available,
-        timestamp=datetime.now()
+        timestamp=datetime.now(),
     )
 
 
@@ -56,7 +56,7 @@ async def health_check(state: ModelState = Depends(get_model_state)) -> HealthRe
 async def readiness_check(state: ModelState = Depends(get_model_state)) -> dict:
     """
     Kubernetes-style readiness probe.
-    
+
     Returns 200 if ready to serve requests, 503 otherwise.
     """
     if state.is_ready:
@@ -68,7 +68,7 @@ async def readiness_check(state: ModelState = Depends(get_model_state)) -> dict:
 async def liveness_check() -> dict:
     """
     Kubernetes-style liveness probe.
-    
+
     Returns 200 if the service is alive.
     """
     return {"alive": True}

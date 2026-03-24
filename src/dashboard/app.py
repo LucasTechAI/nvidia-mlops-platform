@@ -4,7 +4,6 @@ Main Streamlit Dashboard Application.
 NVIDIA Stock Price Prediction Dashboard.
 """
 
-import streamlit as st
 import sys
 from pathlib import Path
 
@@ -12,21 +11,24 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.dashboard.components.predictions import render_predictions_page
-from src.dashboard.components.metrics import render_metrics_page
-from src.dashboard.components.model_schema import render_model_schema_page
-from src.dashboard.components.sidebar import render_sidebar
+import streamlit as st  # noqa: E402
+
+from src.dashboard.components.metrics import render_metrics_page  # noqa: E402
+from src.dashboard.components.model_schema import render_model_schema_page  # noqa: E402
+from src.dashboard.components.predictions import render_predictions_page  # noqa: E402
+from src.dashboard.components.sidebar import render_sidebar  # noqa: E402
 
 # Page configuration
 st.set_page_config(
     page_title="NVIDIA Stock Prediction Dashboard",
     page_icon="📈",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 # Custom CSS - Enhanced UI/UX
-st.markdown("""
+st.markdown(
+    """
 <style>
     /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -328,19 +330,27 @@ st.markdown("""
         }
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
 def main():
     """Main application entry point."""
-    
+
     # Render sidebar and get selected page
     selected_page = render_sidebar()
-    
+
     # Main header with subtitle
-    st.markdown('<p class="main-header">📈 NVIDIA Stock Prediction Dashboard</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">AI-Powered Stock Price Forecasting with LSTM Neural Networks</p>', unsafe_allow_html=True)
-    
+    st.markdown(
+        '<p class="main-header">📈 NVIDIA Stock Prediction Dashboard</p>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<p class="sub-header">AI-Powered Stock Price Forecasting with LSTM Neural Networks</p>',
+        unsafe_allow_html=True,
+    )
+
     # Render selected page
     if selected_page == "Predictions":
         render_predictions_page()
