@@ -34,19 +34,19 @@ async def run_training_task(
 
         # Override config if provided
         if epochs is not None:
-            settings.training.epochs = epochs
+            settings.epochs = epochs
         if batch_size is not None:
-            settings.training.batch_size = batch_size
+            settings.batch_size = batch_size
         if learning_rate is not None:
-            settings.training.learning_rate = learning_rate
+            settings.learning_rate = learning_rate
         if hidden_size is not None:
-            settings.lstm.hidden_size = hidden_size
+            settings.hidden_size = hidden_size
         if num_layers is not None:
-            settings.lstm.num_layers = num_layers
+            settings.num_layers = num_layers
         if sequence_length is not None:
-            settings.lstm.sequence_length = sequence_length
+            settings.sequence_length = sequence_length
 
-        state.total_epochs = settings.training.epochs
+        state.total_epochs = settings.epochs
 
         # Run training
         result = train_model(experiment_name=experiment_name)
@@ -54,7 +54,7 @@ async def run_training_task(
         state.training_run_id = result.get("run_id")
 
         # Reload model after training
-        checkpoint_path = settings.models_dir / "checkpoints" / "best_model.pt"
+        checkpoint_path = settings.model_dir / "checkpoints" / "best_model.pt"
         if checkpoint_path.exists():
             state.load_model(str(checkpoint_path))
 
@@ -141,17 +141,17 @@ async def train_sync(request: TrainRequest, state: ModelState = Depends(get_mode
 
         # Override config
         if request.epochs is not None:
-            settings.training.epochs = request.epochs
+            settings.epochs = request.epochs
         if request.batch_size is not None:
-            settings.training.batch_size = request.batch_size
+            settings.batch_size = request.batch_size
         if request.learning_rate is not None:
-            settings.training.learning_rate = request.learning_rate
+            settings.learning_rate = request.learning_rate
         if request.hidden_size is not None:
-            settings.lstm.hidden_size = request.hidden_size
+            settings.hidden_size = request.hidden_size
         if request.num_layers is not None:
-            settings.lstm.num_layers = request.num_layers
+            settings.num_layers = request.num_layers
         if request.sequence_length is not None:
-            settings.lstm.sequence_length = request.sequence_length
+            settings.sequence_length = request.sequence_length
 
         # Run training
         result = train_model(experiment_name=request.experiment_name)
@@ -159,7 +159,7 @@ async def train_sync(request: TrainRequest, state: ModelState = Depends(get_mode
         training_time = time.time() - start_time
 
         # Reload model
-        checkpoint_path = settings.models_dir / "checkpoints" / "best_model.pt"
+        checkpoint_path = settings.model_dir / "checkpoints" / "best_model.pt"
         if checkpoint_path.exists():
             state.load_model(str(checkpoint_path))
 

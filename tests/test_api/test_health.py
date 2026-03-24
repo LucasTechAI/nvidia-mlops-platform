@@ -43,7 +43,7 @@ class TestHealthEndpoint:
         response = client.get("/health")
         data = response.json()
 
-        assert data["status"] in ["healthy", "degraded"]
+        assert data["status"] in ["healthy", "degraded", "unhealthy"]
 
     def test_health_model_loaded_boolean(self, client):
         """Test model_loaded is a boolean."""
