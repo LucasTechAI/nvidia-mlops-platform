@@ -105,6 +105,26 @@ MLRUNS_DIR = ROOT_DIR / "mlruns"
 
 
 @dataclass
+class DataConfig:
+    """Configuration for data loading and preprocessing."""
+
+    # Time range
+    start_year: int = DATA_START_YEAR
+
+    # Features
+    target_column: str = TARGET_COLUMN
+    feature_columns: Optional[List[str]] = None  # None = use target_column only
+
+    # Scaling
+    scaler_type: str = "minmax"  # Options: "minmax", "standard"
+
+    # Train/val/test split ratios
+    train_split: float = TRAIN_SPLIT
+    val_split: float = VAL_SPLIT
+    test_split: float = TEST_SPLIT
+
+
+@dataclass
 class MLflowConfig:
     """Configuration for MLflow experiment tracking."""
 
@@ -255,6 +275,9 @@ class Settings:
     # Prediction
     forecast_horizon: int = FORECAST_HORIZON
     prediction_uncertainty_factor: float = PREDICTION_UNCERTAINTY_FACTOR
+
+    # Sub-configs
+    data: DataConfig = field(default_factory=DataConfig)
 
     @classmethod
     def from_env(cls) -> "Settings":
