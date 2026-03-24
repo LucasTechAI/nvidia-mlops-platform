@@ -1,0 +1,109 @@
+# =============================================================================
+# Docker Compose for NVIDIA LSTM Stock Forecast
+# =============================================================================
+# Services:
+#   - mlflow: MLflow tracking server (UI on port 5000)
+#   - training: Model training service
+#   - hpo: Hyperparameter optimization service
+#   - prediction: Forecast generation service
+#   - etl: Data extraction service (original)
+#   - dev: Development environment
+# =============================================================================
+
+services:
+  # MLflow tracking server
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nvidia-lstm-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/app/mlruns
+      - ./models:/app/models
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=file:///app/mlruns
+    command: ["mlflow", "ui", "--host", "0.0.0.0", "--port", "5000"]
+    restart: unless-stopped
+
+  # ETL service
+  etl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: nvidia-lstm-etl
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - DATABASE_PATH=/app/data/nvidia_stock.db
+      - LOG_LEVEL=INFO
+    command: ["python", "setup/run_etl_nvidia.py"]
+    network_mode: bridge
+    restart: "no"
+
+  # Training service
+  training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nvidia-lstm-training
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./mlruns:/app/mlruns
+      - ./outputs:/app/outputs
+    environment:
+      - DATABASE_PATH=/app/data/nvidia.db
+      - LOG_LEVEL=INFO
+      - MLFLOW_TRACKING_URI=/app/mlruns
+      - PYTHONPATH=/app
+    depends_on:
+      - etl
+    profiles:
+      - training
+
+  # Development service with source code mounted
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: nvidia-lstm-dev
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./mlruns:/app/mlruns
+      - ./outputs:/app/outputs
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./scripts:/app/scripts
+    environment:
+      - DATABASE_PATH=/app/data/nvidia_stock.db
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - LOG_LEVEL=DEBUG
+      - MLFLOW_TRACKING_URI=/app/mlruns
+      - PYTHONPATH=/app
+    command: ["bash"]
+    stdin_open: true
+    tty: true
+    profiles:
+      - dev
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  lstm-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes (Optional: for persistent data)
+# =============================================================================
+volumes:
+  mlruns-data:
+  model-data:
