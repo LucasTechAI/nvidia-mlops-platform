@@ -21,6 +21,7 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+PYTHON_*
 
 # Virtual Environment
 venv/
@@ -40,13 +41,16 @@ venv.bak/
 *.swo
 *~
 
-# Data files
+# Data files (raw data managed by DVC)
+data/raw/
+data/processed/
 *.csv
 *.h5
 *.hdf5
 *.db
 *.sqlite
 *.db-journal
+!data/golden_set/*.json
 
 # Model artifacts
 *.pth
@@ -66,6 +70,11 @@ runs/
 # MLflow
 mlruns/
 mlartifacts/
+
+# DVC
+/data/*.dvc
+.dvc/tmp/
+.dvc/cache/
 
 # Optuna
 optuna.db

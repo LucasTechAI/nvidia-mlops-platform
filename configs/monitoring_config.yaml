@@ -1,0 +1,36 @@
+# Monitoring Configuration
+# Drift detection thresholds and alerting rules
+
+drift:
+  method: "psi"  # Population Stability Index
+  thresholds:
+    warning: 0.1
+    critical: 0.2   # triggers retraining
+  check_interval_hours: 24
+  features_to_monitor:
+    - "close"
+    - "volume"
+    - "high"
+    - "low"
+
+prometheus:
+  port: 9090
+  scrape_interval: "15s"
+
+grafana:
+  port: 3000
+
+alerts:
+  slack_webhook: "${SLACK_WEBHOOK_URL}"
+  email: "${ALERT_EMAIL}"
+  rules:
+    - name: "model_latency_high"
+      condition: "p95_latency > 2s"
+      severity: "warning"
+    - name: "drift_detected"
+      condition: "psi > 0.1"
+      severity: "warning"
+    - name: "drift_critical"
+      condition: "psi > 0.2"
+      severity: "critical"
+      action: "trigger_retraining"

@@ -1,0 +1,32 @@
+stages:
+  extract:
+    cmd: python scripts/run_etl_nvidia.py
+    deps:
+      - scripts/run_etl_nvidia.py
+      - src/etl/extractor_nvidia.py
+      - src/etl/load_sqlite_nvidia.py
+    outs:
+      - data/raw/nvidia_stock.csv:
+          cache: true
+
+  preprocess:
+    cmd: python -m src.data.preprocessing
+    deps:
+      - src/data/preprocessing.py
+      - data/raw/nvidia_stock.csv
+    outs:
+      - data/processed/nvidia_processed.csv:
+          cache: true
+
+  train:
+    cmd: bash scripts/run_training.sh
+    deps:
+      - src/training/train.py
+      - src/models/lstm_model.py
+      - data/processed/nvidia_processed.csv
+    metrics:
+      - mlruns/metrics.json:
+          cache: false
+    plots:
+      - mlruns/plots/:
+          cache: false

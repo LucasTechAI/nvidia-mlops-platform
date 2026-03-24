@@ -1,0 +1,34 @@
+# Model Configuration
+# Hyperparameters for the LSTM model
+
+model:
+  type: "lstm"
+  input_size: 1
+  hidden_size: 128
+  num_layers: 2
+  dropout: 0.2
+  output_size: 1
+
+training:
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+  early_stopping_patience: 10
+  sequence_length: 60
+  test_size: 0.2
+  random_state: 42
+
+prediction:
+  forecast_days: 30
+
+mlflow:
+  experiment_name: "nvidia-lstm-forecast"
+  required_tags:
+    - "model_name"
+    - "model_version"
+    - "model_type"
+    - "training_data_version"
+    - "owner"
+    - "risk_level"
+    - "fairness_checked"
+    - "git_sha"
