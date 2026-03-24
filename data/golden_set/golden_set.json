@@ -1,0 +1,8 @@
+[
+  {
+    "id": 1,
+    "query": "Qual foi o preço de fechamento da NVIDIA ontem?",
+    "expected_answer": "",
+    "contexts": []
+  }
+]
