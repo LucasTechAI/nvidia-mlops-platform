@@ -46,12 +46,17 @@ def load_data_from_db(db_path: str, start_year: int = 2017, target_column: str =
     df = pd.read_sql_query(query, conn)
     conn.close()
 
-    # Convert date column
+    # Convert date column (use utc=True for timezone-aware strings, then remove tz)
     if "Date" in df.columns:
-        df["Date"] = pd.to_datetime(df["Date"])
+        df["Date"] = pd.to_datetime(df["Date"], utc=True).dt.tz_localize(None)
     elif "date" in df.columns:
-        df["Date"] = pd.to_datetime(df["date"])
+        df["Date"] = pd.to_datetime(df["date"], utc=True).dt.tz_localize(None)
         df = df.drop(columns=["date"])
+
+    # Capitalize column names to match expected format (e.g., close -> Close)
+    rename_map = {col: col.capitalize() for col in df.columns if col != "Date" and col.islower()}
+    if rename_map:
+        df = df.rename(columns=rename_map)
 
     # Filter by year
     if start_year:

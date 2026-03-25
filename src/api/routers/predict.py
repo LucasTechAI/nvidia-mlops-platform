@@ -43,8 +43,12 @@ def generate_forecast_with_uncertainty(
     n_samples: int,
     device: str,
 ) -> tuple:
-    """Generate forecast with Monte Carlo Dropout for uncertainty."""
+    """Generate forecast with Monte Carlo Dropout for uncertainty.
+
+    Returns Close price predictions (index 3) from multi-feature OHLCV output.
+    """
     model.train()  # Enable dropout
+    close_idx = 3  # Close column index in OHLCV
 
     all_predictions = []
 
@@ -55,9 +59,12 @@ def generate_forecast_with_uncertainty(
         for _ in range(horizon):
             with torch.no_grad():
                 pred = model(sequence)
-            predictions.append(pred.cpu().numpy().flatten()[0])
+            pred_np = pred.cpu().numpy().flatten()
+            # Extract Close price (index 3) for the prediction series
+            close_val = pred_np[close_idx] if len(pred_np) > close_idx else pred_np[0]
+            predictions.append(close_val)
 
-            # Sliding window update
+            # Sliding window update (use full multi-feature output)
             new_input = pred.unsqueeze(0)
             sequence = torch.cat([sequence[:, 1:, :], new_input], dim=1)
 
@@ -90,13 +97,21 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
     try:
         # Load historical data
         df = load_data_from_db(start_year=2017)
+
+        # Capitalize columns to match training convention (ETL returns lowercase)
+        rename_map = {col: col.capitalize() for col in df.columns if col.islower()}
+        if rename_map:
+            df = df.rename(columns=rename_map)
+
         df["date"] = pd.to_datetime(df["Date"])
         df = df.sort_values("date").reset_index(drop=True)
 
-        # Prepare sequence
+        # Prepare multi-feature sequence (OHLCV — same as training)
         sequence_length = state.model_config.get("sequence_length", 60)
-        close_prices = df["close"].values.reshape(-1, 1)
-        normalized = state.scaler.transform(close_prices)
+        feature_columns = ["Open", "High", "Low", "Close", "Volume"]
+        available_features = [col for col in feature_columns if col in df.columns]
+        feature_data = df[available_features].values
+        normalized = state.scaler.transform(feature_data)
 
         last_sequence = normalized[-sequence_length:]
         sequence_tensor = torch.FloatTensor(last_sequence).unsqueeze(0).to(state.device)
@@ -115,10 +130,19 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
             lower = mean_preds - z_score * std_preds
             upper = mean_preds + z_score * std_preds
 
-            # Inverse transform
-            predictions_real = state.scaler.inverse_transform(mean_preds.reshape(-1, 1)).flatten()
-            lower_real = state.scaler.inverse_transform(lower.reshape(-1, 1)).flatten()
-            upper_real = state.scaler.inverse_transform(upper.reshape(-1, 1)).flatten()
+            # Inverse transform — model outputs 5 features, Close is at index 3
+            # Create dummy arrays with the right shape for inverse_transform
+            n_features = state.scaler.n_features_in_
+            close_idx = 3  # Close column index in OHLCV
+
+            def inverse_close(values):
+                dummy = np.zeros((len(values), n_features))
+                dummy[:, close_idx] = values
+                return state.scaler.inverse_transform(dummy)[:, close_idx]
+
+            predictions_real = inverse_close(mean_preds)
+            lower_real = inverse_close(lower)
+            upper_real = inverse_close(upper)
         else:
             state.model.eval()
             sequence = sequence_tensor.clone()
@@ -127,12 +151,25 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
             for _ in range(request.horizon):
                 with torch.no_grad():
                     pred = state.model(sequence)
-                predictions.append(pred.cpu().numpy().flatten()[0])
+                predictions.append(pred.cpu().numpy().flatten())
                 new_input = pred.unsqueeze(0)
                 sequence = torch.cat([sequence[:, 1:, :], new_input], dim=1)
 
             predictions = np.array(predictions)
-            predictions_real = state.scaler.inverse_transform(predictions.reshape(-1, 1)).flatten()
+
+            # Inverse transform — extract Close (index 3) from multi-feature output
+            n_features = state.scaler.n_features_in_
+            close_idx = 3  # Close column index in OHLCV
+
+            # predictions shape: (horizon, n_features)
+            if predictions.ndim == 1:
+                dummy = np.zeros((len(predictions), n_features))
+                dummy[:, close_idx] = predictions
+            else:
+                dummy = np.zeros((predictions.shape[0], n_features))
+                dummy[:, :predictions.shape[1]] = predictions
+
+            predictions_real = state.scaler.inverse_transform(dummy)[:, close_idx]
             lower_real = None
             upper_real = None
 
@@ -153,7 +190,7 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
 
         return PredictResponse(
             predictions=prediction_items,
-            last_known_price=float(df["close"].iloc[-1]),
+            last_known_price=float(df["Close"].iloc[-1]),
             last_known_date=df["date"].iloc[-1].to_pydatetime(),
             forecast_horizon=request.horizon,
             model_info=state.model_config,
@@ -179,9 +216,18 @@ async def inference(request: InferenceRequest, state: ModelState = Depends(get_m
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Model not loaded")
 
     try:
-        # Normalize input
-        input_array = np.array(request.sequence).reshape(-1, 1)
-        normalized = state.scaler.transform(input_array)
+        n_features = state.scaler.n_features_in_
+        close_idx = 3  # Close column index in OHLCV
+
+        # Normalize input — user provides Close prices; pad other features with zeros
+        input_array = np.array(request.sequence)
+        if input_array.ndim == 1:
+            # Single-feature input: treat as Close prices, pad OHLCV
+            padded = np.zeros((len(input_array), n_features))
+            padded[:, close_idx] = input_array
+            normalized = state.scaler.transform(padded)
+        else:
+            normalized = state.scaler.transform(input_array)
 
         # Prepare tensor
         sequence_tensor = torch.FloatTensor(normalized).unsqueeze(0).to(state.device)
@@ -194,13 +240,21 @@ async def inference(request: InferenceRequest, state: ModelState = Depends(get_m
         for _ in range(request.steps):
             with torch.no_grad():
                 pred = state.model(sequence)
-            predictions.append(pred.cpu().numpy().flatten()[0])
+            predictions.append(pred.cpu().numpy().flatten())
             new_input = pred.unsqueeze(0)
             sequence = torch.cat([sequence[:, 1:, :], new_input], dim=1)
 
-        # Inverse transform
         predictions = np.array(predictions)
-        predictions_real = state.scaler.inverse_transform(predictions.reshape(-1, 1)).flatten()
+
+        # Inverse transform — extract Close (index 3) from multi-feature output
+        if predictions.ndim == 1:
+            dummy = np.zeros((len(predictions), n_features))
+            dummy[:, close_idx] = predictions
+        else:
+            dummy = np.zeros((predictions.shape[0], n_features))
+            dummy[:, :predictions.shape[1]] = predictions
+
+        predictions_real = state.scaler.inverse_transform(dummy)[:, close_idx]
 
         return InferenceResponse(
             predictions=predictions_real.tolist(),

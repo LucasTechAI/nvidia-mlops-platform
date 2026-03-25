@@ -45,36 +45,52 @@ class ModelState:
     def load_model(self, checkpoint_path: Optional[str] = None, scaler_path: Optional[str] = None) -> bool:
         """Load model and scaler from checkpoint."""
         try:
-            self.device = settings.get_device()
+            import torch as _torch
+
+            self.device = "cuda" if _torch.cuda.is_available() else "cpu"
 
             # Default paths
             if checkpoint_path is None:
-                checkpoint_path = str(settings.models_dir / "checkpoints" / "best_model.pt")
+                checkpoint_path = str(settings.model_dir / "best_model.pth")
 
             if scaler_path is None:
-                # Try to find scaler in outputs
-                scaler_dir = settings.outputs_dir / "artifacts"
-                if scaler_dir.exists():
-                    for run_dir in scaler_dir.iterdir():
-                        scaler_file = run_dir / "scaler.joblib"
-                        if scaler_file.exists():
-                            scaler_path = str(scaler_file)
-                            break
+                # Try common scaler locations
+                for candidate in [
+                    settings.model_dir / "scaler.pkl",
+                    settings.model_dir / "scaler.joblib",
+                ]:
+                    if candidate.exists():
+                        scaler_path = str(candidate)
+                        break
 
             # Load model
             if Path(checkpoint_path).exists():
                 checkpoint = torch.load(checkpoint_path, map_location=self.device, weights_only=False)
-                self.model_config = checkpoint.get("model_config", {})
+
+                # Support both formats: full checkpoint dict or bare state_dict
+                if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+                    self.model_config = checkpoint.get("model_config", {})
+                    state_dict = checkpoint["model_state_dict"]
+                else:
+                    # Bare state_dict saved via torch.save(model.state_dict(), ...)
+                    state_dict = checkpoint
+                    self.model_config = {}
+
+                # Infer model dimensions from state_dict if config not available
+                inferred_input = state_dict.get("lstm.weight_ih_l0", None)
+                inferred_output = state_dict.get("fc.bias", None)
+                input_size = inferred_input.shape[1] if inferred_input is not None else self.model_config.get("input_size", 5)
+                output_size = inferred_output.shape[0] if inferred_output is not None else self.model_config.get("output_size", 1)
 
                 self.model = NvidiaLSTM(
-                    input_size=self.model_config.get("input_size", 1),
-                    hidden_size=self.model_config.get("hidden_size", 128),
-                    num_layers=self.model_config.get("num_layers", 2),
-                    output_size=self.model_config.get("output_size", 1),
-                    dropout=self.model_config.get("dropout", 0.2),
-                    bidirectional=self.model_config.get("bidirectional", False),
+                    input_size=input_size,
+                    hidden_size=self.model_config.get("hidden_size", settings.hidden_size),
+                    num_layers=self.model_config.get("num_layers", settings.num_layers),
+                    output_size=output_size,
+                    dropout=self.model_config.get("dropout", settings.dropout),
+                    bidirectional=self.model_config.get("bidirectional", settings.bidirectional),
                 )
-                self.model.load_state_dict(checkpoint["model_state_dict"])
+                self.model.load_state_dict(state_dict)
                 self.model = self.model.to(self.device)
                 self.model.eval()
 
@@ -85,9 +101,15 @@ class ModelState:
 
             # Load scaler
             if scaler_path and Path(scaler_path).exists():
-                import joblib
+                import pickle as _pickle
 
-                self.scaler = joblib.load(scaler_path)
+                if scaler_path.endswith(".joblib"):
+                    import joblib
+
+                    self.scaler = joblib.load(scaler_path)
+                else:
+                    with open(scaler_path, "rb") as f:
+                        self.scaler = _pickle.load(f)
                 logger.info(f"Scaler loaded from {scaler_path}")
             else:
                 logger.warning("Scaler not found, predictions may not work correctly")

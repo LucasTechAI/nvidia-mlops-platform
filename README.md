@@ -361,6 +361,14 @@ O modelo é avaliado com as seguintes métricas:
 
 > Treinado em 02/02/2026 • PyTorch 2.10+CUDA • MLflow 3.8.1 • ~800 KB
 
+| Métrica | Validação | Teste |
+|---------|-----------|-------|
+| **Loss (MSE)** | 0.003162 | 0.019251 |
+| **RMSE** | 0.053320 | 0.137608 |
+| **MAE** | 0.030938 | 0.080397 |
+
+> Métricas em escala normalizada (0-1). Dataset: 2.319 registros (2017-2026), split 70/15/15.
+
 | Configuração | Valor |
 |-------------|-------|
 | Arquitetura | 2-layer LSTM, hidden=128, dropout=0.2 |

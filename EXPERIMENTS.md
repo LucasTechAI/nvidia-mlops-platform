@@ -68,6 +68,21 @@ As métricas são calculadas na validação a cada época e registradas no MLflo
 **Framework**: PyTorch 2.10+CUDA, MLflow 3.8.1  
 **Tamanho do modelo**: ~800 KB (802.305 bytes)
 
+**Resultados (escala normalizada 0-1)**:
+
+| Conjunto | Loss | RMSE | MAE | MAPE |
+|----------|------|------|-----|------|
+| **Validação** | 0.003162 | 0.053320 | 0.030938 | 30.64% |
+| **Teste** | 0.019251 | 0.137608 | 0.080397 | 192.36% |
+
+> **Nota sobre MAPE**: Os valores elevados de MAPE decorrem do cálculo em escala normalizada (0-1),
+> onde valores próximos de zero inflam o erro percentual. O RMSE e MAE são as métricas mais
+> representativas para este caso de uso.
+
+**Dados do treinamento**:
+- **Total de amostras**: 2.259 sequências (2.319 registros, seq_len=60)
+- **Split**: Train=1.581 / Val=339 / Test=339
+
 **Artefatos gerados**:
 - `loss_curves.png` — Curvas de training loss vs validation loss
 - `predictions_vs_actual.png` — Previsão vs valores reais no conjunto de teste
