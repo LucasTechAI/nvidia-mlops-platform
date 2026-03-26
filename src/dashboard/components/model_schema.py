@@ -16,14 +16,51 @@ project_root = Path(__file__).resolve().parent.parent.parent.parent
 
 def load_model_info() -> dict:
     """Load model information from checkpoint."""
-    checkpoint_path = project_root / "data" / "models" / "checkpoints" / "best_model.pt"
+    # Search multiple possible locations
+    candidates = [
+        project_root / "models" / "best_model.pth",
+        project_root / "models" / "best_model.pt",
+        project_root / "data" / "models" / "checkpoints" / "best_model.pt",
+        project_root / "data" / "models" / "checkpoints" / "best_model.pth",
+    ]
 
-    if not checkpoint_path.exists():
+    checkpoint_path = None
+    for path in candidates:
+        if path.exists():
+            checkpoint_path = path
+            break
+
+    if checkpoint_path is None:
         return None
 
     try:
-        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
-        return checkpoint
+        data = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+
+        # Handle bare state_dict (OrderedDict of tensors) vs checkpoint dict
+        if (
+            isinstance(data, dict)
+            and "model_state_dict" not in data
+            and all(isinstance(v, torch.Tensor) for v in list(data.values())[:3])
+        ):
+            # Bare state_dict — wrap into expected checkpoint format
+            state_dict = data
+            input_size = state_dict["lstm.weight_ih_l0"].shape[1] if "lstm.weight_ih_l0" in state_dict else 5
+            hidden_size = state_dict["lstm.weight_hh_l0"].shape[1] if "lstm.weight_hh_l0" in state_dict else 128
+            output_size = state_dict["fc.bias"].shape[0] if "fc.bias" in state_dict else 1
+            num_layers = sum(1 for k in state_dict if k.startswith("lstm.weight_ih_l")) or 2
+            data = {
+                "model_state_dict": state_dict,
+                "model_config": {
+                    "input_size": input_size,
+                    "hidden_size": hidden_size,
+                    "output_size": output_size,
+                    "num_layers": num_layers,
+                },
+                "epoch": 0,
+                "loss": 0.0,
+            }
+
+        return data
     except Exception as e:
         st.error(f"Error loading model: {e}")
         return None

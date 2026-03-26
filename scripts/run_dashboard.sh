@@ -22,7 +22,9 @@ echo -e "${YELLOW}Dashboard will be available at: http://localhost:${PORT}${NC}"
 echo ""
 
 # Activate virtual environment if it exists
-if [ -d "$PROJECT_ROOT/venv" ]; then
+if [ -d "$PROJECT_ROOT/.venv" ]; then
+    source "$PROJECT_ROOT/.venv/bin/activate"
+elif [ -d "$PROJECT_ROOT/venv" ]; then
     source "$PROJECT_ROOT/venv/bin/activate"
 fi
 

@@ -149,6 +149,103 @@ def validate_epoch(
     return avg_loss, metrics
 
 
+def evaluate_on_test(
+    model: nn.Module,
+    test_data: tuple,
+    scaler,
+    device: torch.device,
+    close_idx: int = 3,
+) -> Dict[str, float]:
+    """
+    Evaluate the trained model on the test set and compute comprehensive metrics.
+
+    Computes: RMSE, MAE, MAPE, R², Correlation, Directional Accuracy,
+    Sharpe Ratio, and Max Drawdown — all in original (inverse-scaled) price space.
+
+    Args:
+        model: Trained model
+        test_data: Tuple of (X_test, y_test) in normalized space
+        scaler: Fitted MinMaxScaler used during preprocessing
+        device: Device to run inference on
+        close_idx: Index of the Close column in the feature vector
+
+    Returns:
+        Dictionary with all test metrics
+    """
+    X_test, y_test = test_data
+    X_test_t = torch.FloatTensor(X_test).to(device)
+
+    model.eval()
+    with torch.no_grad():
+        preds_norm = model(X_test_t).cpu().numpy()
+
+    targets_norm = y_test
+
+    # Inverse-transform to original price scale
+    preds_orig = scaler.inverse_transform(preds_norm)
+    targets_orig = scaler.inverse_transform(targets_norm)
+
+    # Extract Close prices
+    pred_close = preds_orig[:, close_idx]
+    true_close = targets_orig[:, close_idx]
+
+    # --- Core regression metrics ---
+    rmse = float(np.sqrt(np.mean((pred_close - true_close) ** 2)))
+    mae = float(np.mean(np.abs(pred_close - true_close)))
+
+    mask = np.abs(true_close) > 1e-6
+    mape = float(np.mean(np.abs((true_close[mask] - pred_close[mask]) / true_close[mask])) * 100) if mask.any() else 0.0
+
+    # R² score
+    ss_res = np.sum((true_close - pred_close) ** 2)
+    ss_tot = np.sum((true_close - np.mean(true_close)) ** 2)
+    r2 = float(1 - ss_res / ss_tot) if ss_tot > 0 else 0.0
+
+    # Correlation
+    if len(true_close) > 1 and np.std(true_close) > 0 and np.std(pred_close) > 0:
+        correlation = float(np.corrcoef(true_close, pred_close)[0, 1])
+    else:
+        correlation = 0.0
+
+    # --- Directional accuracy ---
+    if len(true_close) > 1:
+        true_dir = np.diff(true_close) > 0
+        pred_dir = np.diff(pred_close) > 0
+        directional_accuracy = float(np.mean(true_dir == pred_dir) * 100)
+    else:
+        directional_accuracy = 0.0
+
+    # --- Financial metrics on predicted returns ---
+    if len(pred_close) > 1:
+        pred_returns = np.diff(pred_close) / pred_close[:-1]
+        mean_ret = np.mean(pred_returns)
+        std_ret = np.std(pred_returns)
+        sharpe_ratio = float(mean_ret / std_ret * np.sqrt(252)) if std_ret > 0 else 0.0
+
+        # Max drawdown
+        cumulative = np.cumprod(1 + pred_returns)
+        peak = np.maximum.accumulate(cumulative)
+        drawdown = (peak - cumulative) / peak
+        max_drawdown = float(np.max(drawdown) * 100) if len(drawdown) > 0 else 0.0
+    else:
+        sharpe_ratio = 0.0
+        max_drawdown = 0.0
+
+    results = {
+        "rmse": rmse,
+        "mae": mae,
+        "mape": mape,
+        "r2_score": r2,
+        "correlation": correlation,
+        "directional_accuracy": directional_accuracy,
+        "sharpe_ratio": sharpe_ratio,
+        "max_drawdown": max_drawdown,
+    }
+
+    logger.info(f"Test metrics: {', '.join(f'{k}={v:.4f}' for k, v in results.items())}")
+    return results
+
+
 def plot_training_history(train_losses: list, val_losses: list, save_path: Optional[str] = None) -> None:
     """
     Plot training and validation loss curves.

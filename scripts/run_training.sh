@@ -12,6 +12,13 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Set environment variables
 export PYTHONPATH="${PYTHONPATH}:${PROJECT_ROOT}"
 
+# Activate virtual environment if it exists
+if [ -d "$PROJECT_ROOT/.venv" ]; then
+    source "$PROJECT_ROOT/.venv/bin/activate"
+elif [ -d "$PROJECT_ROOT/venv" ]; then
+    source "$PROJECT_ROOT/venv/bin/activate"
+fi
+
 # Run training script
 python3 -c "
 import logging
@@ -31,7 +38,7 @@ from src.data.preprocessing import (
     train_val_test_split
 )
 from src.models.lstm_model import create_model
-from src.training.train import train_model, plot_training_history
+from src.training.train import train_model, plot_training_history, evaluate_on_test
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -135,10 +142,62 @@ with mlflow.start_run(run_name='lstm_training'):
         mlflow_tracking=True
     )
     
-    # Save model
+    # =====================================================================
+    # Evaluate on test set with comprehensive metrics
+    # =====================================================================
+    logger.info('Evaluating on test set...')
+    close_idx = available_features.index('Close') if 'Close' in available_features else 3
+    test_results = evaluate_on_test(
+        model=trained_model,
+        test_data=(X_test, y_test),
+        scaler=scaler,
+        device=device,
+        close_idx=close_idx,
+    )
+    
+    # Log test metrics to MLflow
+    for key, value in test_results.items():
+        mlflow.log_metric(f'test_{key}', value)
+    
+    # =====================================================================
+    # Determine training info
+    # =====================================================================
+    val_losses = history['val_loss']
+    best_epoch = int(val_losses.index(min(val_losses)))
+    best_val_loss = min(val_losses)
+    total_epochs = len(val_losses)
+    early_stopped = total_epochs < config['epochs']
+    
+    training_info = {
+        'Best Epoch': best_epoch,
+        'Best Val Loss': best_val_loss,
+        'Total Epochs': total_epochs,
+        'Early Stopped': early_stopped,
+    }
+    
+    model_config_dict = {
+        'input_size': input_size,
+        'hidden_size': settings.hidden_size,
+        'num_layers': settings.num_layers,
+        'output_size': output_size,
+        'dropout': settings.dropout,
+        'bidirectional': settings.bidirectional,
+    }
+    
+    # =====================================================================
+    # Save rich checkpoint with all metadata
+    # =====================================================================
     model_path = settings.model_dir / 'best_model.pth'
-    torch.save(trained_model.state_dict(), model_path)
-    logger.info(f'Saved model to {model_path}')
+    checkpoint = {
+        'model_state_dict': trained_model.state_dict(),
+        'model_config': model_config_dict,
+        'training_info': training_info,
+        'test_results': test_results,
+        'train_losses': history['train_loss'],
+        'val_losses': history['val_loss'],
+    }
+    torch.save(checkpoint, model_path)
+    logger.info(f'Saved rich checkpoint to {model_path}')
     
     # Log model to MLflow
     mlflow.pytorch.log_model(trained_model, 'model')

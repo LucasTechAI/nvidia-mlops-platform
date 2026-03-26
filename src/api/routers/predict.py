@@ -167,7 +167,7 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
                 dummy[:, close_idx] = predictions
             else:
                 dummy = np.zeros((predictions.shape[0], n_features))
-                dummy[:, :predictions.shape[1]] = predictions
+                dummy[:, : predictions.shape[1]] = predictions
 
             predictions_real = state.scaler.inverse_transform(dummy)[:, close_idx]
             lower_real = None
@@ -252,7 +252,7 @@ async def inference(request: InferenceRequest, state: ModelState = Depends(get_m
             dummy[:, close_idx] = predictions
         else:
             dummy = np.zeros((predictions.shape[0], n_features))
-            dummy[:, :predictions.shape[1]] = predictions
+            dummy[:, : predictions.shape[1]] = predictions
 
         predictions_real = state.scaler.inverse_transform(dummy)[:, close_idx]
 
