@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.dependencies import model_state
-from src.api.routers import data_router, health_router, predict_router, train_router
+from src.api.routers import agent_router, data_router, health_router, predict_router, train_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -82,6 +82,7 @@ app.include_router(health_router)
 app.include_router(predict_router)
 app.include_router(train_router)
 app.include_router(data_router)
+app.include_router(agent_router)
 
 
 @app.get("/")
@@ -97,6 +98,7 @@ async def root():
             "inference": "/predict/inference",
             "train": "/train",
             "data": "/data",
+            "agent": "/agent/query",
             "health": "/health",
         },
     }
