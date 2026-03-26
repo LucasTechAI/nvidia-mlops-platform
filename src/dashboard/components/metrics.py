@@ -40,8 +40,10 @@ def load_checkpoint_info() -> dict:
         data = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
 
         # Handle bare state_dict (OrderedDict of tensors) vs checkpoint dict
-        if isinstance(data, dict) and "model_state_dict" not in data and all(
-            isinstance(v, torch.Tensor) for v in list(data.values())[:3]
+        if (
+            isinstance(data, dict)
+            and "model_state_dict" not in data
+            and all(isinstance(v, torch.Tensor) for v in list(data.values())[:3])
         ):
             # Bare state_dict — wrap into expected checkpoint format
             state_dict = data
@@ -170,12 +172,14 @@ def load_mlflow_metrics() -> pd.DataFrame:
                     parts = line.strip().split(" ")
                     if len(parts) >= 3:
                         timestamp, value, step = parts[0], parts[1], parts[2]
-                        rows.append({
-                            "key": key,
-                            "value": float(value),
-                            "step": int(step),
-                            "timestamp": int(timestamp),
-                        })
+                        rows.append(
+                            {
+                                "key": key,
+                                "value": float(value),
+                                "step": int(step),
+                                "timestamp": int(timestamp),
+                            }
+                        )
         if not rows:
             return pd.DataFrame()
         return pd.DataFrame(rows).sort_values(["key", "step"]).reset_index(drop=True)
@@ -300,10 +304,7 @@ def render_metrics_page():
     # Performance Metrics Section
     # Determine if these are true test metrics or just validation approximations
     test_results = checkpoint.get("test_results", {})
-    has_full_test = any(
-        test_results.get(k, 0) != 0
-        for k in ["r2_score", "correlation", "directional_accuracy"]
-    )
+    has_full_test = any(test_results.get(k, 0) != 0 for k in ["r2_score", "correlation", "directional_accuracy"])
     section_title = "📊 Test Set Performance" if has_full_test else "📊 Validation Performance (Best Epoch)"
 
     st.markdown(

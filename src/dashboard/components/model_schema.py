@@ -37,8 +37,10 @@ def load_model_info() -> dict:
         data = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
 
         # Handle bare state_dict (OrderedDict of tensors) vs checkpoint dict
-        if isinstance(data, dict) and "model_state_dict" not in data and all(
-            isinstance(v, torch.Tensor) for v in list(data.values())[:3]
+        if (
+            isinstance(data, dict)
+            and "model_state_dict" not in data
+            and all(isinstance(v, torch.Tensor) for v in list(data.values())[:3])
         ):
             # Bare state_dict — wrap into expected checkpoint format
             state_dict = data

@@ -79,8 +79,12 @@ class ModelState:
                 # Infer model dimensions from state_dict if config not available
                 inferred_input = state_dict.get("lstm.weight_ih_l0", None)
                 inferred_output = state_dict.get("fc.bias", None)
-                input_size = inferred_input.shape[1] if inferred_input is not None else self.model_config.get("input_size", 5)
-                output_size = inferred_output.shape[0] if inferred_output is not None else self.model_config.get("output_size", 1)
+                input_size = (
+                    inferred_input.shape[1] if inferred_input is not None else self.model_config.get("input_size", 5)
+                )
+                output_size = (
+                    inferred_output.shape[0] if inferred_output is not None else self.model_config.get("output_size", 1)
+                )
 
                 self.model = NvidiaLSTM(
                     input_size=input_size,

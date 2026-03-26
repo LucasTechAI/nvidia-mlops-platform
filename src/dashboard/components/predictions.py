@@ -68,8 +68,10 @@ def load_model_and_scaler():
         data = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
 
         # Handle bare state_dict (OrderedDict of tensors) vs checkpoint dict
-        if isinstance(data, dict) and "model_state_dict" not in data and all(
-            isinstance(v, torch.Tensor) for v in list(data.values())[:3]
+        if (
+            isinstance(data, dict)
+            and "model_state_dict" not in data
+            and all(isinstance(v, torch.Tensor) for v in list(data.values())[:3])
         ):
             state_dict = data
             input_size = state_dict["lstm.weight_ih_l0"].shape[1] if "lstm.weight_ih_l0" in state_dict else 5
