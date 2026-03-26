@@ -47,34 +47,69 @@ def load_historical_data() -> pd.DataFrame:
 
 def load_model_and_scaler():
     """Load the trained model and scaler."""
-    checkpoint_path = project_root / "data" / "models" / "checkpoints" / "best_model.pt"
+    # Search multiple possible locations
+    candidates = [
+        project_root / "models" / "best_model.pth",
+        project_root / "models" / "best_model.pt",
+        project_root / "data" / "models" / "checkpoints" / "best_model.pt",
+        project_root / "data" / "models" / "checkpoints" / "best_model.pth",
+    ]
 
-    if not checkpoint_path.exists():
+    checkpoint_path = None
+    for path in candidates:
+        if path.exists():
+            checkpoint_path = path
+            break
+
+    if checkpoint_path is None:
         return None, None, None
 
     try:
-        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+        data = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+
+        # Handle bare state_dict (OrderedDict of tensors) vs checkpoint dict
+        if isinstance(data, dict) and "model_state_dict" not in data and all(
+            isinstance(v, torch.Tensor) for v in list(data.values())[:3]
+        ):
+            state_dict = data
+            input_size = state_dict["lstm.weight_ih_l0"].shape[1] if "lstm.weight_ih_l0" in state_dict else 5
+            hidden_size = state_dict["lstm.weight_hh_l0"].shape[1] if "lstm.weight_hh_l0" in state_dict else 128
+            output_size = state_dict["fc.bias"].shape[0] if "fc.bias" in state_dict else 1
+            num_layers = sum(1 for k in state_dict if k.startswith("lstm.weight_ih_l")) or 2
+            data = {
+                "model_state_dict": state_dict,
+                "model_config": {
+                    "input_size": input_size,
+                    "hidden_size": hidden_size,
+                    "output_size": output_size,
+                    "num_layers": num_layers,
+                    "dropout": 0.2,
+                    "bidirectional": False,
+                },
+            }
 
         # Get model config
-        model_config = checkpoint.get("model_config", {})
+        model_config = data.get("model_config", {})
 
         # Create model
         from src.models.lstm_model import NvidiaLSTM
 
         model = NvidiaLSTM(
-            input_size=model_config.get("input_size", 1),
+            input_size=model_config.get("input_size", 5),
             hidden_size=model_config.get("hidden_size", 128),
             num_layers=model_config.get("num_layers", 2),
-            output_size=model_config.get("output_size", 1),
+            output_size=model_config.get("output_size", 5),
             dropout=model_config.get("dropout", 0.2),
             bidirectional=model_config.get("bidirectional", False),
         )
 
-        model.load_state_dict(checkpoint["model_state_dict"])
+        model.load_state_dict(data["model_state_dict"])
         model.eval()
 
-        # Load scaler
+        # Load scaler — search multiple locations
         scaler_paths = [
+            project_root / "models" / "scaler.pkl",
+            project_root / "models" / "scaler.joblib",
             project_root / "data" / "outputs" / "artifacts" / "scaler.joblib",
             project_root / "data" / "models" / "scaler.joblib",
         ]
@@ -82,15 +117,22 @@ def load_model_and_scaler():
         scaler = None
         for path in scaler_paths:
             if path.exists():
-                scaler = joblib.load(path)
+                try:
+                    import pickle
+
+                    with open(path, "rb") as f:
+                        scaler = pickle.load(f)
+                except Exception:
+                    scaler = joblib.load(path)
                 break
 
         # Try to find scaler in mlruns
         if scaler is None:
             mlruns_artifacts = project_root / "data" / "mlruns"
-            for scaler_file in mlruns_artifacts.rglob("scaler.joblib"):
-                scaler = joblib.load(scaler_file)
-                break
+            if mlruns_artifacts.exists():
+                for scaler_file in mlruns_artifacts.rglob("scaler.joblib"):
+                    scaler = joblib.load(scaler_file)
+                    break
 
         return model, scaler, model_config
 
@@ -108,32 +150,44 @@ def generate_predictions(model, scaler, historical_data: pd.DataFrame, horizon: 
         # Get sequence length from model
         seq_length = 60  # Default
 
-        # Prepare last sequence
-        close_prices = historical_data["Close"].values[-seq_length:]
+        # Use all 5 features the model was trained on: Open, High, Low, Close, Volume
+        feature_columns = ["Open", "High", "Low", "Close", "Volume"]
+        available_features = [col for col in feature_columns if col in historical_data.columns]
 
-        # Normalize
-        close_normalized = scaler.transform(close_prices.reshape(-1, 1))
+        if len(available_features) == scaler.n_features_in_:
+            features = historical_data[available_features].values[-seq_length:]
+        else:
+            # Fallback: if only Close is available, replicate to match scaler dimensions
+            close_prices = historical_data["Close"].values[-seq_length:]
+            features = np.column_stack([close_prices] * scaler.n_features_in_)
 
-        # Create tensor
-        sequence = torch.FloatTensor(close_normalized).unsqueeze(0)  # (1, seq_len, 1)
+        # Normalize using the multi-feature scaler
+        features_normalized = scaler.transform(features)
+
+        # Create tensor: (1, seq_len, n_features)
+        sequence = torch.FloatTensor(features_normalized).unsqueeze(0)
 
         # Generate predictions
         model.eval()
         predictions_normalized = []
         current_sequence = sequence.clone()
 
+        # Determine the index of the Close column
+        close_idx = available_features.index("Close") if "Close" in available_features else 3
+
         with torch.no_grad():
             for _ in range(horizon):
-                pred = model(current_sequence)
-                predictions_normalized.append(pred.item())
+                pred = model(current_sequence)  # (1, n_features)
+                predictions_normalized.append(pred.cpu().numpy().flatten())
 
-                # Update sequence
+                # Update sequence with all features
                 new_input = pred.view(1, 1, -1)
                 current_sequence = torch.cat([current_sequence[:, 1:, :], new_input], dim=1)
 
-        # Inverse transform
-        predictions_normalized = np.array(predictions_normalized).reshape(-1, 1)
-        predictions = scaler.inverse_transform(predictions_normalized).flatten()
+        # Inverse transform all features, then extract Close prices
+        predictions_normalized = np.array(predictions_normalized)  # (horizon, n_features)
+        predictions_all = scaler.inverse_transform(predictions_normalized)
+        predictions = predictions_all[:, close_idx]  # Extract Close price
 
         # Generate dates (skip weekends)
         last_date = historical_data["Date"].iloc[-1]

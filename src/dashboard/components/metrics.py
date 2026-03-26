@@ -5,7 +5,6 @@ Displays model performance metrics and training history.
 """
 
 import json
-import sqlite3
 from pathlib import Path
 
 import numpy as np
@@ -20,60 +19,184 @@ project_root = Path(__file__).resolve().parent.parent.parent.parent
 
 def load_checkpoint_info() -> dict:
     """Load information from the best model checkpoint."""
-    checkpoint_path = project_root / "data" / "models" / "checkpoints" / "best_model.pt"
+    # Search multiple possible locations
+    candidates = [
+        project_root / "models" / "best_model.pth",
+        project_root / "models" / "best_model.pt",
+        project_root / "data" / "models" / "checkpoints" / "best_model.pt",
+        project_root / "data" / "models" / "checkpoints" / "best_model.pth",
+    ]
 
-    if not checkpoint_path.exists():
+    checkpoint_path = None
+    for path in candidates:
+        if path.exists():
+            checkpoint_path = path
+            break
+
+    if checkpoint_path is None:
         return None
 
     try:
-        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
-        return checkpoint
+        data = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+
+        # Handle bare state_dict (OrderedDict of tensors) vs checkpoint dict
+        if isinstance(data, dict) and "model_state_dict" not in data and all(
+            isinstance(v, torch.Tensor) for v in list(data.values())[:3]
+        ):
+            # Bare state_dict — wrap into expected checkpoint format
+            state_dict = data
+            input_size = state_dict["lstm.weight_ih_l0"].shape[1] if "lstm.weight_ih_l0" in state_dict else 5
+            hidden_size = state_dict["lstm.weight_hh_l0"].shape[1] if "lstm.weight_hh_l0" in state_dict else 128
+            output_size = state_dict["fc.bias"].shape[0] if "fc.bias" in state_dict else 1
+            num_layers = sum(1 for k in state_dict if k.startswith("lstm.weight_ih_l")) or 2
+
+            # Try to enrich with MLflow data
+            mlflow_metrics = load_mlflow_metrics()
+            mlflow_params = load_mlflow_params()
+
+            best_val_loss = 0.0
+            best_epoch = 0
+            total_epochs = 0
+            early_stopped = False
+            test_results = {}
+
+            if not mlflow_metrics.empty:
+                # Extract best_val_loss scalar
+                bvl = mlflow_metrics[mlflow_metrics["key"] == "best_val_loss"]
+                if not bvl.empty:
+                    best_val_loss = bvl["value"].iloc[0]
+
+                # Find best epoch from val_loss
+                val_loss = mlflow_metrics[mlflow_metrics["key"] == "val_loss"]
+                if not val_loss.empty:
+                    best_idx = val_loss["value"].idxmin()
+                    best_epoch = int(val_loss.loc[best_idx, "step"])
+                    total_epochs = int(val_loss["step"].max()) + 1
+
+                # Check early stopping: configured epochs vs actual
+                configured_epochs = int(mlflow_params.get("epochs", total_epochs))
+                if total_epochs < configured_epochs:
+                    early_stopped = True
+
+                # Use last-step validation metrics as test results
+                for metric_key, result_key in [
+                    ("val_rmse", "rmse"),
+                    ("val_mae", "mae"),
+                    ("val_mape", "mape"),
+                ]:
+                    m = mlflow_metrics[mlflow_metrics["key"] == metric_key]
+                    if not m.empty:
+                        # Value at best epoch
+                        at_best = m[m["step"] == best_epoch]
+                        if not at_best.empty:
+                            test_results[result_key] = at_best["value"].iloc[0]
+                        else:
+                            test_results[result_key] = m.iloc[-1]["value"]
+
+            data = {
+                "model_state_dict": state_dict,
+                "model_config": {
+                    "input_size": input_size,
+                    "hidden_size": hidden_size,
+                    "output_size": output_size,
+                    "num_layers": num_layers,
+                },
+                "epoch": best_epoch,
+                "loss": best_val_loss,
+                "training_info": {
+                    "Best Epoch": best_epoch,
+                    "Best Val Loss": best_val_loss,
+                    "Total Epochs": total_epochs,
+                    "Early Stopped": early_stopped,
+                },
+                "test_results": test_results,
+            }
+
+        return data
     except Exception as e:
         st.error(f"Error loading checkpoint: {e}")
         return None
 
 
-def load_mlflow_metrics() -> pd.DataFrame:
-    """Load metrics from MLflow database."""
-    db_path = project_root / "data" / "mlruns" / "mlflow.db"
+def _find_latest_mlflow_run() -> Path | None:
+    """Find the latest MLflow run directory (file store)."""
+    # Search in both mlruns/ and data/mlruns/
+    candidates = [
+        project_root / "mlruns",
+        project_root / "data" / "mlruns",
+    ]
 
-    if not db_path.exists():
+    latest_run = None
+    latest_time = 0
+
+    for mlruns_root in candidates:
+        if not mlruns_root.exists():
+            continue
+        for exp_dir in mlruns_root.iterdir():
+            if not exp_dir.is_dir() or exp_dir.name == "models":
+                continue
+            for run_dir in exp_dir.iterdir():
+                if not run_dir.is_dir() or run_dir.name == "models":
+                    continue
+                meta_file = run_dir / "meta.yaml"
+                metrics_dir = run_dir / "metrics"
+                if meta_file.exists() and metrics_dir.exists():
+                    mtime = meta_file.stat().st_mtime
+                    if mtime > latest_time:
+                        latest_time = mtime
+                        latest_run = run_dir
+
+    return latest_run
+
+
+def load_mlflow_metrics() -> pd.DataFrame:
+    """Load metrics from MLflow file store."""
+    run_dir = _find_latest_mlflow_run()
+    if run_dir is None:
+        return pd.DataFrame()
+
+    metrics_dir = run_dir / "metrics"
+    if not metrics_dir.exists():
         return pd.DataFrame()
 
     try:
-        conn = sqlite3.connect(db_path)
-
-        # Get the latest run
-        runs_query = """
-            SELECT run_uuid, start_time, end_time, status, name
-            FROM runs
-            WHERE status = 'FINISHED'
-            ORDER BY start_time DESC
-            LIMIT 1
-        """
-        runs = pd.read_sql_query(runs_query, conn)
-
-        if runs.empty:
-            conn.close()
+        rows = []
+        for metric_file in metrics_dir.iterdir():
+            if not metric_file.is_file():
+                continue
+            key = metric_file.name
+            with open(metric_file, "r") as f:
+                for line in f:
+                    parts = line.strip().split(" ")
+                    if len(parts) >= 3:
+                        timestamp, value, step = parts[0], parts[1], parts[2]
+                        rows.append({
+                            "key": key,
+                            "value": float(value),
+                            "step": int(step),
+                            "timestamp": int(timestamp),
+                        })
+        if not rows:
             return pd.DataFrame()
-
-        latest_run_id = runs.iloc[0]["run_uuid"]
-
-        # Get metrics for the latest run
-        metrics_query = f"""
-            SELECT key, value, step, timestamp
-            FROM metrics
-            WHERE run_uuid = '{latest_run_id}'
-            ORDER BY key, step
-        """
-        metrics_df = pd.read_sql_query(metrics_query, conn)
-        conn.close()
-
-        return metrics_df
-
+        return pd.DataFrame(rows).sort_values(["key", "step"]).reset_index(drop=True)
     except Exception as e:
         st.error(f"Error loading MLflow metrics: {e}")
         return pd.DataFrame()
+
+
+def load_mlflow_params() -> dict:
+    """Load parameters from the latest MLflow run."""
+    run_dir = _find_latest_mlflow_run()
+    if run_dir is None:
+        return {}
+    params_dir = run_dir / "params"
+    if not params_dir.exists():
+        return {}
+    params = {}
+    for pf in params_dir.iterdir():
+        if pf.is_file():
+            params[pf.name] = pf.read_text().strip()
+    return params
 
 
 def load_hpo_results() -> dict:
@@ -174,83 +297,70 @@ def render_metrics_page():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Test Metrics Section
+    # Performance Metrics Section
+    # Determine if these are true test metrics or just validation approximations
+    test_results = checkpoint.get("test_results", {})
+    has_full_test = any(
+        test_results.get(k, 0) != 0
+        for k in ["r2_score", "correlation", "directional_accuracy"]
+    )
+    section_title = "📊 Test Set Performance" if has_full_test else "📊 Validation Performance (Best Epoch)"
+
     st.markdown(
-        """
+        f"""
         <p style="color: rgba(250,250,250,0.5); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">
-            📊 Test Set Performance
+            {section_title}
         </p>
     """,
         unsafe_allow_html=True,
     )
 
-    test_results = checkpoint.get("test_results", {})
-
     if test_results:
-        # Primary metrics in larger cards
-        col1, col2, col3, col4 = st.columns(4)
-
-        with col1:
-            r2 = test_results.get("r2_score", test_results.get("R2 Score", 0))
+        # --- Primary regression metrics (always available) ---
+        primary = []
+        rmse = test_results.get("rmse", test_results.get("RMSE"))
+        if rmse is not None:
+            primary.append(("RMSE", f"${rmse:.4f}"))
+        mae = test_results.get("mae", test_results.get("MAE"))
+        if mae is not None:
+            primary.append(("MAE", f"${mae:.4f}"))
+        mape = test_results.get("mape", test_results.get("MAPE"))
+        if mape is not None:
+            primary.append(("MAPE", f"{mape:.2f}%"))
+        r2 = test_results.get("r2_score", test_results.get("R2 Score"))
+        if r2 is not None and has_full_test:
             quality = "🟢 Excellent" if r2 > 0.9 else ("🟡 Good" if r2 > 0.7 else "🔴 Needs Work")
-            st.metric(
-                label="R² Score",
-                value=f"{r2:.4f}" if isinstance(r2, (int, float)) else str(r2),
-                delta=quality,
-            )
+            primary.append(("R² Score", f"{r2:.4f}", quality))
 
-        with col2:
-            rmse = test_results.get("rmse", test_results.get("RMSE", 0))
-            st.metric(
-                label="RMSE",
-                value=f"${rmse:.2f}" if isinstance(rmse, (int, float)) else str(rmse),
-            )
+        cols = st.columns(len(primary)) if primary else []
+        for i, item in enumerate(primary):
+            with cols[i]:
+                if len(item) == 3:
+                    st.metric(label=item[0], value=item[1], delta=item[2])
+                else:
+                    st.metric(label=item[0], value=item[1])
 
-        with col3:
-            mae = test_results.get("mae", test_results.get("MAE", 0))
-            st.metric(
-                label="MAE",
-                value=f"${mae:.2f}" if isinstance(mae, (int, float)) else str(mae),
-            )
+        # --- Secondary metrics (only if computed during test evaluation) ---
+        secondary = []
+        corr = test_results.get("correlation", test_results.get("Correlation"))
+        if corr is not None and corr != 0:
+            secondary.append(("Correlation", f"{corr:.4f}"))
+        dir_acc = test_results.get("directional_accuracy", test_results.get("Directional Accuracy"))
+        if dir_acc is not None and dir_acc != 0:
+            secondary.append(("Directional Accuracy", f"{dir_acc:.1f}%"))
+        sharpe = test_results.get("sharpe_ratio", test_results.get("Sharpe Ratio"))
+        if sharpe is not None and sharpe != 0:
+            secondary.append(("Sharpe Ratio", f"{sharpe:.2f}"))
+        max_dd = test_results.get("max_drawdown", test_results.get("Max Drawdown"))
+        if max_dd is not None and max_dd != 0:
+            secondary.append(("Max Drawdown", f"{max_dd:.1f}%"))
 
-        with col4:
-            mape = test_results.get("mape", test_results.get("MAPE", 0))
-            st.metric(
-                label="MAPE",
-                value=f"{mape:.2f}%" if isinstance(mape, (int, float)) else str(mape),
-            )
-
-        # Additional metrics in secondary row
-        st.markdown("<br>", unsafe_allow_html=True)
-        col1, col2, col3, col4 = st.columns(4)
-
-        with col1:
-            corr = test_results.get("correlation", test_results.get("Correlation", 0))
-            st.metric(
-                label="Correlation",
-                value=f"{corr:.4f}" if isinstance(corr, (int, float)) else str(corr),
-            )
-
-        with col2:
-            dir_acc = test_results.get("directional_accuracy", test_results.get("Directional Accuracy", 0))
-            st.metric(
-                label="Directional Accuracy",
-                value=f"{dir_acc:.1f}%" if isinstance(dir_acc, (int, float)) else str(dir_acc),
-            )
-
-        with col3:
-            sharpe = test_results.get("sharpe_ratio", test_results.get("Sharpe Ratio", 0))
-            st.metric(
-                label="Sharpe Ratio",
-                value=f"{sharpe:.2f}" if isinstance(sharpe, (int, float)) else str(sharpe),
-            )
-
-        with col4:
-            max_dd = test_results.get("max_drawdown", test_results.get("Max Drawdown", 0))
-            st.metric(
-                label="Max Drawdown",
-                value=f"{max_dd:.1f}%" if isinstance(max_dd, (int, float)) else str(max_dd),
-            )
+        if secondary:
+            st.markdown("<br>", unsafe_allow_html=True)
+            cols2 = st.columns(len(secondary))
+            for i, (label, value) in enumerate(secondary):
+                with cols2[i]:
+                    st.metric(label=label, value=value)
     else:
         st.markdown(
             """
@@ -260,7 +370,7 @@ def render_metrics_page():
                 border-radius: 10px;
                 padding: 16px;
             ">
-                <span style="color: #2196F3;">ℹ️</span> Test results not available in checkpoint.
+                <span style="color: #2196F3;">ℹ️</span> No metrics available. Please train the model first.
             </div>
         """,
             unsafe_allow_html=True,
@@ -458,8 +568,8 @@ def render_metrics_interpretation(test_results: dict):
     interpretations = []
 
     if test_results:
-        r2 = test_results.get("r2_score", test_results.get("R2 Score", 0))
-        if isinstance(r2, (int, float)):
+        r2 = test_results.get("r2_score", test_results.get("R2 Score"))
+        if r2 is not None and isinstance(r2, (int, float)) and r2 != 0:
             if r2 > 0.95:
                 interpretations.append(
                     (
@@ -485,8 +595,8 @@ def render_metrics_interpretation(test_results: dict):
                     )
                 )
 
-        mape = test_results.get("mape", test_results.get("MAPE", 0))
-        if isinstance(mape, (int, float)):
+        mape = test_results.get("mape", test_results.get("MAPE"))
+        if mape is not None and isinstance(mape, (int, float)) and mape != 0:
             if mape < 5:
                 interpretations.append(
                     (
@@ -512,8 +622,8 @@ def render_metrics_interpretation(test_results: dict):
                     )
                 )
 
-        dir_acc = test_results.get("directional_accuracy", test_results.get("Directional Accuracy", 0))
-        if isinstance(dir_acc, (int, float)):
+        dir_acc = test_results.get("directional_accuracy", test_results.get("Directional Accuracy"))
+        if dir_acc is not None and isinstance(dir_acc, (int, float)) and dir_acc != 0:
             if dir_acc > 55:
                 interpretations.append(
                     (
