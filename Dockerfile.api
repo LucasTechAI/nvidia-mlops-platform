@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Builder - Install dependencies
 # -----------------------------------------------------------------------------
-FROM python:3.10-slim AS builder
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # -----------------------------------------------------------------------------
 # Stage 2: Runtime - Minimal production image
 # -----------------------------------------------------------------------------
-FROM python:3.10-slim AS runtime
+FROM python:3.12-slim AS runtime
 
 # Labels
 LABEL maintainer="NVIDIA LSTM Forecast Team"
@@ -64,7 +64,8 @@ COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code
 COPY src/ ./src/
-COPY api/ ./api/
+COPY configs/ ./configs/
+COPY data/golden_set/ ./data/golden_set/
 
 # Create necessary directories
 RUN mkdir -p data/raw data/models/checkpoints data/outputs data/mlruns logs \
@@ -81,4 +82,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:${API_PORT}/health || exit 1
 
 # Run API with uvicorn
-CMD ["sh", "-c", "uvicorn api.main:app --host ${API_HOST} --port ${API_PORT} --workers ${API_WORKERS}"]
+CMD ["sh", "-c", "uvicorn src.api.main:app --host ${API_HOST} --port ${API_PORT} --workers ${API_WORKERS}"]
