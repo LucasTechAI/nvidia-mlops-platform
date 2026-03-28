@@ -1,138 +1,138 @@
-# Plano de Adequação à LGPD
+# LGPD Compliance Plan
 
-## Lei Geral de Proteção de Dados (Lei 13.709/2018)
+## General Data Protection Law (Lei 13.709/2018)
 
-Este documento descreve como o sistema NVIDIA MLOps Platform se adequa à
-Lei Geral de Proteção de Dados Pessoais (LGPD) brasileira.
+This document describes how the NVIDIA MLOps Platform complies with the
+Brazilian General Data Protection Law (LGPD).
 
 ---
 
-## 1. Dados Pessoais Tratados
+## 1. Personal Data Processed
 
-### 1.1 Dados Coletados pelo Sistema
-| Dado | Classificação | Fonte | Necessidade |
-|------|--------------|-------|-------------|
-| Dados de ações NVIDIA | Dados públicos | Yahoo Finance | Funcionalidade core |
-| Queries do usuário | Dado pessoal (potencial) | Input do usuário | Funcionalidade do agente |
-| Logs de acesso à API | Dado pessoal (IP) | Requisições HTTP | Monitoramento/segurança |
+### 1.1 Data Collected by the System
+| Data | Classification | Source | Necessity |
+|------|---------------|--------|-----------|
+| NVIDIA stock data | Public data | Yahoo Finance | Core functionality |
+| User queries | Personal data (potential) | User input | Agent functionality |
+| API access logs | Personal data (IP) | HTTP requests | Monitoring/security |
 
-### 1.2 Dados NÃO Coletados
-- ❌ Nome completo do usuário
-- ❌ CPF, RG ou documentos pessoais
-- ❌ Dados bancários ou financeiros pessoais
-- ❌ Dados sensíveis (saúde, religião, biometria)
-- ❌ Dados de menores de idade
+### 1.2 Data NOT Collected
+- ❌ User full name
+- ❌ CPF, RG, or personal documents
+- ❌ Personal banking or financial data
+- ❌ Sensitive data (health, religion, biometrics)
+- ❌ Data from minors
 
-## 2. Bases Legais (Art. 7º da LGPD)
+## 2. Legal Bases (Art. 7 of LGPD)
 
-| Tratamento | Base Legal | Justificativa |
-|------------|-----------|---------------|
-| Dados de mercado | Art. 7º, III — Dados públicos | Dados financeiros públicos da NASDAQ |
-| Queries do agente | Art. 7º, I — Consentimento | Usuário envia query voluntariamente |
-| Logs de acesso | Art. 7º, IX — Legítimo interesse | Segurança e monitoramento do sistema |
+| Processing | Legal Basis | Justification |
+|------------|------------|---------------|
+| Market data | Art. 7, III — Public data | Public financial data from NASDAQ |
+| Agent queries | Art. 7, I — Consent | User submits query voluntarily |
+| Access logs | Art. 7, IX — Legitimate interest | System security and monitoring |
 
-## 3. Princípios da LGPD Aplicados
+## 3. LGPD Principles Applied
 
-### 3.1 Finalidade (Art. 6º, I)
-- Dados de mercado: exclusivamente para previsão de preços da NVIDIA
-- Queries: processadas pelo agente e descartadas (não armazenadas permanentemente)
+### 3.1 Purpose (Art. 6, I)
+- Market data: exclusively for NVIDIA price prediction
+- Queries: processed by the agent and discarded (not permanently stored)
 
-### 3.2 Adequação (Art. 6º, II)
-- Apenas dados necessários são coletados
-- Modelo treinado apenas com dados financeiros públicos
+### 3.2 Adequacy (Art. 6, II)
+- Only necessary data is collected
+- Model trained exclusively with public financial data
 
-### 3.3 Necessidade (Art. 6º, III)
-- Minimização de dados: apenas Open, High, Low, Close, Volume
-- Logs retidos por período limitado (30 dias)
+### 3.3 Necessity (Art. 6, III)
+- Data minimization: only Open, High, Low, Close, Volume
+- Logs retained for a limited period (30 days)
 
-### 3.4 Livre Acesso (Art. 6º, IV)
-- API documentada com Swagger UI
-- Dados históricos acessíveis via endpoint /data
+### 3.4 Free Access (Art. 6, IV)
+- API documented with Swagger UI
+- Historical data accessible via /data endpoint
 
-### 3.5 Qualidade dos Dados (Art. 6º, V)
-- Dados validados no pipeline ETL
-- Drift detection monitora qualidade continuamente
+### 3.5 Data Quality (Art. 6, V)
+- Data validated in the ETL pipeline
+- Drift detection continuously monitors quality
 
-### 3.6 Transparência (Art. 6º, VI)
-- Model Card documenta o modelo e suas limitações
-- System Card documenta a arquitetura completa
-- API retorna metadados sobre previsões
+### 3.6 Transparency (Art. 6, VI)
+- Model Card documents the model and its limitations
+- System Card documents the complete architecture
+- API returns metadata about predictions
 
-### 3.7 Segurança (Art. 6º, VII)
-- Guardrails protegem contra prompt injection
-- PII detection (Presidio) anonimiza dados pessoais
-- OWASP LLM Top 10 aplicado
-- Docker containers isolam componentes
+### 3.7 Security (Art. 6, VII)
+- Guardrails protect against prompt injection
+- PII detection (Presidio) anonymizes personal data
+- OWASP LLM Top 10 applied
+- Docker containers isolate components
 
-### 3.8 Prevenção (Art. 6º, VIII)
-- Monitoramento contínuo com Prometheus/Grafana
-- Drift detection previne degradação do modelo
-- Rate limiting na API
+### 3.8 Prevention (Art. 6, VIII)
+- Continuous monitoring with Prometheus/Grafana
+- Drift detection prevents model degradation
+- Rate limiting on the API
 
-### 3.9 Não Discriminação (Art. 6º, IX)
-- Modelo não usa dados demográficos
-- Predições baseadas apenas em dados de mercado
+### 3.9 Non-Discrimination (Art. 6, IX)
+- Model does not use demographic data
+- Predictions based solely on market data
 
-### 3.10 Responsabilização (Art. 6º, X)
-- MLflow registra todos os experimentos (auditabilidade)
-- Logs de telemetria rastreiam uso do LLM
-- Versionamento de código e modelos
+### 3.10 Accountability (Art. 6, X)
+- MLflow records all experiments (auditability)
+- Telemetry logs track LLM usage
+- Code and model versioning
 
-## 4. Direitos dos Titulares (Art. 18)
+## 4. Data Subject Rights (Art. 18)
 
-| Direito | Implementação |
+| Right | Implementation |
+|-------|---------------|
+| **Confirmation** (Art. 18, I) | API returns whether data is being processed |
+| **Access** (Art. 18, II) | /data endpoint provides access to the data |
+| **Correction** (Art. 18, III) | Market data corrected via Yahoo Finance re-fetch |
+| **Deletion** (Art. 18, VI) | Queries are not persisted by default |
+| **Information** (Art. 18, VII) | Complete documentation available |
+| **Revocation** (Art. 18, IX) | User can stop using the service |
+
+## 5. PII Detection and Protection
+
+### 5.1 Mechanism
+- **Microsoft Presidio** for PII entity detection
+- **Regex fallback** when Presidio is not available
+
+### 5.2 Detected Entities
+- Brazilian CPF (with digit validation)
+- Email
+- Phone number
+- Credit card numbers
+- IP addresses
+
+### 5.3 Actions
+- PII detected in inputs is flagged
+- PII in outputs is automatically anonymized
+- Logs of detected PII are recorded (without the data itself)
+
+## 6. Technical Security Measures
+
+| Measure | Implementation |
 |---------|---------------|
-| **Confirmação** (Art. 18, I) | API retorna se dados estão sendo processados |
-| **Acesso** (Art. 18, II) | Endpoint /data fornece acesso aos dados |
-| **Correção** (Art. 18, III) | Dados de mercado corrigidos via re-fetch do Yahoo Finance |
-| **Eliminação** (Art. 18, VI) | Queries não são persistidas por padrão |
-| **Informação** (Art. 18, VII) | Documentação completa disponível |
-| **Revogação** (Art. 18, IX) | Usuário pode parar de usar o serviço |
+| Encryption in transit | HTTPS via nginx |
+| Isolation | Docker containers |
+| Access control | CORS configuration |
+| Attack detection | Prompt injection guardrails |
+| Monitoring | Prometheus + Grafana |
+| Auditability | MLflow + Langfuse telemetry |
+| Anonymization | Presidio PII detection |
 
-## 5. Detecção e Proteção de PII
+## 7. Data Protection Officer (DPO)
 
-### 5.1 Mecanismo
-- **Microsoft Presidio** para detecção de entidades PII
-- **Regex fallback** quando Presidio não está disponível
+For data protection inquiries:
+- **Responsible**: Define DPO before production deployment
+- **Contact**: Define communication channel
 
-### 5.2 Entidades Detectadas
-- CPF brasileiro (com validação de dígitos)
-- E-mail
-- Telefone
-- Números de cartão de crédito
-- Endereços IP
+## 8. Incident Response Plan (Art. 48)
 
-### 5.3 Ação
-- PII detectado em inputs é sinalizado
-- PII em outputs é automaticamente anonimizado
-- Logs de PII detectado são registrados (sem o dado em si)
-
-## 6. Medidas de Segurança Técnicas
-
-| Medida | Implementação |
-|--------|---------------|
-| Criptografia em trânsito | HTTPS via nginx |
-| Isolamento | Docker containers |
-| Controle de acesso | CORS configuration |
-| Detecção de ataques | Prompt injection guardrails |
-| Monitoramento | Prometheus + Grafana |
-| Auditabilidade | MLflow + Langfuse telemetry |
-| Anonimização | Presidio PII detection |
-
-## 7. Encarregado (DPO)
-
-Para questões relacionadas à proteção de dados:
-- **Responsável**: Definir DPO antes da produção
-- **Contato**: Definir canal de comunicação
-
-## 8. Plano de Incidentes (Art. 48)
-
-1. **Detecção**: Monitoramento automático via Prometheus/alertas
-2. **Contenção**: Desativação do serviço afetado
-3. **Comunicação**: Notificação à ANPD em 72h (quando aplicável)
-4. **Correção**: Patch e re-deploy
-5. **Documentação**: Registro do incidente e ações tomadas
+1. **Detection**: Automatic monitoring via Prometheus/alerts
+2. **Containment**: Deactivation of affected service
+3. **Notification**: Report to ANPD within 72 hours (when applicable)
+4. **Remediation**: Patch and re-deploy
+5. **Documentation**: Record incident and actions taken
 
 ---
 
-*Documento atualizado em 2025. Revisão recomendada a cada 6 meses ou quando houver mudanças significativas no sistema.*
+*Document updated in 2025. Review recommended every 6 months or when significant system changes occur.*

@@ -205,6 +205,11 @@ def run_hyperparameter_search(
         mlflow.log_params(best_params)
         mlflow.log_metric("best_val_rmse", best_value)
 
+        # Set governance tags for HPO summary run
+        from src.training.train import set_mlflow_governance_tags
+
+        set_mlflow_governance_tags()
+
         # Log parameter importance
         try:
             importance = optuna.importance.get_param_importances(study)

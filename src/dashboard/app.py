@@ -13,8 +13,11 @@ sys.path.insert(0, str(project_root))
 
 import streamlit as st  # noqa: E402
 
+from src.dashboard.components.agent_chat import render_agent_page  # noqa: E402
+from src.dashboard.components.evaluation import render_evaluation_page  # noqa: E402
 from src.dashboard.components.metrics import render_metrics_page  # noqa: E402
 from src.dashboard.components.model_schema import render_model_schema_page  # noqa: E402
+from src.dashboard.components.observability import render_observability_page  # noqa: E402
 from src.dashboard.components.predictions import render_predictions_page  # noqa: E402
 from src.dashboard.components.sidebar import render_sidebar  # noqa: E402
 
@@ -358,6 +361,12 @@ def main():
         render_metrics_page()
     elif selected_page == "Model Schema":
         render_model_schema_page()
+    elif selected_page == "Observability":
+        render_observability_page()
+    elif selected_page == "Evaluation":
+        render_evaluation_page()
+    elif selected_page == "Agent":
+        render_agent_page()
     else:
         render_predictions_page()  # Default page
 

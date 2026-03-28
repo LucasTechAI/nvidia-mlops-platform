@@ -1,151 +1,151 @@
 # LLM Benchmark Report
 
-## Visão Geral
+## Overview
 
-Este documento apresenta o benchmark e avaliação do agente LLM integrado
-na plataforma NVIDIA MLOps, incluindo métricas de qualidade (RAGAS),
-avaliação por LLM-as-judge, e testes A/B de prompts.
+This document presents the benchmark and evaluation of the LLM agent
+integrated into the NVIDIA MLOps platform, including quality metrics (RAGAS),
+LLM-as-judge evaluation, and A/B prompt testing.
 
 ---
 
-## 1. Configuração do Agente
+## 1. Agent Configuration
 
-| Parâmetro | Valor |
+| Parameter | Value |
 |-----------|-------|
-| **Padrão** | ReAct (Reasoning + Acting) |
-| **Provider** | OpenAI / Groq (configurável) |
-| **Modelo** | gpt-4o-mini (default) |
+| **Pattern** | ReAct (Reasoning + Acting) |
+| **Provider** | OpenAI / Groq (configurable) |
+| **Model** | gpt-4o-mini (default) |
 | **Temperature** | 0.1 |
 | **Max Iterations** | 8 |
 | **Tools** | 4 (query_stock_data, predict_stock_prices, get_model_metrics, search_documents) |
-| **RAG** | ChromaDB com 7 documentos de domínio |
+| **RAG** | ChromaDB with 7 domain documents |
 
 ## 2. Golden Set
 
-- **Total de pares**: 25
-- **Idiomas**: Português (16), Inglês (9)
-- **Domínios cobertos**:
-  - Consulta de preços e dados (5 pares)
-  - Previsões e modelo (6 pares)
-  - Arquitetura e features técnicas (5 pares)
-  - Segurança e monitoramento (3 pares)
-  - Uso geral do sistema (6 pares)
+- **Total pairs**: 25
+- **Languages**: Portuguese (16), English (9)
+- **Covered domains**:
+  - Price and data queries (5 pairs)
+  - Predictions and model (6 pairs)
+  - Architecture and technical features (5 pairs)
+  - Security and monitoring (3 pairs)
+  - General system usage (6 pairs)
 
-## 3. Avaliação RAGAS (4 Métricas)
+## 3. RAGAS Evaluation (4 Metrics)
 
-### Métricas
+### Metrics
 
-| Métrica | Descrição | Target |
-|---------|-----------|--------|
-| **Faithfulness** | Resposta é fiel ao contexto fornecido | > 0.7 |
-| **Answer Relevancy** | Resposta é relevante à pergunta | > 0.7 |
-| **Context Precision** | Contexto recuperado é preciso | > 0.6 |
-| **Context Recall** | Contexto cobre a ground truth | > 0.6 |
+| Metric | Description | Target |
+|--------|-------------|--------|
+| **Faithfulness** | Answer is faithful to the provided context | > 0.7 |
+| **Answer Relevancy** | Answer is relevant to the question | > 0.7 |
+| **Context Precision** | Retrieved context is precise | > 0.6 |
+| **Context Recall** | Context covers the ground truth | > 0.6 |
 
-### Execução
+### Execution
 
 ```bash
-# Executar avaliação RAGAS
+# Run RAGAS evaluation
 python -m evaluation.ragas_eval
 ```
 
-Resultados salvos em: `outputs/evaluation/ragas_results.json`
+Results saved at: `outputs/evaluation/ragas_results.json`
 
-### Interpretação
-- **Faithfulness alto**: O agente usa os dados das tools e não alucina
-- **Answer Relevancy alto**: Respostas abordam diretamente a pergunta
-- **Context Precision alto**: RAG recupera documentos relevantes
-- **Context Recall alto**: Contexto cobre informações da ground truth
+### Interpretation
+- **High Faithfulness**: Agent uses tool data and doesn't hallucinate
+- **High Answer Relevancy**: Answers directly address the question
+- **High Context Precision**: RAG retrieves relevant documents
+- **High Context Recall**: Context covers ground truth information
 
-## 4. LLM-as-Judge (3 Critérios)
+## 4. LLM-as-Judge (3 Criteria)
 
-### Critérios de Avaliação
+### Evaluation Criteria
 
-| Critério | Descrição | Escala |
-|----------|-----------|--------|
-| **Relevância** | A resposta aborda diretamente a pergunta | 1–5 |
-| **Acurácia Factual** | Informações são factualmente corretas | 1–5 |
-| **Utilidade para Negócio** | Útil para análise de investimentos | 1–5 |
+| Criterion | Description | Scale |
+|-----------|-------------|-------|
+| **Relevance** | Answer directly addresses the question | 1–5 |
+| **Factual Accuracy** | Information is factually correct | 1–5 |
+| **Business Usefulness** | Useful for investment analysis | 1–5 |
 
-### Execução
+### Execution
 
 ```bash
-# Executar LLM-as-judge
+# Run LLM-as-judge
 python -m evaluation.llm_judge
 ```
 
-Resultados salvos em: `outputs/evaluation/llm_judge_results.json`
+Results saved at: `outputs/evaluation/llm_judge_results.json`
 
-## 5. Teste A/B de Prompts
+## 5. A/B Prompt Testing
 
-### Variantes Testadas
+### Tested Variants
 
-| Variante | Nome | Descrição |
-|----------|------|-----------|
-| **A** | Concise | Prompt curto, focado em tools |
-| **B** | Detailed | Prompt detalhado, com exemplos e regras estritas |
+| Variant | Name | Description |
+|---------|------|-------------|
+| **A** | Concise | Short prompt, tool-focused |
+| **B** | Detailed | Detailed prompt, with examples and strict rules |
 
-### Diferenças Principais
+### Key Differences
 
-| Aspecto | Variante A | Variante B |
-|---------|------------|------------|
-| Comprimento | ~300 tokens | ~600 tokens |
-| Exemplos | Nenhum | 1 exemplo completo |
-| Regras | Implícitas | 6 regras explícitas |
-| Formato numérico | Não especificado | "2 casas decimais" |
-| Source attribution | Não requerido | Obrigatório |
+| Aspect | Variant A | Variant B |
+|--------|-----------|-----------|
+| Length | ~300 tokens | ~600 tokens |
+| Examples | None | 1 complete example |
+| Rules | Implicit | 6 explicit rules |
+| Number format | Unspecified | "2 decimal places" |
+| Source attribution | Not required | Required |
 
-### Execução
+### Execution
 
 ```bash
-# Executar teste A/B (5 primeiras amostras)
+# Run A/B test (first 5 samples)
 python -m evaluation.ab_test_prompts
 ```
 
-Resultados salvos em: `outputs/evaluation/ab_test_results.json`
+Results saved at: `outputs/evaluation/ab_test_results.json`
 
-## 6. Métricas de Performance
+## 6. Performance Metrics
 
-### Latência Esperada
+### Expected Latency
 
-| Operação | Latência (CPU) | Latência (GPU) |
-|----------|---------------|----------------|
-| Previsão LSTM (30 dias) | 0.5–2s | 0.1–0.5s |
-| Query ao agente (1 tool) | 3–8s | 3–8s |
-| Query ao agente (3+ tools) | 8–20s | 8–20s |
+| Operation | Latency (CPU) | Latency (GPU) |
+|-----------|---------------|---------------|
+| LSTM Prediction (30 days) | 0.5–2s | 0.1–0.5s |
+| Agent query (1 tool) | 3–8s | 3–8s |
+| Agent query (3+ tools) | 8–20s | 8–20s |
 | RAG retrieval | < 0.5s | < 0.5s |
 | Guardrail check | < 0.01s | < 0.01s |
 
-### Token Usage Estimado
+### Estimated Token Usage
 
-| Tipo de Query | Tokens Prompt | Tokens Completion | Total |
-|---------------|---------------|-------------------|-------|
-| Simples (1 tool) | ~500 | ~200 | ~700 |
-| Média (2 tools) | ~1000 | ~400 | ~1400 |
-| Complexa (3+ tools) | ~2000 | ~600 | ~2600 |
+| Query Type | Prompt Tokens | Completion Tokens | Total |
+|------------|---------------|-------------------|-------|
+| Simple (1 tool) | ~500 | ~200 | ~700 |
+| Medium (2 tools) | ~1000 | ~400 | ~1400 |
+| Complex (3+ tools) | ~2000 | ~600 | ~2600 |
 
-## 7. Limitações Conhecidas
+## 7. Known Limitations
 
-1. **Dependência de API externa**: Agente requer API key (OpenAI/Groq)
-2. **Latência do LLM**: Domina o tempo total de resposta do agente
-3. **Fallback heurístico**: Quando LLM não está disponível, avaliação usa heurísticas simples
-4. **Golden set estático**: Respostas esperadas podem ficar desatualizadas
-5. **Idioma**: RAG knowledge docs em inglês/português misto
-6. **Avaliação offline**: RAGAS e LLM-judge são processos batch, não real-time
+1. **External API dependency**: Agent requires API key (OpenAI/Groq)
+2. **LLM latency**: Dominates total agent response time
+3. **Heuristic fallback**: When LLM is unavailable, evaluation uses simple heuristics
+4. **Static golden set**: Expected answers may become outdated
+5. **Language**: RAG knowledge docs in mixed English/Portuguese
+6. **Offline evaluation**: RAGAS and LLM-judge are batch processes, not real-time
 
-## 8. Como Reproduzir
+## 8. How to Reproduce
 
 ```bash
-# 1. Configurar variáveis de ambiente
+# 1. Configure environment variables
 export LLM_PROVIDER=openai
 export OPENAI_API_KEY=sk-...
 
-# 2. Executar todas as avaliações
+# 2. Run all evaluations
 python -m evaluation.ragas_eval
 python -m evaluation.llm_judge
 python -m evaluation.ab_test_prompts
 
-# 3. Resultados em outputs/evaluation/
+# 3. Results in outputs/evaluation/
 ls outputs/evaluation/
 # ragas_results.json
 # llm_judge_results.json
@@ -154,4 +154,4 @@ ls outputs/evaluation/
 
 ---
 
-*Relatório gerado em 2025. Métricas atualizadas a cada nova versão do agente ou modelo.*
+*Report generated in 2025. Metrics updated with each new agent or model version.*

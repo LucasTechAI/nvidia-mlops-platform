@@ -1,44 +1,44 @@
-# Datathon — Guia de Desenvolvimento do Desafio da Fase 05
+# Datathon — Phase 05 Challenge Development Guide
 
-> **Fase**: 05 — LLMs e Agentes
-> **Formato**: Datathon com Empresa Convidada
-> **Tipo**: Projeto Integrador (Fases 01–05)
-> **Referência canônica**: [`fases/fase-05-llms-e-agentes/governanca-da-fase/tech-challenge.md`](../../fases/fase-05-llms-e-agentes/governanca-da-fase/tech-challenge.md)
-
----
-
-## Por que este guia existe
-
-O Tech Challenge da Fase 05 é o **Datathon**: uma competição técnica baseada em um problema real fornecido por uma empresa convidada. Diferente dos desafios anteriores, aqui o enunciado vem da indústria e a avaliação é composta por banca mista (empresa + academia).
-
-Este guia de desenvolvimento traduz os **gaps mais frequentes observados em plataformas de ML do mercado financeiro** em orientações práticas para os grupos que enfrentam o Datathon. O objetivo é antecipar armadilhas arquiteturais, de engenharia e de governança que equipes reais cometem — e que a banca avaliará.
-
-O conteúdo é baseado em assessments de maturidade MLOps conduzidos em instituições financeiras reguladas e estruturado com os mesmos padrões do repositório `mlet`.
+> **Phase**: 05 — LLMs and Agents
+> **Format**: Datathon with Guest Company
+> **Type**: Integrative Project (Phases 01–05)
+> **Canonical reference**: [`fases/fase-05-llms-e-agentes/governanca-da-fase/tech-challenge.md`](../../fases/fase-05-llms-e-agentes/governanca-da-fase/tech-challenge.md)
 
 ---
 
-## Maturidade MLOps — O Que a Banca Espera
+## Why This Guide Exists
 
-A banca avalia se o grupo atingiu **pelo menos Nível 2** do Microsoft MLOps Maturity Model nas dimensões críticas:
+The Phase 05 Tech Challenge is the **Datathon**: a technical competition based on a real problem provided by a guest company. Unlike previous challenges, the problem statement comes from industry and the evaluation is composed of a mixed panel (company + academia).
 
-| Dimensão | Nível 0 (inaceitável) | Nível 1 (mínimo) | Nível 2 (esperado) |
+This development guide translates the **most frequent gaps observed in financial market ML platforms** into practical guidance for groups facing the Datathon. The goal is to anticipate architectural, engineering, and governance pitfalls that real teams make — and that the evaluation panel will assess.
+
+The content is based on MLOps maturity assessments conducted at regulated financial institutions and structured with the same standards as the `mlet` repository.
+
+---
+
+## MLOps Maturity — What the Panel Expects
+
+The panel evaluates whether the group has reached **at least Level 2** of the Microsoft MLOps Maturity Model across critical dimensions:
+
+| Dimension | Level 0 (unacceptable) | Level 1 (minimum) | Level 2 (expected) |
 |---|---|---|---|
-| Experiment Management | Sem tracking | MLflow manual, metadata inconsistente | MLflow padronizado, metrics + params + artifacts |
-| Model Management | Sem registro | Registro manual sem lineage | Model Registry com versionamento e metadata obrigatória |
-| CI/CD | Sem pipeline | Pipeline manual, sem gates | GitHub Actions: lint → test → build → deploy (staging) |
-| Monitoring | Sem observabilidade | Logs básicos | Métricas, drift detection, dashboard, alertas |
-| Data Management | Dados soltos | Dados copiados manualmente | DVC/Delta Lake, versionamento, dados sintéticos em dev |
-| Feature Management | Sem feature store | Feature store single-model | Features compartilhadas, materialização incremental |
+| Experiment Management | No tracking | Manual MLflow, inconsistent metadata | Standardized MLflow, metrics + params + artifacts |
+| Model Management | No registry | Manual registration without lineage | Model Registry with versioning and mandatory metadata |
+| CI/CD | No pipeline | Manual pipeline, no gates | GitHub Actions: lint → test → build → deploy (staging) |
+| Monitoring | No observability | Basic logs | Metrics, drift detection, dashboard, alerts |
+| Data Management | Loose data | Manually copied data | DVC/Delta Lake, versioning, synthetic data in dev |
+| Feature Management | No feature store | Single-model feature store | Shared features, incremental materialization |
 
-> **Dica**: a avaliação técnica (70%) foca na demonstração de maturidade acumulada. Mesmo que o modelo final tenha métricas modestas, uma arquitetura bem governada pontuará mais que um modelo bom rodando de forma ad-hoc.
+> **Tip**: The technical evaluation (70%) focuses on demonstrating accumulated maturity. Even if the final model has modest metrics, a well-governed architecture will score higher than a good model running ad-hoc.
 
 ---
 
-## Gaps Comuns em Plataformas de ML — O Que Evitar
+## Common Gaps in ML Platforms — What to Avoid
 
-### Taxonomia de Gaps Observados
+### Taxonomy of Observed Gaps
 
-Os gaps abaixo são derivados de avaliações reais em plataformas de ML de instituições financeiras. Cada gap inclui o anti-padrão, o impacto e a recomendação para o Datathon.
+The gaps below are derived from real assessments of ML platforms at financial institutions. Each gap includes the anti-pattern, the impact, and the recommendation for the Datathon.
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {
@@ -50,142 +50,142 @@ Os gaps abaixo são derivados de avaliações reais em plataformas de ML de inst
   'tertiaryColor':'#FFFFFF'
 }}}%%
 mindmap
-  root((Gaps<br/>MLOps))
-    Código
-      Sem testes
-      Quality gates burlados
+  root((MLOps<br/>Gaps))
+    Code
+      No tests
+      Bypassed quality gates
       Full-table scans
-    Infraestrutura
-      SPOF em notebooks
-      Feature store destrutivo
-      Sem ambientes isolados
+    Infrastructure
+      SPOF in notebooks
+      Destructive feature store
+      No isolated environments
     Pipeline
-      Sem retraining
-      Framework sem sucessor
-      DAGs obsoletas
-    Monitoramento
+      No retraining
+      Framework without successor
+      Obsolete DAGs
+    Monitoring
       Zero monitoring
-      Sem drift detection
-    Governança
-      Metadata inconsistente
-      Sem documentação
-      Sem approval gates
-    Equipe
+      No drift detection
+    Governance
+      Inconsistent metadata
+      No documentation
+      No approval gates
+    Team
       Bus factor = 1
-      Skills gap em eng. software
+      Software engineering skills gap
 ```
 
 ---
 
-### GAP 01: Ausência de Monitoramento de Modelos
+### GAP 01: Lack of Model Monitoring
 
-**Anti-padrão**: Modelo é deployado e nunca mais verificado. Ninguém sabe se está performando bem ou mal.
+**Anti-pattern**: Model is deployed and never checked again. Nobody knows if it's performing well or poorly.
 
-**Por que importa para o Datathon**: A Etapa 3 exige dashboard de observabilidade com métricas técnicas e de negócio. Entregar modelo sem monitoramento é o equivalente a entregar carro sem painel.
+**Why it matters for the Datathon**: Stage 3 requires an observability dashboard with technical and business metrics. Delivering a model without monitoring is the equivalent of delivering a car without a dashboard.
 
-**Recomendação**:
-- Prometheus + Grafana para métricas operacionais (latência, throughput, erros)
-- Langfuse ou TruLens para métricas de qualidade LLM (faithfulness, relevancy)
-- Evidently para drift detection em features/predições
-- Alertas automáticos por degradação
+**Recommendation**:
+- Prometheus + Grafana for operational metrics (latency, throughput, errors)
+- Langfuse or TruLens for LLM quality metrics (faithfulness, relevancy)
+- Evidently for drift detection on features/predictions
+- Automatic alerts for degradation
 
-**Competências mobilizadas**: Fase 03 (Prometheus/Grafana), Fase 04 (drift, observabilidade), Fase 05 (LLMOps telemetria)
-
----
-
-### GAP 02: Notebook Compartilhado como SPOF
-
-**Anti-padrão**: Um único notebook é o trigger de produção para múltiplos modelos. Uma edição quebra tudo.
-
-**Evidência real**: Em instituição financeira, um cientista editou o notebook compartilhado. O modelo dele rodou. Todos os outros pararam. O MLE recebeu 30+ alertas no final de semana.
-
-**Por que importa para o Datathon**: A banca penaliza blast radius alto. Se o pipeline do grupo tem um ponto único de falha, a nota de arquitetura será afetada.
-
-**Recomendação**:
-- Cada componente do pipeline deve ser isolado (jobs/tasks separados)
-- Usar DAGs ou workflows declarativos (Airflow, Prefect, Databricks Asset Bundles)
-- Compute isolado por job — nunca compartilhar cluster entre pipelines desconexos
-- Tudo versionado em Git com deploy via CI/CD
-
-**Competências mobilizadas**: Fase 02 (Docker, pipeline reprodutível), Fase 03 (CI/CD)
+**Competencies mobilized**: Phase 03 (Prometheus/Grafana), Phase 04 (drift, observability), Phase 05 (LLMOps telemetry)
 
 ---
 
-### GAP 03: Feature Store com Padrão Destrutivo (Full-Flush)
+### GAP 02: Shared Notebook as SPOF
 
-**Anti-padrão**: Feature store (Redis, cache) com estratégia "deleta tudo, carrega tudo, sempre". Durante a janela de flush, o store está vazio.
+**Anti-pattern**: A single notebook is the production trigger for multiple models. One edit breaks everything.
 
-**Evidência real**: Em sistema de detecção de fraude, a cada 10-55 minutos todo o cache era deletado e recarregado. Na janela vazia, transações eram processadas sem features — decisões erradas sistematicamente.
+**Real evidence**: At a financial institution, a scientist edited the shared notebook. Their model ran. All others stopped. The MLE received 30+ alerts over the weekend.
 
-**Por que importa para o Datathon**: Se o grupo usa feature store ou cache de contexto para RAG, a estratégia de atualização deve ser incremental, não destrutiva.
+**Why it matters for the Datathon**: The panel penalizes high blast radius. If the group's pipeline has a single point of failure, the architecture score will be affected.
 
-**Recomendação**:
-- Upsert incremental (HSET/MSET com TTL) em vez de FLUSHALL + bulk load
-- Change Data Feed (Delta) ou timestamps para processar apenas deltas
-- Nunca ter janela de store vazio — isso é inaceitável em produção
+**Recommendation**:
+- Each pipeline component should be isolated (separate jobs/tasks)
+- Use declarative DAGs or workflows (Airflow, Prefect, Databricks Asset Bundles)
+- Isolated compute per job — never share clusters between unrelated pipelines
+- Everything versioned in Git with deployment via CI/CD
 
-**Competências mobilizadas**: Fase 02 (feature engineering), Fase 03 (deploy e serving)
-
----
-
-### GAP 04: Cobertura de Testes Próxima a Zero
-
-**Anti-padrão**: Quality gate configurado em thresholds triviais (1% coverage). Equipe burla SonarQube excluindo pastas. Ninguém sabe o que é pytest.
-
-**Evidência real**: Em equipe de ML, a cobertura de testes estava em 1%. Quando perguntados, a resposta foi: "eles nem sabem o que é pytest". Um engenheiro editou o arquivo de configuração do SonarQube para excluir seu diretório.
-
-**Por que importa para o Datathon**: A rubrica exige pytest funcional (Fases 01-02), CI/CD com testes (Fase 03) e validação de dados (Fase 04). Código sem testes = nota baixa em Pipeline + Arquitetura + Documentação.
-
-**Recomendação**:
-- `pytest` com `--cov-fail-under=60` no mínimo
-- Testes de schema com `pandera` ou `great_expectations`
-- Testes de feature engineering: input/output shapes, nulls, ranges
-- Testes de inferência: determinismo, range de predições, count match
-- Testes de integração para endpoints (FastAPI TestClient)
-
-**Competências mobilizadas**: Fase 01 (fundamentos), Fase 02 (clean code, Docker), Fase 03 (CI/CD)
+**Competencies mobilized**: Phase 02 (Docker, reproducible pipeline), Phase 03 (CI/CD)
 
 ---
 
-### GAP 05: Sem Governança de Versionamento de Modelos
+### GAP 03: Feature Store with Destructive Pattern (Full-Flush)
 
-**Anti-padrão**: Cada cientista loga informações diferentes no MLflow — ou nada. Sem tags padronizadas, sem lineage, sem approval workflow.
+**Anti-pattern**: Feature store (Redis, cache) with a "delete everything, load everything, always" strategy. During the flush window, the store is empty.
 
-**Evidência real**: Em plataforma com 20+ modelos, era impossível responder: "Qual versão está em produção? Com quais dados foi treinada? Quem aprovou?"
+**Real evidence**: In a fraud detection system, every 10–55 minutes the entire cache was deleted and reloaded. During the empty window, transactions were processed without features — systematically wrong decisions.
 
-**Por que importa para o Datathon**: A Etapa 4 exige Model Card / System Card. Sem metadata padronizada, o Model Card será genérico e a governança fraca.
+**Why it matters for the Datathon**: If the group uses a feature store or context cache for RAG, the update strategy must be incremental, not destructive.
 
-**Recomendação**:
+**Recommendation**:
+- Incremental upsert (HSET/MSET with TTL) instead of FLUSHALL + bulk load
+- Change Data Feed (Delta) or timestamps to process only deltas
+- Never have an empty store window — this is unacceptable in production
+
+**Competencies mobilized**: Phase 02 (feature engineering), Phase 03 (deployment and serving)
+
+---
+
+### GAP 04: Near-Zero Test Coverage
+
+**Anti-pattern**: Quality gate configured with trivial thresholds (1% coverage). Team bypasses SonarQube by excluding folders. Nobody knows what pytest is.
+
+**Real evidence**: In an ML team, test coverage was at 1%. When asked, the answer was: "they don't even know what pytest is." An engineer edited the SonarQube config file to exclude their directory.
+
+**Why it matters for the Datathon**: The rubric requires functional pytest (Phases 01-02), CI/CD with tests (Phase 03), and data validation (Phase 04). Code without tests = low scores on Pipeline + Architecture + Documentation.
+
+**Recommendation**:
+- `pytest` with `--cov-fail-under=60` at minimum
+- Schema tests with `pandera` or `great_expectations`
+- Feature engineering tests: input/output shapes, nulls, ranges
+- Inference tests: determinism, prediction range, count match
+- Integration tests for endpoints (FastAPI TestClient)
+
+**Competencies mobilized**: Phase 01 (fundamentals), Phase 02 (clean code, Docker), Phase 03 (CI/CD)
+
+---
+
+### GAP 05: No Model Versioning Governance
+
+**Anti-pattern**: Each scientist logs different information in MLflow — or nothing. No standardized tags, no lineage, no approval workflow.
+
+**Real evidence**: In a platform with 20+ models, it was impossible to answer: "Which version is in production? What data was it trained on? Who approved it?"
+
+**Why it matters for the Datathon**: Stage 4 requires Model Card / System Card. Without standardized metadata, the Model Card will be generic and governance weak.
+
+**Recommendation**:
 ```python
-# Schema mínimo obrigatório para registro de modelo
+# Minimum required schema for model registration
 required_tags = {
-    "model_name": str,         # Nome do modelo
-    "model_version": str,      # Versão semântica
+    "model_name": str,         # Model name
+    "model_version": str,      # Semantic version
     "model_type": str,         # classification, regression, generation
-    "training_data_version": str,  # Hash ou versão DVC
+    "training_data_version": str,  # Hash or DVC version
     "metrics": dict,           # {"auc": 0.95, "f1": 0.88}
-    "owner": str,              # Email do responsável
+    "owner": str,              # Owner email
     "risk_level": str,         # low, medium, high, critical
-    "fairness_checked": bool,  # Auditoria de viés feita?
-    "git_sha": str,            # Commit do código
+    "fairness_checked": bool,  # Bias audit done?
+    "git_sha": str,            # Code commit
 }
 ```
 
-**Competências mobilizadas**: Fase 04 (governança, LGPD), Fase 05 (System Card)
+**Competencies mobilized**: Phase 04 (governance, LGPD), Phase 05 (System Card)
 
 ---
 
-### GAP 06: Sem Detecção de Drift
+### GAP 06: No Drift Detection
 
-**Anti-padrão**: Modelo deployado e esquecido. Nenhuma verificação de data drift ou concept drift. Degradação acontece silenciosamente.
+**Anti-pattern**: Model deployed and forgotten. No data drift or concept drift verification. Degradation happens silently.
 
-**Por que importa para o Datathon**: A Etapa 3 exige "Detecção de drift implementada e documentada". É critério de aceite explícito.
+**Why it matters for the Datathon**: Stage 3 requires "Drift detection implemented and documented." It's an explicit acceptance criterion.
 
-**Recomendação**:
-- Evidently para report de drift (data + prediction)
-- PSI (Population Stability Index) como métrica principal
+**Recommendation**:
+- Evidently for drift reporting (data + prediction)
+- PSI (Population Stability Index) as the primary metric
 - Threshold: PSI > 0.1 = warning, PSI > 0.2 = retrain trigger
-- Integrar com MLflow: logar métricas de drift junto com métricas de modelo
+- Integrate with MLflow: log drift metrics alongside model metrics
 
 ```python
 from evidently.report import Report
@@ -198,91 +198,91 @@ drift_result = report.as_dict()
 drift_share = drift_result["metrics"][0]["result"]["share_of_drifted_columns"]
 ```
 
-**Competências mobilizadas**: Fase 04 (drift, observabilidade), Fase 05 (LLMOps)
+**Competencies mobilized**: Phase 04 (drift, observability), Phase 05 (LLMOps)
 
 ---
 
-### GAP 07: Ausência de Retraining Automatizado
+### GAP 07: No Automated Retraining
 
-**Anti-padrão**: Modelos retreinados manualmente, de forma ad-hoc, sem trigger programado. Em alguns casos, cada predição retreina o modelo (acoplamento treino-inferência).
+**Anti-pattern**: Models retrained manually, ad-hoc, without scheduled triggers. In some cases, each prediction retrains the model (training-inference coupling).
 
-**Por que importa para o Datathon**: Demonstrar champion-challenger evaluation mostra maturidade MLOps significativamente acima da média.
+**Why it matters for the Datathon**: Demonstrating champion-challenger evaluation shows MLOps maturity significantly above average.
 
-**Recomendação**:
-- Retraining agendado (cron) como baseline
-- Retraining event-driven (drift detectado → trigger pipeline)
-- Validação champion-challenger antes de promover:
-  - Carregar champion do Model Registry
-  - Treinar challenger com dados novos
-  - Comparar métricas em holdout set
-  - Só promover se `delta_auc >= 0.005` (0.5% melhoria)
-- Human-in-the-loop: approval gate antes de produção
+**Recommendation**:
+- Scheduled retraining (cron) as baseline
+- Event-driven retraining (drift detected → trigger pipeline)
+- Champion-challenger validation before promotion:
+  - Load champion from Model Registry
+  - Train challenger with new data
+  - Compare metrics on holdout set
+  - Only promote if `delta_auc >= 0.005` (0.5% improvement)
+- Human-in-the-loop: approval gate before production
 
-**Competências mobilizadas**: Fase 03 (CI/CD), Fase 04 (monitoramento), Fase 05 (feedback loops)
-
----
-
-### GAP 08: Ambiente de Desenvolvimento sem Dados
-
-**Anti-padrão**: O ambiente de dev existe mas não contém dados. Todo teste acontece em produção.
-
-**Evidência real**: Equipe de ML tinha Databricks dev configurado mas não havia dados lá. Resultado: cada mudança de código era testada diretamente em produção.
-
-**Por que importa para o Datathon**: A rubrica exige pipeline reprodutível (DVC + Docker). Se o grupo não tem dados versionados e acessíveis para reprodução, perde pontos em Data Management.
-
-**Recomendação**:
-- `DVC` para versionar dados (não commitar dados no Git)
-- Dados sintéticos para testes locais (SDV, Faker, fixtures)
-- Dados anonimizados para staging (Presidio para PII, se aplicável)
-- Script `make data` que reproduz ambiente local com dados de teste
-
-**Competências mobilizadas**: Fase 02 (DVC, versionamento), Fase 04 (LGPD, anonimização)
+**Competencies mobilized**: Phase 03 (CI/CD), Phase 04 (monitoring), Phase 05 (feedback loops)
 
 ---
 
-### GAP 09: Skills Gap em Engenharia de Software
+### GAP 08: Development Environment without Data
 
-**Anti-padrão**: Cientistas de dados sem fundamentos de programação: desconhecem testes, type hints, error handling, Git flow. Resistem ativamente a controles de qualidade.
+**Anti-pattern**: Dev environment exists but contains no data. All testing happens in production.
 
-**Por que importa para o Datathon**: A rubrica de "Documentação e arquitetura" (5%) e "Pipeline de dados e baseline" (10%) avaliam qualidade de código. `pyproject.toml`, type hints, docstrings, logging estruturado são habilidades esperadas.
+**Real evidence**: An ML team had Databricks dev configured but there was no data there. Result: every code change was tested directly in production.
 
-**Recomendação**:
+**Why it matters for the Datathon**: The rubric requires a reproducible pipeline (DVC + Docker). If the group doesn't have versioned and accessible data for reproduction, they lose points on Data Management.
+
+**Recommendation**:
+- `DVC` for data versioning (don't commit data to Git)
+- Synthetic data for local tests (SDV, Faker, fixtures)
+- Anonymized data for staging (Presidio for PII, if applicable)
+- `make data` script that reproduces local environment with test data
+
+**Competencies mobilized**: Phase 02 (DVC, versioning), Phase 04 (LGPD, anonymization)
+
+---
+
+### GAP 09: Software Engineering Skills Gap
+
+**Anti-pattern**: Data scientists without programming fundamentals: unfamiliar with tests, type hints, error handling, Git flow. Actively resist quality controls.
+
+**Why it matters for the Datathon**: The "Documentation and architecture" rubric (5%) and "Data pipeline and baseline" (10%) evaluate code quality. `pyproject.toml`, type hints, docstrings, structured logging are expected skills.
+
+**Recommendation**:
 ```python
-# Padrão mínimo de qualidade para o Datathon:
+# Minimum quality standard for the Datathon:
 
-# 1. Type hints em todas as funções
+# 1. Type hints on all functions
 def compute_features(df: pd.DataFrame, target_col: str) -> pd.DataFrame:
     ...
 
-# 2. Docstrings com Args e Returns
+# 2. Docstrings with Args and Returns
 def train_model(X: pd.DataFrame, y: pd.Series) -> tuple[Any, dict[str, float]]:
-    """Treina modelo e retorna artefato + métricas.
+    """Train model and return artifact + metrics.
 
     Args:
-        X: Features de treinamento.
+        X: Training features.
         y: Target.
 
     Returns:
-        Tupla (modelo treinado, dicionário de métricas).
+        Tuple (trained model, metrics dictionary).
     """
     ...
 
-# 3. Logging estruturado (nunca print)
+# 3. Structured logging (never print)
 import logging
 logger = logging.getLogger(__name__)
-logger.info("Treinamento concluído: AUC=%.4f", metrics["auc"])
+logger.info("Training completed: AUC=%.4f", metrics["auc"])
 
-# 4. pyproject.toml com dependências gerenciadas
-# 5. .env para secrets (nunca hardcoded)
+# 4. pyproject.toml with managed dependencies
+# 5. .env for secrets (never hardcoded)
 ```
 
-**Competências mobilizadas**: Fase 01 (fundamentos), Fase 02 (clean code, SOLID)
+**Competencies mobilized**: Phase 01 (fundamentals), Phase 02 (clean code, SOLID)
 
 ---
 
-## Arquitetura de Referência para o Datathon
+## Reference Architecture for the Datathon
 
-O diagrama abaixo mostra a arquitetura esperada para uma entrega completa no Datathon, integrando as 5 fases:
+The diagram below shows the expected architecture for a complete Datathon delivery, integrating all 5 phases:
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {
@@ -294,35 +294,35 @@ O diagrama abaixo mostra a arquitetura esperada para uma entrega completa no Dat
   'tertiaryColor':'#FFFFFF'
 }}}%%
 flowchart TD
-    subgraph Etapa1["Etapa 1 — Dados + Baseline (Fases 01-02)"]
-        A[Dados da Empresa<br/>via DVC] --> B[EDA<br/>Notebook Exploratório]
+    subgraph Stage1["Stage 1 — Data + Baseline (Phases 01-02)"]
+        A[Company Data<br/>via DVC] --> B[EDA<br/>Exploratory Notebook]
         B --> C[Feature Engineering<br/>+ Schema Validation]
         C --> D[Baseline<br/>Scikit-Learn + MLP PyTorch]
         D --> E[MLflow Tracking<br/>Metrics + Params + Artifacts]
     end
 
-    subgraph Etapa2["Etapa 2 — LLM + Agente (Fases 03-05)"]
+    subgraph Stage2["Stage 2 — LLM + Agent (Phases 03-05)"]
         E --> F[LLM Serving<br/>vLLM / BentoML]
-        F --> G[Agente ReAct<br/>≥ 3 Tools]
+        F --> G[ReAct Agent<br/>≥ 3 Tools]
         G --> H[RAG Pipeline<br/>Embedding + Vector Store]
-        H --> I[API FastAPI<br/>Endpoint Documentado]
+        H --> I[FastAPI API<br/>Documented Endpoint]
         I --> J[CI/CD<br/>GitHub Actions]
     end
 
-    subgraph Etapa3["Etapa 3 — Avaliação + Observabilidade (Fases 03-05)"]
-        I --> K[Golden Set<br/>≥ 20 pares]
-        K --> L[RAGAS<br/>4 métricas]
-        L --> M[LLM-as-judge<br/>≥ 3 critérios]
-        I --> N[Langfuse / TruLens<br/>Telemetria]
+    subgraph Stage3["Stage 3 — Evaluation + Observability (Phases 03-05)"]
+        I --> K[Golden Set<br/>≥ 20 pairs]
+        K --> L[RAGAS<br/>4 metrics]
+        L --> M[LLM-as-judge<br/>≥ 3 criteria]
+        I --> N[Langfuse / TruLens<br/>Telemetry]
         N --> O[Prometheus + Grafana<br/>Dashboard]
         O --> P[Drift Detection<br/>Evidently]
     end
 
-    subgraph Etapa4["Etapa 4 — Segurança + Governança (Fases 04-05)"]
+    subgraph Stage4["Stage 4 — Security + Governance (Phases 04-05)"]
         I --> Q[Guardrails<br/>Input + Output]
-        Q --> R[OWASP Top 10<br/>≥ 5 ameaças mapeadas]
-        R --> S[Red Teaming<br/>≥ 5 cenários]
-        S --> T[LGPD + Fairness<br/>+ Explicabilidade]
+        Q --> R[OWASP Top 10<br/>≥ 5 threats mapped]
+        R --> S[Red Teaming<br/>≥ 5 scenarios]
+        S --> T[LGPD + Fairness<br/>+ Explainability]
         T --> U[System Card<br/>+ Model Card]
     end
 
@@ -335,7 +335,7 @@ flowchart TD
 
 ---
 
-## Processo de Desenvolvimento Recomendado
+## Recommended Development Process
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {
@@ -347,52 +347,52 @@ flowchart TD
   'tertiaryColor':'#FFFFFF'
 }}}%%
 flowchart LR
-    A[Kickoff<br/>Empresa] --> B[EDA +<br/>Viabilidade]
-    B --> C{Dados<br/>suficientes?}
-    C --> |Sim| D[Baseline +<br/>Feature Eng.]
-    C --> |Não| E[Solicitar<br/>mais dados]
+    A[Kickoff<br/>Company] --> B[EDA +<br/>Feasibility]
+    B --> C{Sufficient<br/>data?}
+    C --> |Yes| D[Baseline +<br/>Feature Eng.]
+    C --> |No| E[Request<br/>more data]
     E --> B
-    D --> F[LLM + Agente<br/>+ RAG]
-    F --> G[Avaliação<br/>RAGAS + Judge]
-    G --> H{Qualidade<br/>aceitável?}
-    H --> |Sim| I[Guardrails +<br/>Segurança]
-    H --> |Não| J[Iterar<br/>Prompts/RAG]
+    D --> F[LLM + Agent<br/>+ RAG]
+    F --> G[Evaluation<br/>RAGAS + Judge]
+    G --> H{Acceptable<br/>quality?}
+    H --> |Yes| I[Guardrails +<br/>Security]
+    H --> |No| J[Iterate<br/>Prompts/RAG]
     J --> F
     I --> K[System Card<br/>+ Docs]
-    K --> L[Ensaio<br/>Pitch]
+    K --> L[Pitch<br/>Rehearsal]
     L --> M((Demo Day))
 ```
 
 ---
 
-## Estrutura de Repositório Recomendada
+## Recommended Repository Structure
 
 ```
-datathon-grupo-XX/
+datathon-group-XX/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml                     # GitHub Actions: lint + test + build
 ├── data/
-│   ├── raw/                           # Dados brutos (NÃO commitar, usar DVC)
-│   ├── processed/                     # Dados processados
-│   └── golden_set/                    # ≥ 20 pares (query, expected, contexts)
+│   ├── raw/                           # Raw data (DO NOT commit, use DVC)
+│   ├── processed/                     # Processed data
+│   └── golden_set/                    # ≥ 20 pairs (query, expected, contexts)
 ├── src/
 │   ├── features/
 │   │   ├── __init__.py
-│   │   └── feature_engineering.py     # Transformações de features
+│   │   └── feature_engineering.py     # Feature transformations
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── baseline.py                # Scikit-Learn + MLP PyTorch
-│   │   └── train.py                   # Pipeline de treino com MLflow
+│   │   └── train.py                   # Training pipeline with MLflow
 │   ├── agent/
 │   │   ├── __init__.py
-│   │   ├── react_agent.py             # Agente ReAct
-│   │   ├── tools.py                   # ≥ 3 tools customizadas
+│   │   ├── react_agent.py             # ReAct agent
+│   │   ├── tools.py                   # ≥ 3 custom tools
 │   │   └── rag_pipeline.py            # RAG: embedding + retriever + generator
 │   ├── serving/
 │   │   ├── __init__.py
 │   │   ├── app.py                     # FastAPI endpoint
-│   │   └── Dockerfile                 # Container de serving
+│   │   └── Dockerfile                 # Serving container
 │   ├── monitoring/
 │   │   ├── __init__.py
 │   │   ├── drift.py                   # Evidently drift detection
@@ -402,45 +402,45 @@ datathon-grupo-XX/
 │       ├── guardrails.py              # Input/output guardrails
 │       └── pii_detection.py           # Presidio PII detection
 ├── tests/
-│   ├── conftest.py                    # Fixtures compartilhados
-│   ├── test_features.py               # Testes de features
-│   ├── test_models.py                 # Testes de modelo
-│   ├── test_agent.py                  # Testes do agente
-│   ├── test_api.py                    # Testes de endpoint
-│   └── test_guardrails.py            # Testes de segurança
+│   ├── conftest.py                    # Shared fixtures
+│   ├── test_features.py               # Feature tests
+│   ├── test_models.py                 # Model tests
+│   ├── test_agent.py                  # Agent tests
+│   ├── test_api.py                    # Endpoint tests
+│   └── test_guardrails.py            # Security tests
 ├── evaluation/
-│   ├── ragas_eval.py                  # RAGAS: 4 métricas
-│   ├── llm_judge.py                   # LLM-as-judge: ≥ 3 critérios
-│   └── ab_test_prompts.py            # A/B test de prompts
+│   ├── ragas_eval.py                  # RAGAS: 4 metrics
+│   ├── llm_judge.py                   # LLM-as-judge: ≥ 3 criteria
+│   └── ab_test_prompts.py            # A/B prompt testing
 ├── docs/
 │   ├── MODEL_CARD.md                  # Model Card
 │   ├── SYSTEM_CARD.md                 # System Card
-│   ├── LGPD_PLAN.md                   # Plano de conformidade LGPD
-│   ├── OWASP_MAPPING.md              # ≥ 5 ameaças mapeadas
-│   └── RED_TEAM_REPORT.md            # ≥ 5 cenários adversariais
+│   ├── LGPD_PLAN.md                   # LGPD compliance plan
+│   ├── OWASP_MAPPING.md              # ≥ 5 threats mapped
+│   └── RED_TEAM_REPORT.md            # ≥ 5 adversarial scenarios
 ├── notebooks/
-│   └── 01_eda.ipynb                   # EDA exploratória
+│   └── 01_eda.ipynb                   # Exploratory EDA
 ├── configs/
-│   ├── model_config.yaml              # Hiperparâmetros
-│   └── monitoring_config.yaml         # Thresholds de drift
-├── docker-compose.yml                 # Orquestração local
-├── dvc.yaml                           # Pipeline DVC
-├── pyproject.toml                     # Dependências (Poetry/uv)
-├── Makefile                           # Atalhos: make train, make serve, make test
-├── .env.example                       # Template de variáveis de ambiente
-├── .pre-commit-config.yaml            # Hooks de qualidade
-└── README.md                          # Documentação principal
+│   ├── model_config.yaml              # Hyperparameters
+│   └── monitoring_config.yaml         # Drift thresholds
+├── docker-compose.yml                 # Local orchestration
+├── dvc.yaml                           # DVC pipeline
+├── pyproject.toml                     # Dependencies (Poetry/uv)
+├── Makefile                           # Shortcuts: make train, make serve, make test
+├── .env.example                       # Environment variables template
+├── .pre-commit-config.yaml            # Quality hooks
+└── README.md                          # Main documentation
 ```
 
 ---
 
-## Exemplos de Código Alinhados ao Datathon
+## Code Examples Aligned with the Datathon
 
-### MLflow Tracking Padronizado (Etapa 1)
+### Standardized MLflow Tracking (Stage 1)
 
 ```python
 # src/models/train.py
-"""Pipeline de treinamento com MLflow tracking padronizado."""
+"""Training pipeline with standardized MLflow tracking."""
 import logging
 
 import mlflow
@@ -465,19 +465,19 @@ def train_and_log(
     test_size: float = 0.2,
     random_state: int = 42,
 ) -> str:
-    """Treina modelo, loga tudo no MLflow, retorna run_id.
+    """Train model, log everything to MLflow, return run_id.
 
     Args:
-        df: DataFrame com features e target.
-        target_col: Nome da coluna target.
-        model_name: Nome para registro no MLflow.
-        model_class: Classe do modelo (ex: RandomForestClassifier).
-        model_params: Hiperparâmetros do modelo.
-        test_size: Proporção de teste.
-        random_state: Semente para reprodutibilidade.
+        df: DataFrame with features and target.
+        target_col: Target column name.
+        model_name: Name for MLflow registration.
+        model_class: Model class (e.g., RandomForestClassifier).
+        model_params: Model hyperparameters.
+        test_size: Test proportion.
+        random_state: Seed for reproducibility.
 
     Returns:
-        run_id do experimento MLflow.
+        MLflow experiment run_id.
     """
     X = df.drop(columns=[target_col])
     y = df[target_col]
@@ -486,25 +486,25 @@ def train_and_log(
     )
 
     with mlflow.start_run(run_name=model_name) as run:
-        # Log de parâmetros
+        # Log parameters
         mlflow.log_params(model_params)
         mlflow.log_param("test_size", test_size)
         mlflow.log_param("random_state", random_state)
         mlflow.log_param("n_features", X_train.shape[1])
         mlflow.log_param("n_samples_train", X_train.shape[0])
 
-        # Tags padronizadas (obrigatório)
+        # Standardized tags (required)
         mlflow.set_tag("model_type", "classification")
         mlflow.set_tag("framework", model_class.__module__.split(".")[0])
-        mlflow.set_tag("owner", "grupo-XX")
-        mlflow.set_tag("phase", "datathon-fase05")
+        mlflow.set_tag("owner", "group-XX")
+        mlflow.set_tag("phase", "datathon-phase05")
 
-        # Treino
+        # Training
         model = model_class(**model_params)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        # Métricas padronizadas
+        # Standardized metrics
         metrics = {
             "auc": roc_auc_score(y_test, y_pred),
             "precision": precision_score(y_test, y_pred, zero_division=0),
@@ -513,11 +513,11 @@ def train_and_log(
         }
         mlflow.log_metrics(metrics)
 
-        # Log do modelo
+        # Log model
         mlflow.sklearn.log_model(model, "model")
 
         logger.info(
-            "Modelo %s treinado: AUC=%.4f, F1=%.4f",
+            "Model %s trained: AUC=%.4f, F1=%.4f",
             model_name,
             metrics["auc"],
             metrics["f1"],
@@ -526,18 +526,18 @@ def train_and_log(
         return run.info.run_id
 ```
 
-### Testes Padronizados (Etapa 1)
+### Standardized Tests (Stage 1)
 
 ```python
 # tests/conftest.py
-"""Fixtures compartilhados para testes."""
+"""Shared fixtures for tests."""
 import pandas as pd
 import pytest
 
 
 @pytest.fixture
 def sample_data() -> pd.DataFrame:
-    """Dados sintéticos para testes (nunca dados reais)."""
+    """Synthetic data for tests (never real data)."""
     return pd.DataFrame({
         "feature_1": [0.1, 0.5, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4],
         "feature_2": [1.0, 2.0, 3.0, 4.0, 5.0, 1.5, 3.5, 2.5],
@@ -547,7 +547,7 @@ def sample_data() -> pd.DataFrame:
 
 
 # tests/test_features.py
-"""Testes de feature engineering — schema contracts."""
+"""Feature engineering tests — schema contracts."""
 import pandera as pa
 from pandera import Column, DataFrameSchema
 
@@ -562,30 +562,30 @@ FEATURE_SCHEMA = DataFrameSchema({
 
 
 def test_schema_contract(sample_data):
-    """Features de saída devem respeitar o contrato de schema."""
+    """Output features must respect the schema contract."""
     result = compute_features(sample_data)
     FEATURE_SCHEMA.validate(result)
 
 
 def test_no_nulls(sample_data):
-    """Nenhuma feature pode ter null após transformação."""
+    """No feature can have null after transformation."""
     result = compute_features(sample_data)
     assert result.isnull().sum().sum() == 0
 
 
 def test_row_count_preserved(sample_data):
-    """Número de registros deve ser preservado."""
+    """Number of records must be preserved."""
     result = compute_features(sample_data)
     assert len(result) == len(sample_data)
 ```
 
-### Agente ReAct com Tools (Etapa 2)
+### ReAct Agent with Tools (Stage 2)
 
 ```python
 # src/agent/react_agent.py
-"""Agente ReAct com tools customizadas para o domínio do Datathon.
+"""ReAct agent with custom tools for the Datathon domain.
 
-Referência: Yao et al. (2023) — ReAct: Synergizing Reasoning and Acting
+Reference: Yao et al. (2023) — ReAct: Synergizing Reasoning and Acting
             in Language Models. https://arxiv.org/abs/2210.03629
 """
 import logging
@@ -597,22 +597,22 @@ from langchain.tools import Tool
 
 logger = logging.getLogger(__name__)
 
-REACT_PROMPT = PromptTemplate.from_template("""Você é um assistente especializado.
-Use as ferramentas disponíveis para responder perguntas.
+REACT_PROMPT = PromptTemplate.from_template("""You are a specialized assistant.
+Use the available tools to answer questions.
 
-Ferramentas disponíveis:
+Available tools:
 {tools}
 
-Use o formato:
-Thought: pensar sobre o que fazer
-Action: nome_da_ferramenta
-Action Input: input para a ferramenta
-Observation: resultado da ferramenta
-... (repita Thought/Action/Observation quantas vezes necessário)
-Thought: Agora sei a resposta final
-Final Answer: resposta para o usuário
+Use the format:
+Thought: think about what to do
+Action: tool_name
+Action Input: input for the tool
+Observation: tool result
+... (repeat Thought/Action/Observation as needed)
+Thought: I now know the final answer
+Final Answer: answer to the user
 
-Pergunta: {input}
+Question: {input}
 {agent_scratchpad}""")
 
 
@@ -621,18 +621,18 @@ def create_datathon_agent(
     model_name: str = "gpt-4o-mini",
     temperature: float = 0.0,
 ) -> AgentExecutor:
-    """Cria agente ReAct para o Datathon.
+    """Create ReAct agent for the Datathon.
 
     Args:
-        tools: Lista de ferramentas (≥ 3 obrigatório).
-        model_name: Modelo LLM a utilizar.
-        temperature: Temperatura de geração.
+        tools: List of tools (≥ 3 required).
+        model_name: LLM model to use.
+        temperature: Generation temperature.
 
     Returns:
-        AgentExecutor configurado.
+        Configured AgentExecutor.
     """
     if len(tools) < 3:
-        logger.warning("Datathon exige ≥ 3 tools. Fornecidas: %d", len(tools))
+        logger.warning("Datathon requires ≥ 3 tools. Provided: %d", len(tools))
 
     llm = ChatOpenAI(model=model_name, temperature=temperature)
     agent = create_react_agent(llm=llm, tools=tools, prompt=REACT_PROMPT)
@@ -646,13 +646,13 @@ def create_datathon_agent(
     )
 ```
 
-### RAGAS Evaluation (Etapa 3)
+### RAGAS Evaluation (Stage 3)
 
 ```python
 # evaluation/ragas_eval.py
-"""Avaliação do pipeline RAG com RAGAS — 4 métricas obrigatórias.
+"""RAG pipeline evaluation with RAGAS — 4 required metrics.
 
-Referência: Es et al. (2024) — RAGAS: Automated Evaluation of Retrieval
+Reference: Es et al. (2024) — RAGAS: Automated Evaluation of Retrieval
             Augmented Generation. https://arxiv.org/abs/2309.15217
 """
 import json
@@ -674,20 +674,20 @@ def evaluate_rag_pipeline(
     golden_set_path: str,
     rag_fn,
 ) -> dict[str, float]:
-    """Avalia pipeline RAG contra golden set.
+    """Evaluate RAG pipeline against golden set.
 
     Args:
-        golden_set_path: Caminho para JSON com golden set.
-        rag_fn: Função que recebe query e retorna
+        golden_set_path: Path to JSON with golden set.
+        rag_fn: Function that takes a query and returns
                 (answer, contexts).
 
     Returns:
-        Dicionário com 4 métricas RAGAS.
+        Dictionary with 4 RAGAS metrics.
     """
     with open(golden_set_path) as f:
         golden_set = json.load(f)
 
-    # Gera respostas do pipeline
+    # Generate pipeline responses
     results = []
     for item in golden_set:
         answer, contexts = rag_fn(item["query"])
@@ -700,7 +700,7 @@ def evaluate_rag_pipeline(
 
     dataset = Dataset.from_list(results)
 
-    # Avaliação RAGAS — 4 métricas obrigatórias
+    # RAGAS evaluation — 4 required metrics
     scores = evaluate(
         dataset,
         metrics=[
@@ -722,13 +722,13 @@ def evaluate_rag_pipeline(
     return metrics
 ```
 
-### Guardrails de Input e Output (Etapa 4)
+### Input and Output Guardrails (Stage 4)
 
 ```python
 # src/security/guardrails.py
-"""Guardrails de segurança para input e output do agente.
+"""Security guardrails for agent input and output.
 
-Referência: OWASP Top 10 for LLM Applications (2025)
+Reference: OWASP Top 10 for LLM Applications (2025)
             https://owasp.org/www-project-top-10-for-large-language-model-applications/
 """
 import logging
@@ -741,9 +741,9 @@ logger = logging.getLogger(__name__)
 
 
 class InputGuardrail:
-    """Valida e sanitiza input do usuário antes de enviar ao LLM."""
+    """Validates and sanitizes user input before sending to the LLM."""
 
-    # Padrões comuns de prompt injection
+    # Common prompt injection patterns
     INJECTION_PATTERNS = [
         r"ignore\s+(all\s+)?previous\s+instructions",
         r"you\s+are\s+now\s+a",
@@ -760,29 +760,29 @@ class InputGuardrail:
         ]
 
     def validate(self, user_input: str) -> tuple[bool, str]:
-        """Valida input do usuário.
+        """Validate user input.
 
         Args:
-            user_input: Texto do usuário.
+            user_input: User text.
 
         Returns:
-            Tupla (is_valid, reason).
+            Tuple (is_valid, reason).
         """
         # Check 1: Prompt injection detection
         for pattern in self._compiled_patterns:
             if pattern.search(user_input):
-                logger.warning("Prompt injection detectado: %s", user_input[:100])
-                return False, "Input bloqueado: padrão suspeito detectado."
+                logger.warning("Prompt injection detected: %s", user_input[:100])
+                return False, "Input blocked: suspicious pattern detected."
 
-        # Check 2: Tamanho máximo (evitar context stuffing)
+        # Check 2: Maximum length (prevent context stuffing)
         if len(user_input) > 4096:
-            return False, "Input bloqueado: excede tamanho máximo (4096 chars)."
+            return False, "Input blocked: exceeds maximum length (4096 chars)."
 
         return True, "OK"
 
 
 class OutputGuardrail:
-    """Valida e sanitiza output do LLM antes de retornar ao usuário."""
+    """Validates and sanitizes LLM output before returning to the user."""
 
     def __init__(self, language: str = "pt"):
         self.analyzer = AnalyzerEngine()
@@ -790,13 +790,13 @@ class OutputGuardrail:
         self.language = language
 
     def sanitize(self, llm_output: str) -> str:
-        """Remove PII do output do LLM.
+        """Remove PII from LLM output.
 
         Args:
-            llm_output: Texto gerado pelo LLM.
+            llm_output: Text generated by the LLM.
 
         Returns:
-            Texto sanitizado.
+            Sanitized text.
         """
         results = self.analyzer.analyze(
             text=llm_output,
@@ -805,7 +805,7 @@ class OutputGuardrail:
         )
 
         if results:
-            logger.warning("PII detectado no output: %d entidades", len(results))
+            logger.warning("PII detected in output: %d entities", len(results))
             anonymized = self.anonymizer.anonymize(
                 text=llm_output,
                 analyzer_results=results,
@@ -815,7 +815,7 @@ class OutputGuardrail:
         return llm_output
 ```
 
-### GitHub Actions CI (Etapa 2)
+### GitHub Actions CI (Stage 2)
 
 ```yaml
 # .github/workflows/ci.yml
@@ -874,48 +874,48 @@ jobs:
 
 ---
 
-## Checklist de Entrega Final
+## Final Delivery Checklist
 
-Use este checklist como guia antes do Demo Day:
+Use this checklist as a guide before Demo Day:
 
-### Etapa 1 — Dados + Baseline
-- [ ] EDA documentada com insights relevantes para o problema da empresa
-- [ ] Baseline treinado e métricas reportadas no MLflow
-- [ ] Pipeline versionado (DVC + Docker) e reprodutível
-- [ ] Métricas de negócio mapeadas para métricas técnicas
-- [ ] `pyproject.toml` com todas as dependências
+### Stage 1 — Data + Baseline
+- [ ] Documented EDA with relevant insights for the company problem
+- [ ] Trained baseline with metrics reported in MLflow
+- [ ] Versioned pipeline (DVC + Docker) and reproducible
+- [ ] Business metrics mapped to technical metrics
+- [ ] `pyproject.toml` with all dependencies
 
-### Etapa 2 — LLM + Agente
-- [ ] LLM servido via API com quantização aplicada
-- [ ] Agente ReAct funcional com ≥ 3 tools relevantes ao domínio
-- [ ] RAG retornando contexto relevante dos dados fornecidos
-- [ ] CI/CD pipeline funcional (GitHub Actions)
-- [ ] Benchmark documentado com ≥ 3 configurações
+### Stage 2 — LLM + Agent
+- [ ] LLM served via API with quantization applied
+- [ ] Functional ReAct agent with ≥ 3 domain-relevant tools
+- [ ] RAG returning relevant context from provided data
+- [ ] Functional CI/CD pipeline (GitHub Actions)
+- [ ] Documented benchmark with ≥ 3 configurations
 
-### Etapa 3 — Avaliação + Observabilidade
-- [ ] Golden set com ≥ 20 pares relevantes ao domínio
-- [ ] RAGAS: 4 métricas calculadas e reportadas
-- [ ] LLM-as-judge com ≥ 3 critérios (incluindo critério de negócio)
-- [ ] Telemetria e dashboard funcionando end-to-end
-- [ ] Detecção de drift implementada e documentada
+### Stage 3 — Evaluation + Observability
+- [ ] Golden set with ≥ 20 domain-relevant pairs
+- [ ] RAGAS: 4 metrics calculated and reported
+- [ ] LLM-as-judge with ≥ 3 criteria (including business criterion)
+- [ ] Telemetry and dashboard working end-to-end
+- [ ] Drift detection implemented and documented
 
-### Etapa 4 — Segurança + Governança
-- [ ] OWASP mapping com ≥ 5 ameaças e mitigações
-- [ ] Guardrails de input e output funcionais
-- [ ] ≥ 5 cenários adversariais testados e documentados
-- [ ] Plano LGPD aplicado ao caso real
-- [ ] Explicabilidade e fairness documentados
-- [ ] System Card completo
+### Stage 4 — Security + Governance
+- [ ] OWASP mapping with ≥ 5 threats and mitigations
+- [ ] Functional input and output guardrails
+- [ ] ≥ 5 adversarial scenarios tested and documented
+- [ ] LGPD plan applied to the real case
+- [ ] Explainability and fairness documented
+- [ ] Complete System Card
 
 ### Demo Day
-- [ ] Pitch ≤ 10 min: Problema → Abordagem → Demo → Resultados → Impacto
-- [ ] Ensaio prévio com timer
-- [ ] Backup: slides offline caso a demo falhe
-- [ ] Preparação para Q&A técnico e de negócio
+- [ ] Pitch ≤ 10 min: Problem → Approach → Demo → Results → Impact
+- [ ] Prior rehearsal with timer
+- [ ] Backup: offline slides in case demo fails
+- [ ] Preparation for technical and business Q&A
 
 ---
 
-## Distribuição dos Pesos na Avaliação
+## Evaluation Weight Distribution
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {
@@ -926,38 +926,38 @@ Use este checklist como guia antes do Demo Day:
   'secondaryColor':'#BAE1FF',
   'tertiaryColor':'#FFFFFF'
 }}}%%
-pie title Distribuição de Pesos — Datathon Fase 05
-    "Pipeline de dados + baseline (Fases 01-02)" : 10
-    "LLM serving + agente (Fases 03+05)" : 15
-    "Avaliação de qualidade (Fase 05)" : 10
-    "Observabilidade + monitoramento (Fases 03-05)" : 10
-    "Segurança + guardrails (Fase 05)" : 10
-    "Governança + conformidade (Fase 04)" : 5
-    "Documentação + arquitetura" : 5
+pie title Weight Distribution — Datathon Phase 05
+    "Data pipeline + baseline (Phases 01-02)" : 10
+    "LLM serving + agent (Phases 03+05)" : 15
+    "Quality evaluation (Phase 05)" : 10
+    "Observability + monitoring (Phases 03-05)" : 10
+    "Security + guardrails (Phase 05)" : 10
+    "Governance + compliance (Phase 04)" : 5
+    "Documentation + architecture" : 5
     "PyTorch + MLflow" : 5
-    "Critérios de negócio (Empresa)" : 30
+    "Business criteria (Company)" : 30
 ```
 
 ---
 
-## Referências
+## References
 
-### Acadêmicas
+### Academic
 1. Yao, S. et al. (2023). _"ReAct: Synergizing Reasoning and Acting in Language Models"_. ICLR 2023. https://arxiv.org/abs/2210.03629
 2. Es, S. et al. (2024). _"RAGAS: Automated Evaluation of Retrieval Augmented Generation"_. https://arxiv.org/abs/2309.15217
 3. Breck, E. et al. (2017). _"The ML Test Score: A Rubric for ML Production Readiness and Technical Debt Reduction"_. IEEE BigData.
 4. Mitchell, M. et al. (2019). _"Model Cards for Model Reporting"_. FAT* Conference.
 5. Sculley, D. et al. (2015). _"Hidden Technical Debt in Machine Learning Systems"_. NeurIPS.
 
-### Frameworks e Guias
+### Frameworks and Guides
 6. Microsoft (2024). _"MLOps Maturity Model"_. Azure ML Documentation.
 7. Google (2023). _"Rules of Machine Learning: Best Practices for ML Engineering"_.
 8. Google (2023). _"Practitioners Guide to MLOps"_.
 9. OWASP (2025). _"OWASP Top 10 for Large Language Model Applications"_. https://owasp.org/www-project-top-10-for-large-language-model-applications/
 
-### Regulatórias
-10. Brasil (2018). _Lei nº 13.709/2018 (LGPD)_ — Proteção de dados pessoais.
+### Regulatory
+10. Brazil (2018). _Law No. 13,709/2018 (LGPD)_ — Personal Data Protection.
 
-### Repositórios de Referência
-11. FIAP (2025). _MLET Pós-Tech_ — Repositório `mlet`. Fases 01–05.
-12. FIAP (2025). _Materiais MLET_ — Repositório `Materiais-MLET`. Conteúdo técnico executável.
+### Reference Repositories
+11. FIAP (2025). _MLET Post-Tech_ — Repository `mlet`. Phases 01–05.
+12. FIAP (2025). _MLET Materials_ — Repository `Materiais-MLET`. Executable technical content.
