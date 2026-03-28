@@ -76,6 +76,9 @@ def render_sidebar() -> str:
             "📊 Stock Predictions": "Predictions",
             "📈 Model Metrics": "Model Metrics",
             "🧠 Model Architecture": "Model Schema",
+            "🔍 Observability": "Observability",
+            "📋 Evaluation": "Evaluation",
+            "🤖 AI Agent": "Agent",
         }
 
         selected = st.radio("Select a page:", list(pages.keys()), label_visibility="collapsed")

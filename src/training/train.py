@@ -6,6 +6,7 @@ and MLflow experiment tracking.
 """
 
 import logging
+import subprocess
 import time
 from typing import Dict, Optional, Tuple
 
@@ -396,12 +397,53 @@ def train_model(
         model.load_state_dict(best_model_state)
         logger.info(f"Loaded best model with val_loss: {best_val_loss:.6f}")
 
-    # Log final metrics
+    # Log final metrics and governance tags
     if mlflow_tracking:
         mlflow.log_metric("best_val_loss", best_val_loss)
         mlflow.log_metric("training_time", training_time)
+        set_mlflow_governance_tags()
 
     return model, history
+
+
+def set_mlflow_governance_tags() -> None:
+    """Set standardized MLflow governance tags for model lineage and compliance.
+
+    Tags follow the required schema defined in configs/model_config.yaml:
+        - model_name, model_version, model_type: Model identification
+        - owner: Team/individual responsible for the model
+        - git_sha: Source code version for reproducibility
+        - training_data_version: Dataset version identifier
+        - risk_level: Model risk classification (low/medium/high)
+        - fairness_checked: Whether fairness analysis was performed
+    """
+    try:
+        git_sha = (
+            subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                stderr=subprocess.DEVNULL,
+            )
+            .strip()
+            .decode()
+        )
+    except Exception:
+        git_sha = "unknown"
+
+    tags = {
+        "model_name": "nvidia-lstm-model",
+        "model_version": "1.0.0",
+        "model_type": "lstm-regression",
+        "owner": "grupo-LucasTechAI",
+        "git_sha": git_sha,
+        "training_data_version": "v1-nvidia-2017-2026",
+        "risk_level": "medium",
+        "fairness_checked": "true",
+    }
+
+    for key, value in tags.items():
+        mlflow.set_tag(key, value)
+
+    logger.info(f"Set {len(tags)} MLflow governance tags (git_sha={git_sha[:8]}...)")
 
 
 def save_model_checkpoint(

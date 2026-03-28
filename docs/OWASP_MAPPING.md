@@ -1,131 +1,131 @@
-# OWASP Top 10 for LLM Applications — Mapeamento
+# OWASP Top 10 for LLM Applications — Mapping
 
-## Referência
+## Reference
 
 [OWASP Top 10 for Large Language Model Applications (2025)](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 
 ---
 
-## Mapeamento de Riscos e Mitigações
+## Risk Mapping and Mitigations
 
 ### LLM01: Prompt Injection
 
-| Aspecto | Detalhe |
-|---------|---------|
-| **Risco** | Atacante manipula o prompt do agente para executar ações não autorizadas |
-| **Nível** | 🟡 Médio |
-| **Mitigação** | `InputGuardrail` com 16 padrões regex de prompt injection |
-| **Implementação** | `src/security/guardrails.py` — `InputGuardrail._check_injection()` |
-| **Padrões detectados** | "ignore previous instructions", "system:", "jailbreak", "DAN mode", "bypass safety", "reveal system prompt", entre outros |
-| **Ação** | Input bloqueado antes de chegar ao LLM |
+| Aspect | Detail |
+|--------|--------|
+| **Risk** | Attacker manipulates the agent's prompt to execute unauthorized actions |
+| **Level** | 🟡 Medium |
+| **Mitigation** | `InputGuardrail` with 16 regex patterns for prompt injection |
+| **Implementation** | `src/security/guardrails.py` — `InputGuardrail._check_injection()` |
+| **Detected patterns** | "ignore previous instructions", "system:", "jailbreak", "DAN mode", "bypass safety", "reveal system prompt", among others |
+| **Action** | Input blocked before reaching the LLM |
 
 ### LLM02: Insecure Output Handling
 
-| Aspecto | Detalhe |
-|---------|---------|
-| **Risco** | Output do LLM contém conteúdo nocivo, PII ou instruções executáveis |
-| **Nível** | 🟡 Médio |
-| **Mitigação** | `OutputGuardrail` com PII detection, content filtering e disclaimers |
-| **Implementação** | `src/security/guardrails.py` — `OutputGuardrail.validate()` |
-| **Ações** | PII removido (Presidio), conteúdo nocivo bloqueado, disclaimers adicionados |
+| Aspect | Detail |
+|--------|--------|
+| **Risk** | LLM output contains harmful content, PII, or executable instructions |
+| **Level** | 🟡 Medium |
+| **Mitigation** | `OutputGuardrail` with PII detection, content filtering, and disclaimers |
+| **Implementation** | `src/security/guardrails.py` — `OutputGuardrail.validate()` |
+| **Actions** | PII removed (Presidio), harmful content blocked, disclaimers added |
 
 ### LLM03: Training Data Poisoning
 
-| Aspecto | Detalhe |
-|---------|---------|
-| **Risco** | Dados de treinamento comprometidos afetam as previsões |
-| **Nível** | 🟢 Baixo |
-| **Mitigação** | Dados de fonte confiável (Yahoo Finance), drift detection (PSI) |
-| **Implementação** | `src/monitoring/drift.py`, `src/etl/preprocessing.py` |
-| **Ação** | PSI > 0.2 aciona alerta de retreino |
+| Aspect | Detail |
+|--------|--------|
+| **Risk** | Compromised training data affects predictions |
+| **Level** | 🟢 Low |
+| **Mitigation** | Data from trusted source (Yahoo Finance), drift detection (PSI) |
+| **Implementation** | `src/monitoring/drift.py`, `src/etl/preprocessing.py` |
+| **Action** | PSI > 0.2 triggers retraining alert |
 
 ### LLM04: Model Denial of Service
 
-| Aspecto | Detalhe |
-|---------|---------|
-| **Risco** | Inputs extremamente longos ou complexos sobrecarregam o sistema |
-| **Nível** | 🟡 Médio |
-| **Mitigação** | Max input length (2000 chars), max iterations (8), timeouts |
-| **Implementação** | `src/security/guardrails.py` — `MAX_INPUT_LENGTH`, `src/agent/react_agent.py` — `max_iterations` |
-| **Ação** | Inputs grandes rejeitados, loops do agente limitados |
+| Aspect | Detail |
+|--------|--------|
+| **Risk** | Extremely long or complex inputs overload the system |
+| **Level** | 🟡 Medium |
+| **Mitigation** | Max input length (2000 chars), max iterations (8), timeouts |
+| **Implementation** | `src/security/guardrails.py` — `MAX_INPUT_LENGTH`, `src/agent/react_agent.py` — `max_iterations` |
+| **Action** | Large inputs rejected, agent loops limited |
 
 ### LLM05: Supply Chain Vulnerabilities
 
-| Aspecto | Detalhe |
-|---------|---------|
-| **Risco** | Dependências comprometidas (pip packages) |
-| **Nível** | 🟡 Médio |
-| **Mitigação** | `pip-audit` no CI, versões mínimas fixadas em requirements.txt |
-| **Implementação** | `.github/workflows/ci.yml` — step pip-audit |
-| **Ação** | CI falha se vulnerabilidades conhecidas são detectadas |
+| Aspect | Detail |
+|--------|--------|
+| **Risk** | Compromised dependencies (pip packages) |
+| **Level** | 🟡 Medium |
+| **Mitigation** | `pip-audit` in CI, minimum versions pinned in requirements.txt |
+| **Implementation** | `.github/workflows/ci.yml` — pip-audit step |
+| **Action** | CI fails if known vulnerabilities are detected |
 
 ### LLM06: Sensitive Information Disclosure
 
-| Aspecto | Detalhe |
-|---------|---------|
-| **Risco** | LLM expõe PII, chaves de API ou dados sensíveis |
-| **Nível** | 🟡 Médio |
-| **Mitigação** | PII detection + anonymization (Presidio), env vars para secrets |
-| **Implementação** | `src/security/pii_detection.py`, `src/security/guardrails.py` |
-| **Entidades** | CPF, email, telefone, cartão de crédito, IP |
-| **Ação** | PII detectado é substituído por `<PII_REDACTED>` |
+| Aspect | Detail |
+|--------|--------|
+| **Risk** | LLM exposes PII, API keys, or sensitive data |
+| **Level** | 🟡 Medium |
+| **Mitigation** | PII detection + anonymization (Presidio), env vars for secrets |
+| **Implementation** | `src/security/pii_detection.py`, `src/security/guardrails.py` |
+| **Entities** | CPF, email, phone, credit card, IP |
+| **Action** | Detected PII replaced with `<PII_REDACTED>` |
 
 ### LLM07: Insecure Plugin Design
 
-| Aspecto | Detalhe |
-|---------|---------|
-| **Risco** | Tools do agente executam ações não autorizadas |
-| **Nível** | 🟢 Baixo |
-| **Mitigação** | Tools são read-only, restritas a dados financeiros da NVIDIA |
-| **Implementação** | `src/agent/tools.py` — 4 tools controladas |
+| Aspect | Detail |
+|--------|--------|
+| **Risk** | Agent tools execute unauthorized actions |
+| **Level** | 🟢 Low |
+| **Mitigation** | Tools are read-only, restricted to NVIDIA financial data |
+| **Implementation** | `src/agent/tools.py` — 4 controlled tools |
 | **Tools** | query_stock_data (read), predict (inference), get_metrics (read), search_documents (read) |
-| **Ação** | Nenhuma tool permite escrita ou acesso ao sistema de arquivos |
+| **Action** | No tool allows writing or file system access |
 
 ### LLM08: Excessive Agency
 
-| Aspecto | Detalhe |
-|---------|---------|
-| **Risco** | Agente executa ações além do escopo permitido |
-| **Nível** | 🟢 Baixo |
-| **Mitigação** | Max iterations (8), topic validation, tools restritas |
-| **Implementação** | `src/agent/react_agent.py`, `src/security/guardrails.py` |
-| **Ação** | Agente limitado a consultas e previsões (sem ações externas) |
+| Aspect | Detail |
+|--------|--------|
+| **Risk** | Agent executes actions beyond the permitted scope |
+| **Level** | 🟢 Low |
+| **Mitigation** | Max iterations (8), topic validation, restricted tools |
+| **Implementation** | `src/agent/react_agent.py`, `src/security/guardrails.py` |
+| **Action** | Agent limited to queries and predictions (no external actions) |
 
 ### LLM09: Overreliance
 
-| Aspecto | Detalhe |
-|---------|---------|
-| **Risco** | Usuário confia cegamente nas previsões para investir |
-| **Nível** | 🔴 Alto |
-| **Mitigação** | Disclaimers obrigatórios, intervalos de confiança, Model Card |
-| **Implementação** | `src/security/guardrails.py` — `OutputGuardrail._is_prediction_query()`, `docs/MODEL_CARD.md` |
-| **Ação** | Disclaimer de risco adicionado automaticamente a respostas sobre previsões |
+| Aspect | Detail |
+|--------|--------|
+| **Risk** | User blindly trusts predictions for investment |
+| **Level** | 🔴 High |
+| **Mitigation** | Mandatory disclaimers, confidence intervals, Model Card |
+| **Implementation** | `src/security/guardrails.py` — `OutputGuardrail._is_prediction_query()`, `docs/MODEL_CARD.md` |
+| **Action** | Risk disclaimer automatically added to prediction-related responses |
 
 ### LLM10: Model Theft
 
-| Aspecto | Detalhe |
-|---------|---------|
-| **Risco** | Acesso não autorizado aos pesos do modelo |
-| **Nível** | 🟢 Baixo |
-| **Mitigação** | Modelo servido via API (pesos não expostos), Docker isolation |
-| **Implementação** | `src/api/`, `Dockerfile.api` |
-| **Ação** | API retorna apenas previsões, nunca pesos ou arquitetura |
+| Aspect | Detail |
+|--------|--------|
+| **Risk** | Unauthorized access to model weights |
+| **Level** | 🟢 Low |
+| **Mitigation** | Model served via API (weights not exposed), Docker isolation |
+| **Implementation** | `src/api/`, `Dockerfile.api` |
+| **Action** | API returns only predictions, never weights or architecture |
 
 ---
 
-## Resumo de Cobertura
+## Coverage Summary
 
-| OWASP Risk | Nível | Status |
+| OWASP Risk | Level | Status |
 |------------|-------|--------|
-| LLM01: Prompt Injection | 🟡 Médio | ✅ Mitigado |
-| LLM02: Insecure Output | 🟡 Médio | ✅ Mitigado |
-| LLM03: Data Poisoning | 🟢 Baixo | ✅ Mitigado |
-| LLM04: Model DoS | 🟡 Médio | ✅ Mitigado |
-| LLM05: Supply Chain | 🟡 Médio | ✅ Mitigado |
-| LLM06: Info Disclosure | 🟡 Médio | ✅ Mitigado |
-| LLM07: Insecure Plugin | 🟢 Baixo | ✅ Mitigado |
-| LLM08: Excessive Agency | 🟢 Baixo | ✅ Mitigado |
-| LLM09: Overreliance | 🔴 Alto | ✅ Mitigado |
-| LLM10: Model Theft | 🟢 Baixo | ✅ Mitigado |
+| LLM01: Prompt Injection | 🟡 Medium | ✅ Mitigated |
+| LLM02: Insecure Output | 🟡 Medium | ✅ Mitigated |
+| LLM03: Data Poisoning | 🟢 Low | ✅ Mitigated |
+| LLM04: Model DoS | 🟡 Medium | ✅ Mitigated |
+| LLM05: Supply Chain | 🟡 Medium | ✅ Mitigated |
+| LLM06: Info Disclosure | 🟡 Medium | ✅ Mitigated |
+| LLM07: Insecure Plugin | 🟢 Low | ✅ Mitigated |
+| LLM08: Excessive Agency | 🟢 Low | ✅ Mitigated |
+| LLM09: Overreliance | 🔴 High | ✅ Mitigated |
+| LLM10: Model Theft | 🟢 Low | ✅ Mitigated |
 
-**Cobertura: 10/10 riscos mapeados e mitigados.**
+**Coverage: 10/10 risks mapped and mitigated.**

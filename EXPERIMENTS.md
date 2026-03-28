@@ -1,435 +1,584 @@
 # 📊 Experiments Documentation
 
-Documentação dos experimentos conduzidos durante o desenvolvimento da plataforma de previsão de preços da NVIDIA com LSTM.
+Documentation of experiments conducted during the development of the NVIDIA stock price prediction platform with LSTM.
 
-> Todos os experimentos são rastreados automaticamente via **MLflow**.  
-> Para visualizar: `bash scripts/start_mlflow_ui.sh` → http://localhost:5000
-
----
-
-## Visão Geral
-
-O projeto utiliza uma rede LSTM (Long Short-Term Memory) para prever o preço de fechamento das ações da NVIDIA (NVDA). Os experimentos exploram variações de arquitetura, hiperparâmetros, features e estratégias de treinamento.
-
-### Métricas Utilizadas
-
-| Métrica | Descrição |
-|---------|-----------|
-| **RMSE** | Root Mean Square Error — métrica principal de otimização |
-| **MAE** | Mean Absolute Error — robusta a outliers |
-| **MAPE** | Mean Absolute Percentage Error — erro relativo (%) |
-
-As métricas são calculadas na validação a cada época e registradas no MLflow (`val_rmse`, `val_mae`, `val_mape`).
+> All experiments are automatically tracked via **MLflow**.
+> To view: `bash scripts/start_mlflow_ui.sh` → http://localhost:5000
 
 ---
 
-## 1. Modelo Base (Baseline)
+## Overview
 
-### Experimento 1.1: LSTM Simples
+The project uses an LSTM (Long Short-Term Memory) network to predict the closing price of NVIDIA (NVDA) stock. The experiments explore variations in architecture, hyperparameters, features, and training strategies.
 
-**Objetivo**: Estabelecer baseline com arquitetura mínima.
+### Metrics Used
 
-| Parâmetro | Valor |
+| Metric | Description |
+|--------|-------------|
+| **RMSE** | Root Mean Square Error — primary optimization metric |
+| **MAE** | Mean Absolute Error — robust to outliers |
+| **MAPE** | Mean Absolute Percentage Error — relative error (%) |
+
+Metrics are computed on the validation set every epoch and logged in MLflow (`val_rmse`, `val_mae`, `val_mape`).
+
+---
+
+## 1. Baseline Model
+
+### Experiment 1.1: Simple LSTM
+
+**Objective**: Establish a baseline with a minimal architecture.
+
+| Parameter | Value |
 |-----------|-------|
-| Camadas LSTM | 1 |
+| LSTM Layers | 1 |
 | Hidden Size | 64 |
 | Dropout | 0.0 (single layer) |
-| Sequence Length | 30 dias |
-| Features | Close (univariada) |
+| Sequence Length | 30 days |
+| Features | Close (univariate) |
 | Learning Rate | 0.001 |
 | Epochs | 100 (early stopping, patience=10) |
 | Batch Size | 32 |
 
-**Achados**:
-- Modelo simples converge rapidamente (~20 epochs)
-- Captura tendências gerais, mas perde variações de curto prazo
-- Serve como baseline para comparação com arquiteturas mais complexas
+**Findings**:
+- Simple model converges quickly (~20 epochs)
+- Captures general trends but misses short-term variations
+- Serves as a baseline for comparison with more complex architectures
 
-### Experimento 1.2: LSTM Profunda (Modelo Principal)
+### Experiment 1.2: Deep LSTM (Main Model)
 
-**Objetivo**: Aumentar capacidade do modelo com mais camadas e features.
+**Objective**: Increase model capacity with more layers and features.
 
-| Parâmetro | Valor |
+| Parameter | Value |
 |-----------|-------|
-| Camadas LSTM | 2 (stacked) |
+| LSTM Layers | 2 (stacked) |
 | Hidden Size | 128 |
-| Dropout | 0.2 (entre camadas) |
-| Sequence Length | 60 dias |
+| Dropout | 0.2 (between layers) |
+| Sequence Length | 60 days |
 | Features | OHLCV (5 features) |
 | Learning Rate | 0.001 |
 | Epochs | 100 (early stopping, patience=10) |
 | Batch Size | 32 |
-| Otimizador | Adam |
+| Optimizer | Adam |
 | Loss Function | MSE |
 | Gradient Clipping | max_norm=1.0 |
 
-**MLflow Run ID**: `ee17873ae3354481926bf70ac77130ef`  
-**Data**: 02/02/2026  
-**Framework**: PyTorch 2.10+CUDA, MLflow 3.8.1  
-**Tamanho do modelo**: ~800 KB (802.305 bytes)
+**MLflow Run ID**: `ee17873ae3354481926bf70ac77130ef`
+**Date**: 2026-02-02
+**Framework**: PyTorch 2.10+CUDA, MLflow 3.8.1
+**Model Size**: ~800 KB (802,305 bytes)
 
-**Resultados (escala normalizada 0-1)**:
+**Results (normalized scale 0–1)**:
 
-| Conjunto | Loss | RMSE | MAE | MAPE |
-|----------|------|------|-----|------|
-| **Validação** | 0.003162 | 0.053320 | 0.030938 | 30.64% |
-| **Teste** | 0.019251 | 0.137608 | 0.080397 | 192.36% |
+| Set | Loss | RMSE | MAE | MAPE |
+|-----|------|------|-----|------|
+| **Validation** | 0.003162 | 0.053320 | 0.030938 | 30.64% |
+| **Test** | 0.019251 | 0.137608 | 0.080397 | 192.36% |
 
-> **Nota sobre MAPE**: Os valores elevados de MAPE decorrem do cálculo em escala normalizada (0-1),
-> onde valores próximos de zero inflam o erro percentual. O RMSE e MAE são as métricas mais
-> representativas para este caso de uso.
+> **Note on MAPE**: The high MAPE values result from computation on the normalized scale (0–1),
+> where values close to zero inflate the percentage error. RMSE and MAE are the most
+> representative metrics for this use case.
 
-**Dados do treinamento**:
-- **Total de amostras**: 2.259 sequências (2.319 registros, seq_len=60)
-- **Split**: Train=1.581 / Val=339 / Test=339
+**Training Data**:
+- **Total samples**: 2,259 sequences (2,319 records, seq_len=60)
+- **Split**: Train=1,581 / Val=339 / Test=339
 
-**Artefatos gerados**:
-- `loss_curves.png` — Curvas de training loss vs validation loss
-- `predictions_vs_actual.png` — Previsão vs valores reais no conjunto de teste
-- `scaler.joblib` — MinMaxScaler para inverse transform das previsões
+**Generated Artifacts**:
+- `loss_curves.png` — Training loss vs validation loss curves
+- `predictions_vs_actual.png` — Prediction vs actual values on the test set
+- `scaler.joblib` — MinMaxScaler for inverse transform of predictions
 
-**Achados**:
-- 2 camadas LSTM com hidden=128 oferece bom equilíbrio entre capacidade e generalização
-- Dropout de 0.2 entre camadas previne overfitting efetivamente
-- Gradient clipping (max_norm=1.0) estabiliza o treinamento em dados financeiros voláteis
-- Early stopping tipicamente ativa entre epochs 40-60, indicando convergência adequada
-- Features OHLCV (5 dimensões) fornecem contexto de mercado mais rico que close-only
+**Findings**:
+- 2 LSTM layers with hidden=128 provides a good balance between capacity and generalization
+- Dropout of 0.2 between layers effectively prevents overfitting
+- Gradient clipping (max_norm=1.0) stabilizes training on volatile financial data
+- Early stopping typically triggers between epochs 40–60, indicating adequate convergence
+- OHLCV features (5 dimensions) provide richer market context than close-only
 
 ---
 
-## 2. Otimização de Hiperparâmetros (HPO)
+## 2. Hyperparameter Optimization (HPO)
 
-### Experimento 2.1: Busca Bayesiana com Optuna (20 trials)
+### Experiment 2.1: Bayesian Search with Optuna (20 trials)
 
-**Objetivo**: Encontrar hiperparâmetros ótimos via TPE Sampler.
+**Objective**: Find optimal hyperparameters via TPE Sampler.
 
-**Espaço de busca**:
+**Search Space**:
 
-| Hiperparâmetro | Range | Tipo |
+| Hyperparameter | Range | Type |
 |----------------|-------|------|
-| `num_layers` | [1, 4] | inteiro |
-| `hidden_size` | {32, 64, 128, 256} | categórico |
-| `learning_rate` | [1e-5, 1e-2] | float (escala log) |
+| `num_layers` | [1, 4] | integer |
+| `hidden_size` | {32, 64, 128, 256} | categorical |
+| `learning_rate` | [1e-5, 1e-2] | float (log scale) |
 | `dropout` | [0.1, 0.5] | float |
-| `sequence_length` | {30, 60, 90, 120} | categórico |
-| `batch_size` | {16, 32, 64, 128} | categórico |
+| `sequence_length` | {30, 60, 90, 120} | categorical |
+| `batch_size` | {16, 32, 64, 128} | categorical |
 
-**Configuração de treino por trial**:
-- Epochs: 50 (reduzido para HPO)
+**Training configuration per trial**:
+- Epochs: 50 (reduced for HPO)
 - Early stopping patience: 5
-- Otimizador: Adam
-- Objetivo: Minimizar val_RMSE
+- Optimizer: Adam
+- Objective: Minimize val_RMSE
 
-**Achados**:
-- Hidden size 128-256 consistentemente supera 32-64
-- Learning rate ótimo no range [5e-4, 2e-3]
-- Dropout entre 0.15-0.30 oferece melhor regularização
-- Sequence length de 60 dias é o ponto ideal (30 perde contexto, 90+ adiciona ruído)
-- Batch size 32 oferece bom trade-off entre velocidade e generalização
+**Findings**:
+- Hidden size 128–256 consistently outperforms 32–64
+- Optimal learning rate in the range [5e-4, 2e-3]
+- Dropout between 0.15–0.30 offers the best regularization
+- Sequence length of 60 days is the sweet spot (30 loses context, 90+ adds noise)
+- Batch size 32 offers a good trade-off between speed and generalization
 
-### Experimento 2.2: HPO Estendido (50+ trials)
+### Experiment 2.2: Extended HPO (50+ trials)
 
-**Objetivo**: Refinar busca com mais trials para convergência.
+**Objective**: Refine search with more trials for convergence.
 
-**Configuração**: Mesma do 2.1 com 50-100 trials.
+**Configuration**: Same as 2.1 with 50–100 trials.
 
-**Achados**:
-- A partir de ~40 trials, ganho marginal diminui significativamente
-- Top-5 configurações convergem para: 2 layers, hidden 128-256, lr ~0.001, dropout ~0.2
-- Confirma a configuração baseline (Exp 1.2) como robusta
+**Findings**:
+- From ~40 trials onward, marginal gain diminishes significantly
+- Top-5 configurations converge to: 2 layers, hidden 128–256, lr ~0.001, dropout ~0.2
+- Confirms the baseline configuration (Exp 1.2) as robust
 
 ---
 
-## 3. Engenharia de Features
+## 3. Feature Engineering
 
-### Experimento 3.1: Feature Única (Close)
+### Experiment 3.1: Single Feature (Close)
 
-| Parâmetro | Valor |
+| Parameter | Value |
 |-----------|-------|
 | Features | Close (1 feature) |
-| Normalização | MinMaxScaler (0-1) |
+| Normalization | MinMaxScaler (0–1) |
 
-**Prós**: Simples, menor risco de overfitting, treino mais rápido  
-**Contras**: Perde informação de volatilidade (high-low spread), volume e abertura
+**Pros**: Simple, lower risk of overfitting, faster training
+**Cons**: Loses volatility information (high-low spread), volume, and opening data
 
-### Experimento 3.2: Multi-Feature (OHLCV) — Configuração Adotada
+### Experiment 3.2: Multi-Feature (OHLCV) — Adopted Configuration
 
-| Parâmetro | Valor |
+| Parameter | Value |
 |-----------|-------|
 | Features | Open, High, Low, Close, Volume (5 features) |
-| Normalização | MinMaxScaler (0-1), aplicado feature-wise |
+| Normalization | MinMaxScaler (0–1), applied feature-wise |
 | input_size | 5 |
 
-**Prós**: Contexto de mercado mais rico, captura volatilidade e volume  
-**Contras**: Maior complexidade, necessita hidden_size >= 64
+**Pros**: Richer market context, captures volatility and volume
+**Cons**: Greater complexity, requires hidden_size >= 64
 
-**Achados**:
-- OHLCV melhora a captura de padrões de reversão e continuação
-- Volume como feature adicional ajuda em momentos de alta volatilidade
-- Normalização feature-wise é essencial para evitar dominância de features com escala maior
+**Findings**:
+- OHLCV improves capture of reversal and continuation patterns
+- Volume as an additional feature helps during high-volatility periods
+- Feature-wise normalization is essential to prevent dominance of features with larger scales
 
-### Experimento 3.3: Indicadores Técnicos
+### Experiment 3.3: Technical Indicators
 
-**Status**: Trabalho futuro  
-**Features planejadas**: RSI, MACD, Bollinger Bands, Médias Móveis  
-**Hipótese**: Indicadores técnicos podem melhorar previsões de curto prazo
+**Status**: Future work
+**Planned Features**: RSI, MACD, Bollinger Bands, Moving Averages
+**Hypothesis**: Technical indicators may improve short-term predictions
 
 ---
 
-## 4. Variações de Arquitetura
+## 4. Architecture Variations
 
-### Experimento 4.1: LSTM Unidirecional (Adotada)
+### Experiment 4.1: Unidirectional LSTM (Adopted)
 
-| Parâmetro | Valor |
+| Parameter | Value |
 |-----------|-------|
 | Bidirectional | False |
-| Parâmetros totais | ~200K |
+| Total Parameters | ~200K |
 
-**Justificativa**: Em séries temporais financeiras, informação futura não está disponível. LSTM unidirecional respeita a causalidade temporal.
+**Justification**: In financial time series, future information is not available. A unidirectional LSTM respects temporal causality.
 
-### Experimento 4.2: LSTM Bidirecional
+### Experiment 4.2: Bidirectional LSTM
 
-| Parâmetro | Valor |
+| Parameter | Value |
 |-----------|-------|
 | Bidirectional | True |
-| Parâmetros totais | ~400K (2x) |
+| Total Parameters | ~400K (2x) |
 
-**Achados**:
-- Dobra o número de parâmetros sem ganho proporcional em métricas
-- Em previsão de séries temporais, look-ahead não é realista
-- Maior risco de overfitting em datasets de tamanho moderado (~6.800 amostras)
+**Findings**:
+- Doubles the number of parameters without proportional metric gains
+- In time series prediction, look-ahead is unrealistic
+- Higher risk of overfitting on moderate-sized datasets (~6,800 samples)
 
-### Experimento 4.3: LSTM com Atenção
+### Experiment 4.3: LSTM with Attention
 
-**Status**: Trabalho futuro  
-**Hipótese**: Mecanismo de atenção pode focar em timesteps mais relevantes
-
----
-
-## 5. Análise de Sequence Length
-
-**Objetivo**: Determinar a janela de lookback ótima.
-
-| Sequence Length | Observações |
-|----------------|-------------|
-| 30 dias | Captura padrões de curto prazo; pode perder tendências sazonais |
-| **60 dias** | **Melhor equilíbrio**: captura tendências sem ruído excessivo |
-| 90 dias | Contexto longo; tendência a overfitting com dataset limitado |
-| 120 dias | Contexto estendido; tempo de treino maior, ganho marginal |
-
-**Achado principal**: 60 dias (aproximadamente 3 meses de trading) captura ciclos de mercado de curto-médio prazo sem adicionar ruído de regimes de mercado diferentes.
+**Status**: Future work
+**Hypothesis**: Attention mechanism can focus on more relevant timesteps
 
 ---
 
-## 6. Técnicas de Regularização
+## 5. Sequence Length Analysis
+
+**Objective**: Determine the optimal lookback window.
+
+| Sequence Length | Observations |
+|-----------------|-------------|
+| 30 days | Captures short-term patterns; may miss seasonal trends |
+| **60 days** | **Best balance**: captures trends without excessive noise |
+| 90 days | Long context; tendency to overfit with limited dataset |
+| 120 days | Extended context; longer training time, marginal gain |
+
+**Key Finding**: 60 days (approximately 3 months of trading) captures short-to-medium-term market cycles without adding noise from different market regimes.
+
+---
+
+## 6. Regularization Techniques
 
 ### 6.1 Dropout
 
-| Dropout | Observações |
+| Dropout | Observations |
 |---------|-------------|
-| 0.0 | Sem regularização — overfitting em ~20 epochs |
-| 0.1 | Regularização leve — bom para modelos simples |
-| **0.2** | **Adotado**: equilíbrio entre capacidade e generalização |
-| 0.3 | Regularização moderada — perda de expressividade |
-| 0.5 | Regularização forte — underfitting em modelos com 2 layers |
+| 0.0 | No regularization — overfitting at ~20 epochs |
+| 0.1 | Light regularization — good for simple models |
+| **0.2** | **Adopted**: balance between capacity and generalization |
+| 0.3 | Moderate regularization — loss of expressiveness |
+| 0.5 | Strong regularization — underfitting with 2-layer models |
 
-**Nota**: Dropout só é aplicado entre camadas LSTM (`dropout=0` se `num_layers=1`).
+**Note**: Dropout is only applied between LSTM layers (`dropout=0` if `num_layers=1`).
 
 ### 6.2 Early Stopping
 
-| Patience | Observações |
+| Patience | Observations |
 |----------|-------------|
-| 5 | Para cedo demais — modelo não converge completamente |
-| **10** | **Adotado**: permite recuperação de platôs temporários |
-| 15 | Treino mais longo sem ganho significativo |
-| 20 | Risco de overfitting se val_loss começa a subir |
+| 5 | Stops too early — model does not converge fully |
+| **10** | **Adopted**: allows recovery from temporary plateaus |
+| 15 | Longer training without significant gains |
+| 20 | Risk of overfitting if val_loss starts increasing |
 
 ### 6.3 Gradient Clipping
 
-**Configuração adotada**: `max_norm=1.0` (via `torch.nn.utils.clip_grad_norm_`)
+**Adopted configuration**: `max_norm=1.0` (via `torch.nn.utils.clip_grad_norm_`)
 
-**Achados**:
-- Essencial para estabilidade em dados financeiros (variações bruscas no preço)
-- Previne explosão de gradientes comuns em LSTM com backprop through time
-- max_norm=1.0 não prejudica velocidade de convergência
+**Findings**:
+- Essential for stability on financial data (sudden price swings)
+- Prevents gradient explosion common in LSTM with backprop through time
+- max_norm=1.0 does not impair convergence speed
 
 ---
 
-## 7. Estratégias de Treinamento
+## 7. Training Strategies
 
-### 7.1 Otimizador
+### 7.1 Optimizer
 
-| Otimizador | Observações |
-|------------|-------------|
-| **Adam** | **Adotado**: convergência rápida, bom default para LSTM |
-| SGD + momentum | Convergência mais lenta, pode generalizar melhor com tuning |
-| AdamW | Trabalho futuro: weight decay explícito |
+| Optimizer | Observations |
+|-----------|-------------|
+| **Adam** | **Adopted**: fast convergence, good default for LSTM |
+| SGD + momentum | Slower convergence, may generalize better with tuning |
+| AdamW | Future work: explicit weight decay |
 
-### 7.2 Impacto do Batch Size
+### 7.2 Batch Size Impact
 
 | Batch Size | Trade-offs |
 |------------|------------|
-| 16 | Atualizações mais frequentes, mais ruidosas; treino mais lento |
-| **32** | **Adotado**: bom equilíbrio velocidade/generalização |
-| 64 | Estimativas de gradiente mais estáveis; menos generalização |
-| 128 | Treino mais rápido; risco de convergir para mínimos rasos |
+| 16 | More frequent, noisier updates; slower training |
+| **32** | **Adopted**: good speed/generalization balance |
+| 64 | More stable gradient estimates; less generalization |
+| 128 | Faster training; risk of converging to shallow minima |
 
-### 7.3 Split de Dados
+### 7.3 Data Split
 
-**Configuração adotada**: 70% treino / 15% validação / 15% teste
+**Adopted configuration**: 70% train / 15% validation / 15% test
 
-**Achados**:
-- Split temporal (sem shuffle) é crítico para séries temporais — evita data leakage
-- 15% para validação é suficiente para early stopping confiável
-- Conjunto de teste reservado para avaliação final única
+**Findings**:
+- Temporal split (no shuffle) is critical for time series — avoids data leakage
+- 15% for validation is sufficient for reliable early stopping
+- Test set reserved for single final evaluation
 
 ---
 
-## 8. Métodos de Ensemble
+## 8. Ensemble Methods
 
 ### 8.1 Top-K Model Averaging
 
-**Status**: Trabalho futuro  
-**Abordagem**: Média das previsões dos top 3-5 modelos do HPO  
-**Benefício esperado**: Redução de variância nas previsões
+**Status**: Future work
+**Approach**: Average predictions from the top 3–5 HPO models
+**Expected benefit**: Variance reduction in predictions
 
-### 8.2 Ensemble Ponderado
+### 8.2 Weighted Ensemble
 
-**Status**: Trabalho futuro  
-**Abordagem**: Ponderar modelos por performance de validação
-
----
-
-## Melhores Práticas Identificadas
-
-### Preprocessamento de Dados
-1. **Normalização**: MinMaxScaler (0-1) funciona bem para dados financeiros
-2. **Sequências**: Manter ordem temporal — nunca embaralhar antes de criar sequências
-3. **Split temporal**: 70/15/15 com corte cronológico (sem shuffle)
-4. **Filtragem**: Dados a partir de 2017+ reduz ruído de regimes de mercado diferentes
-5. **Tratamento de MAPE**: Threshold de 1e-3 para evitar divisão por zero em valores normalizados
-
-### Arquitetura do Modelo
-1. **Hidden Size**: 128 fornece boa capacidade sem overfitting para ~6.800 amostras
-2. **Num Layers**: 2 camadas equilibra profundidade e estabilidade
-3. **Dropout**: 0.2 entre camadas é o ponto ideal
-4. **Inicialização**: Xavier (input weights) + Orthogonal (hidden weights)
-
-### Treinamento
-1. **Early Stopping**: Patience=10 previne overfitting, permite recuperação de platôs
-2. **Gradient Clipping**: max_norm=1.0 estabiliza LSTM em séries voláteis
-3. **Batch Size**: 32 equilibra velocidade e generalização
-4. **Learning Rate**: 0.001 (Adam) — ponto de partida robusto
-
-### Organização no MLflow
-1. **Métricas por época**: `train_loss`, `val_loss`, `val_rmse`, `val_mae`, `val_mape`
-2. **Métricas finais**: `best_val_loss`, `training_time`
-3. **Artefatos**: Modelo (.pth), scaler (.joblib), gráficos (.png)
-4. **Modelo registrado**: PyTorch flavor com conda/pip environments
+**Status**: Future work
+**Approach**: Weight models by validation performance
 
 ---
 
-## Registro de Execuções
+## 9. Champion-Challenger Pipeline
 
-### Run `ee17873a` — Modelo de Referência
+### 9.1 Automated Model Validation
 
-| Campo | Valor |
+**Objective**: Ensure new models outperform the production model before promotion.
+
+**Implementation**: `src/training/champion_challenger.py`
+
+| Parameter | Value |
+|-----------|-------|
+| Promotion threshold | δ RMSE ≤ −0.5% |
+| Compared metrics | RMSE, MAE, MAPE, R², Directional Accuracy |
+| Trigger | Drift detection or manual execution |
+| Logging | MLflow (experiment `champion_challenger`) |
+| Artifacts | `outputs/champion_challenger/latest_comparison.json` |
+
+**Pipeline flow**:
+1. **Drift detection** — Runs KS-test / PSI on recent data via `detect_drift_from_db()`
+2. **Challenger training** — If drift is detected, trains a new model with `train_model()`
+3. **Metric comparison** — Evaluates both on the holdout set with `evaluate_model()`
+4. **Promotion decision** — Promotes challenger if `rmse_delta_pct ≤ −0.005` (0.5%)
+5. **MLflow logging** — Logs metrics, parameters, and decision with tag `pipeline=champion_challenger`
+
+**Promotion criteria**:
+- ✅ Promote: Challenger RMSE is ≥0.5% better than champion
+- ⚠️ Keep: Improvement <0.5% (below threshold)
+- ❌ Keep: Challenger RMSE is worse than champion
+
+**Findings**:
+- The 0.5% threshold prevents promotions due to statistical noise
+- Full MLflow logging enables auditing of all promotion decisions
+- Pipeline integrated with drift detection closes the monitoring → retraining loop
+
+---
+
+## 10. Explainability
+
+### 10.1 Permutation Importance
+
+**Objective**: Quantify the contribution of each feature to the model's predictions.
+
+**Implementation**: `src/explainability/feature_importance.py`
+
+| Parameter | Value |
+|-----------|-------|
+| Method | Permutation Importance |
+| Base metric | RMSE |
+| Repetitions | 5 (for statistical stability) |
+| Analyzed features | Open, High, Low, Close, Volume |
+| Logging | MLflow (artifacts + metrics) |
+
+**Flow**:
+1. Evaluate baseline RMSE of the model on the test dataset
+2. For each feature: shuffle the column, recalculate RMSE, measure degradation
+3. Repeat N times to obtain mean and standard deviation
+4. Ranking: the feature with the greatest degradation = most important
+
+**Generated artifacts**:
+- `feature_importance.png` — Bar chart with importance per feature
+- `feature_importance.json` — Numerical data for reproducibility
+- Metrics logged in MLflow for each feature
+
+**Expected findings**:
+- Close and Volume tend to be the most important features for next-day prediction
+- Open and High/Low provide intraday range context
+- Importance may vary with market regimes (high vs. low volatility)
+
+---
+
+## 11. Evaluation Framework
+
+### 11.1 Golden Set
+
+**Location**: `data/golden_set/golden_set.json`
+
+A curated set of question-answer pairs to evaluate:
+- Quality of the RAG agent's responses
+- Faithfulness to retrieved context
+- Relevance of model predictions
+
+### 11.2 LLM-as-Judge
+
+**Implementation**: `evaluation/llm_judge.py`
+
+Uses an LLM as an evaluator to score responses on:
+- Relevance of the answer to the question
+- Factual accuracy based on the data
+- Completeness of the answer
+
+### 11.3 RAGAS Evaluation
+
+**Implementation**: `evaluation/ragas_eval.py`
+
+RAGAS framework for RAG pipeline evaluation:
+- **Faithfulness**: Is the answer faithful to the retrieved context?
+- **Answer Relevancy**: Is the answer relevant to the question?
+- **Context Precision**: Is the retrieved context precise?
+- **Context Recall**: Is the retrieved context complete?
+
+### 11.4 A/B Test Prompts
+
+**Implementation**: `evaluation/ab_test_prompts.py`
+
+Compares prompt variations to identify the most effective formulation for the agent.
+
+---
+
+## 12. Observability & Monitoring
+
+### 12.1 Monitoring Stack
+
+| Component | Function | Port |
+|-----------|----------|------|
+| **Prometheus** | Metrics collection | :9090 |
+| **Grafana** | Dashboards & alerts | :3000 |
+| **MLflow** | Experiment tracking | :5000 |
+| **Streamlit** | Interactive dashboard | :8501 |
+
+### 12.2 Drift Detection
+
+**Implementation**: `src/monitoring/drift.py`
+
+| Method | Description |
+|--------|-------------|
+| KS-test | Kolmogorov-Smirnov test for distribution differences |
+| PSI | Population Stability Index |
+| Evidently | Framework for drift reports (optional) |
+
+### 12.3 Dashboard Observability
+
+**Additional Streamlit tabs** (`src/dashboard/components/`):
+- **Observability**: Drift detection, champion-challenger status, telemetry links
+- **Evaluation**: Evaluation metrics, explainability, LLM-judge results
+- **AI Agent**: Interactive chat interface with RAG agent
+
+### 12.4 Grafana Dashboards
+
+**Provisioning**: `configs/grafana/`
+
+Pre-configured dashboards:
+- Inference metrics (latency, throughput)
+- Model metrics (RMSE, MAE over time)
+- Drift alerts
+
+---
+
+## Best Practices Identified
+
+### Data Preprocessing
+1. **Normalization**: MinMaxScaler (0–1) works well for financial data
+2. **Sequences**: Maintain temporal order — never shuffle before creating sequences
+3. **Temporal split**: 70/15/15 with chronological cutoff (no shuffle)
+4. **Filtering**: Data from 2017+ reduces noise from different market regimes
+5. **MAPE handling**: Threshold of 1e-3 to avoid division by zero on normalized values
+
+### Model Architecture
+1. **Hidden Size**: 128 provides good capacity without overfitting for ~6,800 samples
+2. **Num Layers**: 2 layers balances depth and stability
+3. **Dropout**: 0.2 between layers is the sweet spot
+4. **Initialization**: Xavier (input weights) + Orthogonal (hidden weights)
+
+### Training
+1. **Early Stopping**: Patience=10 prevents overfitting, allows recovery from plateaus
+2. **Gradient Clipping**: max_norm=1.0 stabilizes LSTM on volatile series
+3. **Batch Size**: 32 balances speed and generalization
+4. **Learning Rate**: 0.001 (Adam) — robust starting point
+
+### MLflow Organization
+1. **Per-epoch metrics**: `train_loss`, `val_loss`, `val_rmse`, `val_mae`, `val_mape`
+2. **Final metrics**: `best_val_loss`, `training_time`
+3. **Artifacts**: Model (.pth), scaler (.joblib), plots (.png)
+4. **Registered model**: PyTorch flavor with conda/pip environments
+
+---
+
+## Run Log
+
+### Run `ee17873a` — Reference Model
+
+| Field | Value |
 |-------|-------|
 | **Run ID** | `ee17873ae3354481926bf70ac77130ef` |
-| **Data** | 02/02/2026, 22:55 UTC |
+| **Date** | 2026-02-02, 22:55 UTC |
 | **Framework** | PyTorch 2.10.0+cu128 |
 | **MLflow** | 3.8.1 |
 | **Python** | 3.12.3 |
 | **Model ID** | `m-3e0081ef10d84a849bec198392752b10` |
-| **Model Size** | 802.305 bytes (~800 KB) |
-| **Arquitetura** | 2-layer LSTM, hidden=128, dropout=0.2 |
-| **Features** | OHLCV (5 dimensões) |
-| **Sequence Length** | 60 dias |
-| **Normalização** | MinMaxScaler (0-1) |
+| **Model Size** | 802,305 bytes (~800 KB) |
+| **Architecture** | 2-layer LSTM, hidden=128, dropout=0.2 |
+| **Features** | OHLCV (5 dimensions) |
+| **Sequence Length** | 60 days |
+| **Normalization** | MinMaxScaler (0–1) |
 
-**Artefatos**:
+**Artifacts**:
 
-| Artefato | Descrição |
-|----------|-----------|
-| `loss_curves.png` | Curvas de training loss vs validation loss por época |
-| `predictions_vs_actual.png` | Previsões do modelo vs valores reais no conjunto de teste |
-| `scaler.joblib` | MinMaxScaler serializado para inverse transform |
+| Artifact | Description |
+|----------|-------------|
+| `loss_curves.png` | Training loss vs validation loss curves per epoch |
+| `predictions_vs_actual.png` | Model predictions vs actual values on test set |
+| `scaler.joblib` | Serialized MinMaxScaler for inverse transform |
 
-Para visualizar métricas detalhadas e artefatos deste run:
+To view detailed metrics and artifacts for this run:
 ```bash
 bash scripts/start_mlflow_ui.sh
-# Acesse http://localhost:5000 → Experiment 1 → Run ee17873a
+# Go to http://localhost:5000 → Experiment 1 → Run ee17873a
 ```
 
 ---
 
-## Direções Futuras
+## Future Directions
 
-### Curto prazo
-- [ ] Walk-forward validation para avaliação mais robusta
-- [ ] Comparação com baselines ingênuos (último valor, média móvel)
-- [ ] Executar múltiplas seeds para significância estatística
+### Short-term
+- [x] Champion-Challenger pipeline for automated model validation
+- [x] Feature importance via permutation importance
+- [x] Dashboard observability tabs (drift, agent chat, evaluation)
+- [ ] Walk-forward validation for more robust evaluation
+- [ ] Comparison with naive baselines (last value, moving average)
+- [ ] Multiple seeds for statistical significance
 
-### Médio prazo
-- [ ] Adicionar indicadores técnicos como features (RSI, MACD, Bollinger)
-- [ ] Implementar mecanismo de atenção temporal
-- [ ] Testar ensemble dos top modelos do HPO
-- [ ] Intervalos de predição calibrados
+### Medium-term
+- [ ] Add technical indicators as features (RSI, MACD, Bollinger)
+- [ ] Implement temporal attention mechanism
+- [ ] Test ensemble of top HPO models
+- [ ] Calibrated prediction intervals
 
-### Longo prazo
-- [ ] Previsões multi-step diretas (vs. autoregressiva)
-- [ ] Transfer learning para outras ações
-- [ ] Integração com dados de sentimento (notícias, redes sociais)
-- [ ] Otimização de portfólio baseada em previsões
+### Long-term
+- [ ] Direct multi-step predictions (vs. autoregressive)
+- [ ] Transfer learning to other stocks
+- [ ] Integration with sentiment data (news, social media)
+- [ ] Portfolio optimization based on predictions
 
 ---
 
-## Template de Experimento
+## Experiment Template
 
-Ao documentar novos experimentos, usar o template abaixo:
+When documenting new experiments, use the template below:
 
 ```markdown
-### Experimento X.Y: [Nome]
+### Experiment X.Y: [Name]
 
-**Data**: YYYY-MM-DD
-**Objetivo**: [O que está sendo testado]
-**Hipótese**: [Resultado esperado]
+**Date**: YYYY-MM-DD
+**Objective**: [What is being tested]
+**Hypothesis**: [Expected result]
 
-**Configuração**:
-| Parâmetro | Valor |
+**Configuration**:
+| Parameter | Value |
 |-----------|-------|
-| Param 1 | valor |
-| Param 2 | valor |
+| Param 1 | value |
+| Param 2 | value |
 
-**Resultados**:
+**Results**:
 - RMSE: X.XXXX
 - MAE: X.XXXX
 - MAPE: X.XX%
 - MLflow Run ID: [run_id]
 
-**Achados**:
-1. Achado 1
-2. Achado 2
+**Findings**:
+1. Finding 1
+2. Finding 2
 
-**Próximos passos**:
-- Ação 1
-- Ação 2
+**Next steps**:
+- Action 1
+- Action 2
 ```
 
 ---
 
-## Reprodutibilidade
+## Reproducibility
 
-Todos os experimentos podem ser reproduzidos com:
+All experiments can be reproduced with:
 
-1. **MLflow Run ID** para parâmetros exatos e artefatos
-2. **Código-fonte**: `src/training/train.py`, `src/training/hyperparameter_search.py`
-3. **Dados**: `python3 scripts/run_etl_nvidia.py` (extrair dados atualizados)
-4. **Ambiente**: `requirements.txt` (versões fixas)
-5. **Treino**: `bash scripts/run_training.sh`
+1. **MLflow Run ID** for exact parameters and artifacts
+2. **Source code**: `src/training/train.py`, `src/training/hyperparameter_search.py`
+3. **Data**: `python3 scripts/run_etl_nvidia.py` (extract updated data)
+4. **Environment**: `requirements.txt` (pinned versions)
+5. **Training**: `bash scripts/run_training.sh`
 6. **HPO**: `bash scripts/run_hpo.sh <n_trials>`
 
 ---
 
-**Última atualização**: 2026-02-02  
-**Mantido por**: LucasTechAI
+**Last updated**: 2026-03-28
+**Maintained by**: LucasTechAI
