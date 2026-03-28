@@ -55,21 +55,26 @@ class TestTrackAgentQuery:
 class TestMetricObjects:
     def test_request_count_labels(self):
         from src.monitoring.metrics import REQUEST_COUNT
+
         REQUEST_COUNT.labels(method="GET", endpoint="/test", status_code="200").inc()
 
     def test_prediction_latency_observe(self):
         from src.monitoring.metrics import PREDICTION_LATENCY
+
         PREDICTION_LATENCY.observe(0.42)
 
     def test_model_loaded_gauge(self):
         from src.monitoring.metrics import MODEL_LOADED
+
         MODEL_LOADED.set(1)
 
     def test_drift_score_gauge(self):
         from src.monitoring.metrics import DRIFT_SCORE
+
         DRIFT_SCORE.set(0.15)
 
     def test_llm_token_usage(self):
         from src.monitoring.metrics import LLM_TOKEN_USAGE
+
         LLM_TOKEN_USAGE.labels(type="prompt").inc(100)
         LLM_TOKEN_USAGE.labels(type="completion").inc(50)

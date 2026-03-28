@@ -75,8 +75,12 @@ class TestCreateModel:
 
     def test_factory_custom(self):
         model = create_model(
-            input_size=3, hidden_size=64, num_layers=3,
-            dropout=0.1, bidirectional=True, output_size=3,
+            input_size=3,
+            hidden_size=64,
+            num_layers=3,
+            dropout=0.1,
+            bidirectional=True,
+            output_size=3,
         )
         assert model.hidden_size == 64
         assert model.num_layers == 3

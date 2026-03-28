@@ -16,6 +16,7 @@ from src.prediction.predict import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def device():
     return torch.device("cpu")
@@ -40,6 +41,7 @@ def last_sequence():
 # Tests — generate_forecast
 # ---------------------------------------------------------------------------
 
+
 class TestGenerateForecast:
     def test_output_shape(self, model_5feat, last_sequence, device):
         horizon = 7
@@ -59,6 +61,7 @@ class TestGenerateForecast:
 # ---------------------------------------------------------------------------
 # Tests — inverse_transform_predictions
 # ---------------------------------------------------------------------------
+
 
 class TestInverseTransformPredictions:
     def test_inverse_transform(self, tmp_path):
@@ -85,6 +88,7 @@ class TestInverseTransformPredictions:
 # ---------------------------------------------------------------------------
 # Tests — calculate_prediction_intervals
 # ---------------------------------------------------------------------------
+
 
 class TestCalculatePredictionIntervals:
     def test_interval_shapes(self):
@@ -119,6 +123,7 @@ class TestCalculatePredictionIntervals:
 # ---------------------------------------------------------------------------
 # Tests — save_predictions_to_csv
 # ---------------------------------------------------------------------------
+
 
 class TestSavePredictionsCsv:
     def test_save_1d(self, tmp_path):

@@ -10,14 +10,13 @@ from src.utils.database_manager import DatabaseError, DatabaseManager
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def db(tmp_path):
     """DatabaseManager backed by a temporary SQLite file."""
     db_path = str(tmp_path / "test.db")
     conn = sqlite3.connect(db_path)
-    conn.execute(
-        "CREATE TABLE stocks (id INTEGER PRIMARY KEY, symbol TEXT, price REAL)"
-    )
+    conn.execute("CREATE TABLE stocks (id INTEGER PRIMARY KEY, symbol TEXT, price REAL)")
     conn.execute("INSERT INTO stocks (symbol, price) VALUES ('NVDA', 100.0)")
     conn.execute("INSERT INTO stocks (symbol, price) VALUES ('AAPL', 200.0)")
     conn.commit()
@@ -29,11 +28,10 @@ def db(tmp_path):
 # Tests — CRUD
 # ---------------------------------------------------------------------------
 
+
 class TestInsert:
     def test_insert_returns_rowid(self, db):
-        row_id = db.insert(
-            "INSERT INTO stocks (symbol, price) VALUES (?, ?)", ("GOOG", 150.0)
-        )
+        row_id = db.insert("INSERT INTO stocks (symbol, price) VALUES (?, ?)", ("GOOG", 150.0))
         assert isinstance(row_id, int)
         assert row_id > 0
 
@@ -49,9 +47,7 @@ class TestInsert:
 class TestInsertMany:
     def test_batch_insert(self, db):
         rows = [("TSLA", 300.0), ("AMZN", 400.0)]
-        count = db.insert_many(
-            "INSERT INTO stocks (symbol, price) VALUES (?, ?)", rows
-        )
+        count = db.insert_many("INSERT INTO stocks (symbol, price) VALUES (?, ?)", rows)
         assert count == 2
 
     def test_non_insert_raises(self, db):
@@ -100,6 +96,7 @@ class TestDelete:
 # ---------------------------------------------------------------------------
 # Tests — table_exists / get_table_info
 # ---------------------------------------------------------------------------
+
 
 class TestTableUtils:
     def test_table_exists_true(self, db):

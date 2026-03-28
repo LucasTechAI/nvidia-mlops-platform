@@ -23,9 +23,7 @@ def render_observability_page():
         unsafe_allow_html=True,
     )
 
-    tab_drift, tab_champion, tab_telemetry = st.tabs(
-        ["📉 Drift Detection", "🏆 Champion-Challenger", "📊 Telemetry"]
-    )
+    tab_drift, tab_champion, tab_telemetry = st.tabs(["📉 Drift Detection", "🏆 Champion-Challenger", "📊 Telemetry"])
 
     with tab_drift:
         _render_drift_section()
@@ -71,8 +69,7 @@ def _render_drift_section():
         drift_detected = results.get("drift_detected", False)
         if drift_detected:
             st.markdown(
-                '<div class="warning-box">⚠️ <b>Drift Detected</b> — '
-                "Consider retraining the model.</div>",
+                '<div class="warning-box">⚠️ <b>Drift Detected</b> — Consider retraining the model.</div>',
                 unsafe_allow_html=True,
             )
         else:
@@ -147,8 +144,7 @@ def _display_comparison(data: dict):
 
     if promoted:
         st.markdown(
-            '<div class="success-box">🏆 <b>Challenger Promoted!</b> — '
-            "New model is now champion.</div>",
+            '<div class="success-box">🏆 <b>Challenger Promoted!</b> — New model is now champion.</div>',
             unsafe_allow_html=True,
         )
     else:

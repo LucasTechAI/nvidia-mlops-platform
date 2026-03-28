@@ -126,6 +126,7 @@ class TestIndexGoldenSet:
         with patch("src.agent.rag_pipeline.PROJECT_ROOT", MagicMock()):
             # Make the path not exist
             from pathlib import Path
+
             with patch.object(Path, "exists", return_value=False):
                 count = p.index_golden_set()
         # Should return 0 when file doesn't exist

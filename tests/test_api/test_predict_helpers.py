@@ -1,6 +1,5 @@
 """Extended tests for predict endpoint helper functions."""
 
-
 import numpy as np
 import pandas as pd
 import torch
@@ -41,18 +40,14 @@ class TestGenerateForecastWithUncertainty:
         seq = torch.randn(1, 10, 5)
         horizon = 5
         n_samples = 3
-        mean_preds, std_preds = generate_forecast_with_uncertainty(
-            model, seq, horizon, n_samples, device="cpu"
-        )
+        mean_preds, std_preds = generate_forecast_with_uncertainty(model, seq, horizon, n_samples, device="cpu")
         assert mean_preds.shape == (horizon,)
         assert std_preds.shape == (horizon,)
 
     def test_std_non_negative(self):
         model = NvidiaLSTM(input_size=5, hidden_size=16, num_layers=2, dropout=0.2, output_size=5)
         seq = torch.randn(1, 10, 5)
-        _, std_preds = generate_forecast_with_uncertainty(
-            model, seq, horizon=3, n_samples=5, device="cpu"
-        )
+        _, std_preds = generate_forecast_with_uncertainty(model, seq, horizon=3, n_samples=5, device="cpu")
         assert np.all(std_preds >= 0)
 
     def test_model_back_to_eval(self):

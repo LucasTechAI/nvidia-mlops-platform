@@ -102,9 +102,7 @@ class TestGetLastSequence:
 
     def test_returns_correct_shape(self):
         n = 100
-        df = pd.DataFrame(
-            {"Close": np.random.rand(n) * 100 + 100}
-        )
+        df = pd.DataFrame({"Close": np.random.rand(n) * 100 + 100})
         scaler = MinMaxScaler()
         scaler.fit(df[["Close"]].values)
 

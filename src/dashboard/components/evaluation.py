@@ -23,9 +23,7 @@ def render_evaluation_page():
         unsafe_allow_html=True,
     )
 
-    tab_metrics, tab_explain, tab_llm = st.tabs(
-        ["📊 Evaluation Metrics", "🔍 Explainability", "🤖 LLM Evaluation"]
-    )
+    tab_metrics, tab_explain, tab_llm = st.tabs(["📊 Evaluation Metrics", "🔍 Explainability", "🤖 LLM Evaluation"])
 
     with tab_metrics:
         _render_evaluation_metrics()
@@ -130,10 +128,7 @@ def _render_explainability():
         importance_data = results.get("feature_importance", {})
         if importance_data:
             df = pd.DataFrame(
-                [
-                    {"Feature": k, "Importance": v["mean"], "Std": v.get("std", 0)}
-                    for k, v in importance_data.items()
-                ]
+                [{"Feature": k, "Importance": v["mean"], "Std": v.get("std", 0)} for k, v in importance_data.items()]
             ).sort_values("Importance", ascending=False)
             st.dataframe(df, use_container_width=True)
 

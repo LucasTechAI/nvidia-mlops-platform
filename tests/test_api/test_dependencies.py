@@ -170,6 +170,7 @@ class TestModelStateLoadModel:
             scaler.fit(np.random.rand(10, 5))
             scaler_path = str(Path(tmpdir) / "scaler.joblib")
             import joblib
+
             joblib.dump(scaler, scaler_path)
 
             result = state.load_model(cp_path, scaler_path=scaler_path)

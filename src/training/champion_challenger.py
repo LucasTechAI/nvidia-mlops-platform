@@ -199,15 +199,15 @@ def compare_models(
         result.promote = True
         result.reason = (
             f"Challenger RMSE ({challenger_metrics.rmse:.4f}) is "
-            f"{abs(rmse_delta_pct)*100:.2f}% better than champion "
+            f"{abs(rmse_delta_pct) * 100:.2f}% better than champion "
             f"({champion_metrics.rmse:.4f}). Promoting."
         )
         logger.info("✅ PROMOTE: %s", result.reason)
     elif rmse_delta < 0:
         result.promote = False
         result.reason = (
-            f"Challenger RMSE improved by {abs(rmse_delta_pct)*100:.2f}% "
-            f"but below threshold ({threshold*100:.1f}%). Keeping champion."
+            f"Challenger RMSE improved by {abs(rmse_delta_pct) * 100:.2f}% "
+            f"but below threshold ({threshold * 100:.1f}%). Keeping champion."
         )
         logger.info("⚠️ NO PROMOTE (below threshold): %s", result.reason)
     else:

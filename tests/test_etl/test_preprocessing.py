@@ -1,6 +1,5 @@
 """Tests for ETL preprocessing module."""
 
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -19,6 +18,7 @@ from src.etl.preprocessing import (
 # ---------------------------------------------------------------------------
 # Tests — StockDataset
 # ---------------------------------------------------------------------------
+
 
 class TestStockDataset:
     def test_len(self):
@@ -47,14 +47,17 @@ class TestStockDataset:
 # Tests — normalize_features (ETL version)
 # ---------------------------------------------------------------------------
 
+
 class TestNormalizeFeatures:
     @pytest.fixture
     def df(self):
         np.random.seed(42)
-        return pd.DataFrame({
-            "Open": np.random.randn(100) * 10 + 100,
-            "Close": np.random.randn(100) * 10 + 100,
-        })
+        return pd.DataFrame(
+            {
+                "Open": np.random.randn(100) * 10 + 100,
+                "Close": np.random.randn(100) * 10 + 100,
+            }
+        )
 
     def test_minmax_range(self, df):
         data, scaler = normalize_features(df, ["Open", "Close"])
@@ -72,6 +75,7 @@ class TestNormalizeFeatures:
 
     def test_pre_fitted_scaler(self, df):
         from sklearn.preprocessing import MinMaxScaler
+
         scaler = MinMaxScaler()
         scaler.fit(df[["Open"]].values)
         data, _ = normalize_features(df, ["Open"], fit_scaler=False, scaler=scaler)
@@ -85,6 +89,7 @@ class TestNormalizeFeatures:
 # ---------------------------------------------------------------------------
 # Tests — create_sequences (ETL version)
 # ---------------------------------------------------------------------------
+
 
 class TestCreateSequences:
     def test_shapes(self):
@@ -102,6 +107,7 @@ class TestCreateSequences:
 # ---------------------------------------------------------------------------
 # Tests — train_val_test_split (ETL version)
 # ---------------------------------------------------------------------------
+
 
 class TestTrainValTestSplit:
     def test_default_split(self):
@@ -124,6 +130,7 @@ class TestTrainValTestSplit:
 # ---------------------------------------------------------------------------
 # Tests — create_data_loaders
 # ---------------------------------------------------------------------------
+
 
 class TestCreateDataLoaders:
     def test_loaders_created(self):
@@ -152,6 +159,7 @@ class TestCreateDataLoaders:
 # Tests — get_last_sequence
 # ---------------------------------------------------------------------------
 
+
 class TestGetLastSequence:
     def test_output_shape(self):
         from sklearn.preprocessing import MinMaxScaler
@@ -167,9 +175,11 @@ class TestGetLastSequence:
 # Tests — inverse_transform (ETL version)
 # ---------------------------------------------------------------------------
 
+
 class TestInverseTransform:
     def test_1d_input(self):
         from sklearn.preprocessing import MinMaxScaler
+
         scaler = MinMaxScaler()
         data = np.random.randn(50, 1).astype(np.float32)
         scaler.fit(data)
@@ -179,6 +189,7 @@ class TestInverseTransform:
 
     def test_2d_input(self):
         from sklearn.preprocessing import MinMaxScaler
+
         scaler = MinMaxScaler()
         data = np.random.randn(50, 3).astype(np.float32)
         scaler.fit(data)
@@ -188,6 +199,7 @@ class TestInverseTransform:
 
     def test_3d_input(self):
         from sklearn.preprocessing import MinMaxScaler
+
         scaler = MinMaxScaler()
         data_2d = np.random.randn(100, 3).astype(np.float32)
         scaler.fit(data_2d)

@@ -52,9 +52,7 @@ def render_agent_page():
             with st.spinner("Thinking..."):
                 response = _get_agent_response(user_input)
                 st.markdown(response)
-                st.session_state.chat_history.append(
-                    {"role": "assistant", "content": response}
-                )
+                st.session_state.chat_history.append({"role": "assistant", "content": response})
 
     # Sidebar controls
     with st.sidebar:
@@ -75,9 +73,7 @@ def render_agent_page():
         ]
         for example in examples:
             if st.button(f"📝 {example}", key=f"ex_{hash(example)}"):
-                st.session_state.chat_history.append(
-                    {"role": "user", "content": example}
-                )
+                st.session_state.chat_history.append({"role": "user", "content": example})
                 st.rerun()
 
 
@@ -104,7 +100,4 @@ def _get_agent_response(query: str) -> str:
         )
     except Exception as e:
         logger.error("Agent error: %s", str(e))
-        return (
-            f"⚠️ Agent encountered an error: {str(e)}\n\n"
-            "Make sure your LLM API key is configured in `.env`."
-        )
+        return f"⚠️ Agent encountered an error: {str(e)}\n\nMake sure your LLM API key is configured in `.env`."

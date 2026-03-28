@@ -1,12 +1,11 @@
 """Tests for the ReAct agent module."""
 
-
-
 from src.agent.react_agent import SYSTEM_PROMPT, ReActAgent
 
 # ---------------------------------------------------------------------------
 # Tests — initialization
 # ---------------------------------------------------------------------------
+
 
 class TestReActAgentInit:
     def test_default_init(self, monkeypatch):
@@ -41,6 +40,7 @@ class TestReActAgentInit:
 # Tests — _parse_action
 # ---------------------------------------------------------------------------
 
+
 class TestParseAction:
     def test_parse_valid_action(self):
         agent = ReActAgent()
@@ -67,6 +67,7 @@ class TestParseAction:
 # Tests — _parse_final_answer
 # ---------------------------------------------------------------------------
 
+
 class TestParseFinalAnswer:
     def test_parse_valid_final_answer(self):
         agent = ReActAgent()
@@ -92,6 +93,7 @@ class TestParseFinalAnswer:
 # Tests — _execute_tool
 # ---------------------------------------------------------------------------
 
+
 class TestExecuteTool:
     def test_unknown_tool(self):
         agent = ReActAgent()
@@ -110,6 +112,7 @@ class TestExecuteTool:
 # Tests — _call_llm
 # ---------------------------------------------------------------------------
 
+
 class TestCallLlm:
     def test_no_client_returns_fallback(self, monkeypatch):
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
@@ -123,6 +126,7 @@ class TestCallLlm:
 # ---------------------------------------------------------------------------
 # Tests — query
 # ---------------------------------------------------------------------------
+
 
 class TestQuery:
     def test_query_with_immediate_final_answer(self):
@@ -161,6 +165,7 @@ class TestQuery:
 # ---------------------------------------------------------------------------
 # Tests — SYSTEM_PROMPT
 # ---------------------------------------------------------------------------
+
 
 class TestSystemPrompt:
     def test_has_placeholder(self):

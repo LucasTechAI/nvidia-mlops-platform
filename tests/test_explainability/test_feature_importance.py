@@ -18,6 +18,7 @@ from src.models.lstm_model import NvidiaLSTM
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def device():
     return torch.device("cpu")
@@ -41,6 +42,7 @@ def synthetic_data():
 # Tests — _compute_rmse
 # ---------------------------------------------------------------------------
 
+
 class TestComputeRmse:
     def test_returns_positive_float(self, model, synthetic_data, device):
         X, y = synthetic_data
@@ -62,16 +64,13 @@ class TestComputeRmse:
 # Tests — compute_permutation_importance
 # ---------------------------------------------------------------------------
 
+
 class TestPermutationImportance:
     def test_result_keys(self, model, synthetic_data, device, tmp_path, monkeypatch):
         X, y = synthetic_data
         # Redirect output directory to tmp
-        monkeypatch.setattr(
-            "src.explainability.feature_importance.RESULTS_DIR", tmp_path
-        )
-        result = compute_permutation_importance(
-            model, X, y, n_repeats=2, device=device
-        )
+        monkeypatch.setattr("src.explainability.feature_importance.RESULTS_DIR", tmp_path)
+        result = compute_permutation_importance(model, X, y, n_repeats=2, device=device)
         assert "feature_names" in result
         assert "importances_mean" in result
         assert "importances_std" in result
@@ -80,32 +79,22 @@ class TestPermutationImportance:
 
     def test_feature_count_matches(self, model, synthetic_data, device, tmp_path, monkeypatch):
         X, y = synthetic_data
-        monkeypatch.setattr(
-            "src.explainability.feature_importance.RESULTS_DIR", tmp_path
-        )
-        result = compute_permutation_importance(
-            model, X, y, n_repeats=2, device=device
-        )
+        monkeypatch.setattr("src.explainability.feature_importance.RESULTS_DIR", tmp_path)
+        result = compute_permutation_importance(model, X, y, n_repeats=2, device=device)
         assert len(result["feature_names"]) == 5
         assert len(result["importances_mean"]) == 5
         assert len(result["importances_std"]) == 5
 
     def test_custom_feature_names(self, model, synthetic_data, device, tmp_path, monkeypatch):
         X, y = synthetic_data
-        monkeypatch.setattr(
-            "src.explainability.feature_importance.RESULTS_DIR", tmp_path
-        )
+        monkeypatch.setattr("src.explainability.feature_importance.RESULTS_DIR", tmp_path)
         names = ["A", "B", "C", "D", "E"]
-        result = compute_permutation_importance(
-            model, X, y, feature_names=names, n_repeats=2, device=device
-        )
+        result = compute_permutation_importance(model, X, y, feature_names=names, n_repeats=2, device=device)
         assert result["feature_names"] == names
 
     def test_saves_json(self, model, synthetic_data, device, tmp_path, monkeypatch):
         X, y = synthetic_data
-        monkeypatch.setattr(
-            "src.explainability.feature_importance.RESULTS_DIR", tmp_path
-        )
+        monkeypatch.setattr("src.explainability.feature_importance.RESULTS_DIR", tmp_path)
         compute_permutation_importance(model, X, y, n_repeats=2, device=device)
         json_path = tmp_path / "permutation_importance.json"
         assert json_path.exists()
@@ -116,6 +105,7 @@ class TestPermutationImportance:
 # ---------------------------------------------------------------------------
 # Tests — plot_feature_importance
 # ---------------------------------------------------------------------------
+
 
 class TestPlotFeatureImportance:
     def test_saves_png(self, tmp_path):
@@ -130,9 +120,7 @@ class TestPlotFeatureImportance:
         assert Path(returned_path).exists()
 
     def test_default_path(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "src.explainability.feature_importance.RESULTS_DIR", tmp_path
-        )
+        monkeypatch.setattr("src.explainability.feature_importance.RESULTS_DIR", tmp_path)
         results = {
             "feature_names": ["A", "B"],
             "importances_mean": [0.1, 0.2],

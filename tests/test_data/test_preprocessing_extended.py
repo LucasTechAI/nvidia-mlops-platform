@@ -19,15 +19,18 @@ from src.data.preprocessing import (
 # Tests — normalize_features
 # ---------------------------------------------------------------------------
 
+
 class TestNormalizeFeatures:
     @pytest.fixture
     def sample_df(self):
         np.random.seed(42)
-        return pd.DataFrame({
-            "Open": np.random.randn(100) * 10 + 100,
-            "Close": np.random.randn(100) * 10 + 100,
-            "Volume": np.random.randint(1e6, 1e7, 100).astype(float),
-        })
+        return pd.DataFrame(
+            {
+                "Open": np.random.randn(100) * 10 + 100,
+                "Close": np.random.randn(100) * 10 + 100,
+                "Volume": np.random.randint(1e6, 1e7, 100).astype(float),
+            }
+        )
 
     def test_output_range(self, sample_df):
         data, scaler = normalize_features(sample_df, ["Open", "Close"])
@@ -51,6 +54,7 @@ class TestNormalizeFeatures:
 # ---------------------------------------------------------------------------
 # Tests — create_sequences
 # ---------------------------------------------------------------------------
+
 
 class TestCreateSequences:
     def test_shapes(self):
@@ -83,6 +87,7 @@ class TestCreateSequences:
 # Tests — train_val_test_split
 # ---------------------------------------------------------------------------
 
+
 class TestTrainValTestSplit:
     @pytest.fixture
     def data(self):
@@ -100,9 +105,7 @@ class TestTrainValTestSplit:
 
     def test_custom_split(self, data):
         X, y = data
-        X_tr, y_tr, X_v, y_v, X_te, y_te = train_val_test_split(
-            X, y, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1
-        )
+        X_tr, y_tr, X_v, y_v, X_te, y_te = train_val_test_split(X, y, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1)
         assert len(X_tr) == 80
         assert len(X_v) == 10
 
@@ -124,6 +127,7 @@ class TestTrainValTestSplit:
 # ---------------------------------------------------------------------------
 # Tests — load_scaler / inverse_transform
 # ---------------------------------------------------------------------------
+
 
 class TestScalerUtils:
     def test_load_scaler(self, tmp_path):

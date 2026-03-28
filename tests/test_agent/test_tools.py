@@ -16,6 +16,7 @@ from src.agent.tools import (
 # Tests — TOOL_REGISTRY
 # ---------------------------------------------------------------------------
 
+
 class TestToolRegistry:
     def test_all_tools_registered(self):
         expected = {"query_stock_data", "predict_stock_prices", "get_model_metrics", "search_documents"}
@@ -37,6 +38,7 @@ class TestToolRegistry:
 # ---------------------------------------------------------------------------
 # Tests — query_stock_data
 # ---------------------------------------------------------------------------
+
 
 class TestQueryStockData:
     def test_db_not_found(self, monkeypatch):
@@ -92,12 +94,9 @@ class TestQueryStockData:
         db_path.parent.mkdir(parents=True)
         conn = sqlite3.connect(str(db_path))
         conn.execute(
-            "CREATE TABLE nvidia_stock "
-            "(date TEXT, open REAL, high REAL, low REAL, close REAL, volume INTEGER)"
+            "CREATE TABLE nvidia_stock (date TEXT, open REAL, high REAL, low REAL, close REAL, volume INTEGER)"
         )
-        conn.execute(
-            "INSERT INTO nvidia_stock VALUES ('2024-01-01', 100, 110, 90, 105, 1000000)"
-        )
+        conn.execute("INSERT INTO nvidia_stock VALUES ('2024-01-01', 100, 110, 90, 105, 1000000)")
         conn.commit()
         conn.close()
 
@@ -109,6 +108,7 @@ class TestQueryStockData:
 # ---------------------------------------------------------------------------
 # Tests — predict_stock_prices
 # ---------------------------------------------------------------------------
+
 
 class TestPredictStockPrices:
     def test_no_model_returns_error(self, monkeypatch):
@@ -126,6 +126,7 @@ class TestPredictStockPrices:
 # Tests — get_model_metrics
 # ---------------------------------------------------------------------------
 
+
 class TestGetModelMetrics:
     def test_no_checkpoint(self, monkeypatch):
         monkeypatch.setattr("src.agent.tools.PROJECT_ROOT", Path("/nonexistent"))
@@ -134,6 +135,7 @@ class TestGetModelMetrics:
 
     def test_with_checkpoint(self, tmp_path, monkeypatch):
         import torch
+
         model_dir = tmp_path / "models"
         model_dir.mkdir()
         checkpoint = {
@@ -153,6 +155,7 @@ class TestGetModelMetrics:
 # ---------------------------------------------------------------------------
 # Tests — search_documents
 # ---------------------------------------------------------------------------
+
 
 class TestSearchDocuments:
     def test_rag_import_error(self):

@@ -16,6 +16,7 @@ from src.monitoring.drift import (
 # Tests — calculate_psi
 # ---------------------------------------------------------------------------
 
+
 class TestCalculatePSI:
     def test_identical_distributions_near_zero(self):
         np.random.seed(42)
@@ -60,44 +61,51 @@ class TestCalculatePSI:
 # Tests — detect_drift
 # ---------------------------------------------------------------------------
 
+
 class TestDetectDrift:
     @pytest.fixture
     def reference_df(self):
         np.random.seed(42)
         n = 200
-        return pd.DataFrame({
-            "Open": np.random.randn(n) * 10 + 100,
-            "High": np.random.randn(n) * 10 + 110,
-            "Low": np.random.randn(n) * 10 + 90,
-            "Close": np.random.randn(n) * 10 + 100,
-            "Volume": np.random.randn(n) * 1e6 + 5e6,
-        })
+        return pd.DataFrame(
+            {
+                "Open": np.random.randn(n) * 10 + 100,
+                "High": np.random.randn(n) * 10 + 110,
+                "Low": np.random.randn(n) * 10 + 90,
+                "Close": np.random.randn(n) * 10 + 100,
+                "Volume": np.random.randn(n) * 1e6 + 5e6,
+            }
+        )
 
     @pytest.fixture
     def current_no_drift(self, reference_df):
         """Current data from same distribution."""
         np.random.seed(99)
         n = 200
-        return pd.DataFrame({
-            "Open": np.random.randn(n) * 10 + 100,
-            "High": np.random.randn(n) * 10 + 110,
-            "Low": np.random.randn(n) * 10 + 90,
-            "Close": np.random.randn(n) * 10 + 100,
-            "Volume": np.random.randn(n) * 1e6 + 5e6,
-        })
+        return pd.DataFrame(
+            {
+                "Open": np.random.randn(n) * 10 + 100,
+                "High": np.random.randn(n) * 10 + 110,
+                "Low": np.random.randn(n) * 10 + 90,
+                "Close": np.random.randn(n) * 10 + 100,
+                "Volume": np.random.randn(n) * 1e6 + 5e6,
+            }
+        )
 
     @pytest.fixture
     def current_with_drift(self):
         """Heavily shifted data."""
         np.random.seed(77)
         n = 200
-        return pd.DataFrame({
-            "Open": np.random.randn(n) * 10 + 500,
-            "High": np.random.randn(n) * 10 + 510,
-            "Low": np.random.randn(n) * 10 + 490,
-            "Close": np.random.randn(n) * 10 + 500,
-            "Volume": np.random.randn(n) * 1e6 + 50e6,
-        })
+        return pd.DataFrame(
+            {
+                "Open": np.random.randn(n) * 10 + 500,
+                "High": np.random.randn(n) * 10 + 510,
+                "Low": np.random.randn(n) * 10 + 490,
+                "Close": np.random.randn(n) * 10 + 500,
+                "Volume": np.random.randn(n) * 1e6 + 50e6,
+            }
+        )
 
     def test_no_drift_detected(self, tmp_path, monkeypatch):
         """Same distribution should yield low PSI."""
@@ -133,9 +141,7 @@ class TestDetectDrift:
 
     def test_custom_features(self, reference_df, current_no_drift, tmp_path, monkeypatch):
         monkeypatch.setattr("src.monitoring.drift.RESULTS_DIR", tmp_path)
-        result = detect_drift(
-            reference_df, current_no_drift, features=["Close", "Volume"], save_results=False
-        )
+        result = detect_drift(reference_df, current_no_drift, features=["Close", "Volume"], save_results=False)
         assert "Close" in result["features"]
         assert "Volume" in result["features"]
         assert "Open" not in result["features"]

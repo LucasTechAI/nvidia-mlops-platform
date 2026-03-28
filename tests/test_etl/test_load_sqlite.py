@@ -13,9 +13,7 @@ class TestCreateTable:
         db_path = str(tmp_path / "test.db")
         conn = sqlite3.connect(db_path)
         create_table_if_not_exists(conn)
-        cursor = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='nvidia_stock'"
-        )
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='nvidia_stock'")
         assert cursor.fetchone() is not None
         conn.close()
 
@@ -35,16 +33,18 @@ class TestLoadCsvToSqlite:
     def test_load_from_csv(self, tmp_path):
         # Create a test CSV
         csv_path = str(tmp_path / "test.csv")
-        df = pd.DataFrame({
-            "Date": ["2024-01-01", "2024-01-02"],
-            "Open": [100.0, 101.0],
-            "High": [105.0, 106.0],
-            "Low": [95.0, 96.0],
-            "Close": [102.0, 103.0],
-            "Volume": [1000000, 2000000],
-            "Dividends": [0.0, 0.0],
-            "Stock Splits": [0.0, 0.0],
-        })
+        df = pd.DataFrame(
+            {
+                "Date": ["2024-01-01", "2024-01-02"],
+                "Open": [100.0, 101.0],
+                "High": [105.0, 106.0],
+                "Low": [95.0, 96.0],
+                "Close": [102.0, 103.0],
+                "Volume": [1000000, 2000000],
+                "Dividends": [0.0, 0.0],
+                "Stock Splits": [0.0, 0.0],
+            }
+        )
         df.to_csv(csv_path, index=False)
 
         db_path = str(tmp_path / "test.db")
