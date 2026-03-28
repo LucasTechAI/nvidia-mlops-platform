@@ -17,6 +17,8 @@ mlflow>=3.5.0
 
 # Hyperparameter Optimization
 optuna>=3.5.0
+optuna-integration>=4.0.0
+optuna-integration>=4.0.0
 
 # Visualization
 matplotlib>=3.8.0
