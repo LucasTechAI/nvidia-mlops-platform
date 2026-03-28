@@ -106,6 +106,9 @@ class ReActAgent:
             except ImportError:
                 logger.warning("groq not installed, falling back to openai")
                 self.llm_provider = "openai"
+            except Exception as e:
+                logger.warning("Failed to create Groq client: %s", e)
+                self.llm_provider = "openai"
 
         if self.llm_provider == "openai":
             try:
@@ -115,6 +118,9 @@ class ReActAgent:
                 return self._client
             except ImportError:
                 logger.warning("openai not installed, using tool-only mode")
+                return None
+            except Exception as e:
+                logger.warning("Failed to create OpenAI client: %s", e)
                 return None
 
         return None
