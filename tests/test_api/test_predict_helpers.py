@@ -1,15 +1,13 @@
 """Extended tests for predict endpoint helper functions."""
 
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
-import pytest
 import torch
 
 from src.api.routers.predict import (
-    get_forecast_dates,
     generate_forecast_with_uncertainty,
+    get_forecast_dates,
 )
 from src.models.lstm_model import NvidiaLSTM
 

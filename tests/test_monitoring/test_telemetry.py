@@ -1,12 +1,10 @@
 """Tests for the telemetry module."""
 
-import os
 import time
 
 import pytest
 
 from src.monitoring.telemetry import TelemetryTracer, get_tracer
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-import pytest
-
 
 class TestPathConstants:
     def test_root_dir_exists(self):
@@ -38,7 +36,7 @@ class TestModelConstants:
         assert NUM_LAYERS == 2
 
     def test_split_ratios_sum_to_one(self):
-        from src.config import TRAIN_SPLIT, VAL_SPLIT, TEST_SPLIT
+        from src.config import TEST_SPLIT, TRAIN_SPLIT, VAL_SPLIT
         assert abs(TRAIN_SPLIT + VAL_SPLIT + TEST_SPLIT - 1.0) < 1e-9
 
 

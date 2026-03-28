@@ -5,9 +5,9 @@ import pytest
 from src.monitoring.metrics import (
     PROMETHEUS_AVAILABLE,
     get_metrics,
-    track_request,
-    track_prediction,
     track_agent_query,
+    track_prediction,
+    track_request,
 )
 
 

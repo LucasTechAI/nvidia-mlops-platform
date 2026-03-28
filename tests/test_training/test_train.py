@@ -1,23 +1,23 @@
 """Tests for the training pipeline module."""
 
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 import torch
 import torch.nn as nn
-from unittest.mock import MagicMock, patch
 
 from src.models.lstm_model import NvidiaLSTM
 from src.training.train import (
-    train_epoch,
-    validate_epoch,
     evaluate_on_test,
-    plot_training_history,
-    train_model,
-    set_mlflow_governance_tags,
-    save_model_checkpoint,
     load_model_checkpoint,
+    plot_training_history,
+    save_model_checkpoint,
+    set_mlflow_governance_tags,
+    train_epoch,
+    train_model,
+    validate_epoch,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -6,7 +6,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import numpy as np
-import pytest
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -14,12 +13,11 @@ from src.training.champion_challenger import (
     IMPROVEMENT_THRESHOLD,
     ComparisonResult,
     ModelMetrics,
+    _save_result,
     compare_models,
     evaluate_model,
     run_champion_challenger,
-    _save_result,
 )
-
 
 # ── ModelMetrics ───────────────────────────────────────────────
 

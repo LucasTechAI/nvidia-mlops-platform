@@ -7,13 +7,12 @@ import numpy as np
 import pytest
 import torch
 
-from src.models.lstm_model import NvidiaLSTM
 from src.explainability.feature_importance import (
     _compute_rmse,
     compute_permutation_importance,
     plot_feature_importance,
 )
-
+from src.models.lstm_model import NvidiaLSTM
 
 # ---------------------------------------------------------------------------
 # Fixtures

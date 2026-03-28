@@ -1,6 +1,5 @@
 """Tests for ETL preprocessing module."""
 
-import sqlite3
 
 import numpy as np
 import pandas as pd
@@ -9,14 +8,13 @@ import torch
 
 from src.etl.preprocessing import (
     StockDataset,
-    normalize_features,
-    create_sequences,
-    train_val_test_split,
     create_data_loaders,
+    create_sequences,
     get_last_sequence,
     inverse_transform,
+    normalize_features,
+    train_val_test_split,
 )
-
 
 # ---------------------------------------------------------------------------
 # Tests — StockDataset

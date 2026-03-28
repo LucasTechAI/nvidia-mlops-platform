@@ -1,13 +1,9 @@
 """Tests for the hyperparameter search module."""
 
-import pickle
 
-import numpy as np
 import optuna
-import pytest
 
-from src.training.hyperparameter_search import save_study, load_study
-
+from src.training.hyperparameter_search import load_study, save_study
 
 # ---------------------------------------------------------------------------
 # Tests — save / load study

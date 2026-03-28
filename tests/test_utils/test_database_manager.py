@@ -4,8 +4,7 @@ import sqlite3
 
 import pytest
 
-from src.utils.database_manager import DatabaseManager, DatabaseError
-
+from src.utils.database_manager import DatabaseError, DatabaseManager
 
 # ---------------------------------------------------------------------------
 # Fixtures

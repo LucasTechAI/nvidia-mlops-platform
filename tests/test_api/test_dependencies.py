@@ -3,7 +3,7 @@
 import pickle
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 import torch
@@ -115,8 +115,8 @@ class TestModelStateLoadModel:
 
         scaler_path = None
         if include_scaler:
-            from sklearn.preprocessing import MinMaxScaler
             import numpy as np
+            from sklearn.preprocessing import MinMaxScaler
 
             scaler = MinMaxScaler()
             scaler.fit(np.random.rand(10, 5))
@@ -163,8 +163,8 @@ class TestModelStateLoadModel:
         with tempfile.TemporaryDirectory() as tmpdir:
             cp_path, _ = self._create_checkpoint(tmpdir, include_scaler=False)
             # Create joblib scaler
-            from sklearn.preprocessing import MinMaxScaler
             import numpy as np
+            from sklearn.preprocessing import MinMaxScaler
 
             scaler = MinMaxScaler()
             scaler.fit(np.random.rand(10, 5))

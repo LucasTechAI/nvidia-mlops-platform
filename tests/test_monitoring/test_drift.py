@@ -1,19 +1,16 @@
 """Tests for the drift detection module."""
 
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from src.monitoring.drift import (
+    PSI_RETRAIN_THRESHOLD,
     calculate_psi,
     detect_drift,
-    PSI_WARNING_THRESHOLD,
-    PSI_RETRAIN_THRESHOLD,
 )
-
 
 # ---------------------------------------------------------------------------
 # Tests — calculate_psi

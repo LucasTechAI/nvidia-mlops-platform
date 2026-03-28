@@ -2,18 +2,15 @@
 
 import sqlite3
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import patch
 
 from src.agent.tools import (
-    query_stock_data,
-    predict_stock_prices,
-    get_model_metrics,
-    search_documents,
     TOOL_REGISTRY,
+    get_model_metrics,
+    predict_stock_prices,
+    query_stock_data,
+    search_documents,
 )
-
 
 # ---------------------------------------------------------------------------
 # Tests — TOOL_REGISTRY
@@ -94,8 +91,13 @@ class TestQueryStockData:
         db_path = tmp_path / "data" / "nvidia_stock.db"
         db_path.parent.mkdir(parents=True)
         conn = sqlite3.connect(str(db_path))
-        conn.execute("CREATE TABLE nvidia_stock (date TEXT, open REAL, high REAL, low REAL, close REAL, volume INTEGER)")
-        conn.execute("INSERT INTO nvidia_stock VALUES ('2024-01-01', 100, 110, 90, 105, 1000000)")
+        conn.execute(
+            "CREATE TABLE nvidia_stock "
+            "(date TEXT, open REAL, high REAL, low REAL, close REAL, volume INTEGER)"
+        )
+        conn.execute(
+            "INSERT INTO nvidia_stock VALUES ('2024-01-01', 100, 110, 90, 105, 1000000)"
+        )
         conn.commit()
         conn.close()
 

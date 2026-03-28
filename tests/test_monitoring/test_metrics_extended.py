@@ -1,7 +1,7 @@
 """Extended tests for monitoring/metrics.py — tracking functions and middleware."""
 
 import asyncio
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 

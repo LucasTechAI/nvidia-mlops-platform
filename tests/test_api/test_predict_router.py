@@ -1,6 +1,5 @@
 """Tests for api/routers/predict.py — predict & inference endpoints."""
 
-from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -18,7 +17,6 @@ from src.api.routers.predict import (
     router,
 )
 from src.models.lstm_model import NvidiaLSTM
-
 
 # ── Helper: forecast dates ─────────────────────────────────────
 

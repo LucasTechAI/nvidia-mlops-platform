@@ -1,7 +1,6 @@
 """Tests for the load_sqlite_nvidia ETL module."""
 
 import sqlite3
-from pathlib import Path
 
 import pandas as pd
 import pytest

@@ -1,7 +1,5 @@
 """Extended tests for the LSTM model module."""
 
-import numpy as np
-import pytest
 import torch
 
 from src.models.lstm_model import NvidiaLSTM, create_model

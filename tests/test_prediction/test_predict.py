@@ -6,12 +6,11 @@ import torch
 
 from src.models.lstm_model import NvidiaLSTM
 from src.prediction.predict import (
+    calculate_prediction_intervals,
     generate_forecast,
     inverse_transform_predictions,
-    calculate_prediction_intervals,
     save_predictions_to_csv,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -64,6 +63,7 @@ class TestGenerateForecast:
 class TestInverseTransformPredictions:
     def test_inverse_transform(self, tmp_path):
         import pickle
+
         from sklearn.preprocessing import MinMaxScaler
 
         scaler = MinMaxScaler()

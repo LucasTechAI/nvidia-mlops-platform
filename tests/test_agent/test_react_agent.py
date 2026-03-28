@@ -1,11 +1,8 @@
 """Tests for the ReAct agent module."""
 
-from unittest.mock import patch, MagicMock
 
-import pytest
 
-from src.agent.react_agent import ReActAgent, SYSTEM_PROMPT
-
+from src.agent.react_agent import SYSTEM_PROMPT, ReActAgent
 
 # ---------------------------------------------------------------------------
 # Tests — initialization

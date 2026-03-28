@@ -8,13 +8,12 @@ import pandas as pd
 import pytest
 
 from src.data.preprocessing import (
-    normalize_features,
     create_sequences,
-    train_val_test_split,
-    load_scaler,
     inverse_transform,
+    load_scaler,
+    normalize_features,
+    train_val_test_split,
 )
-
 
 # ---------------------------------------------------------------------------
 # Tests — normalize_features

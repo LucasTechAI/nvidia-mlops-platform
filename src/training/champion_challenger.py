@@ -25,8 +25,6 @@ from typing import Any, Optional
 import numpy as np
 import torch
 
-from src.config import settings
-
 logger = logging.getLogger(__name__)
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
