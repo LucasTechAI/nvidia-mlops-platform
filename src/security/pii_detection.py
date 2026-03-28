@@ -192,8 +192,9 @@ class PIIDetector:
 
             return anonymized.text
         except Exception as e:
-            logger.warning("Presidio anonymization failed: %s", str(e))
-            return text
+            logger.warning("Presidio anonymization failed: %s. Falling back to regex.", str(e))
+            entities = self._detect_regex(text)
+            return self._anonymize_regex(text, entities)
 
     def _detect_regex(self, text: str) -> list[dict]:
         """Fallback regex-based PII detection."""
