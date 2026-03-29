@@ -13,6 +13,11 @@ import os
 import re
 from typing import Optional
 
+import mlflow
+from dotenv import load_dotenv
+
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 
 # System prompt for the ReAct agent
@@ -81,8 +86,8 @@ class ReActAgent:
         self.max_iterations = max_iterations
 
         # Determine LLM provider and model
-        self.llm_provider = llm_provider or os.getenv("LLM_PROVIDER", "openai")
-        self.model_name = model_name or os.getenv("LLM_MODEL", "gpt-4o-mini")
+        self.llm_provider = llm_provider or os.getenv("LLM_PROVIDER", "openrouter")
+        self.model_name = model_name or os.getenv("LLM_MODEL", "google/gemini-2.0-flash-001")
 
         self._client = None
         logger.info(
@@ -104,17 +109,22 @@ class ReActAgent:
                 self._client = Groq(api_key=os.getenv("GROQ_API_KEY"))
                 return self._client
             except ImportError:
-                logger.warning("groq not installed, falling back to openai")
-                self.llm_provider = "openai"
+                logger.warning("groq not installed, falling back to openrouter")
+                self.llm_provider = "openrouter"
             except Exception as e:
                 logger.warning("Failed to create Groq client: %s", e)
-                self.llm_provider = "openai"
+                self.llm_provider = "openrouter"
 
-        if self.llm_provider == "openai":
+        if self.llm_provider in ("openrouter", "openai"):
             try:
                 from openai import OpenAI
 
-                self._client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+                if self.llm_provider == "openrouter":
+                    api_key = os.getenv("OPENROUTER_API_KEY")
+                    base_url = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+                    self._client = OpenAI(api_key=api_key, base_url=base_url)
+                else:
+                    self._client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
                 return self._client
             except ImportError:
                 logger.warning("openai not installed, using tool-only mode")
@@ -125,6 +135,7 @@ class ReActAgent:
 
         return None
 
+    @mlflow.trace(name="ReActAgent._call_llm", span_type="LLM")
     def _call_llm(self, messages: list[dict]) -> str:
         """Call the LLM with the given messages.
 
@@ -136,7 +147,7 @@ class ReActAgent:
         """
         client = self._get_client()
         if client is None:
-            return "Final Answer: LLM not available. Please set OPENAI_API_KEY or GROQ_API_KEY."
+            return "Final Answer: LLM not available. Please set OPENROUTER_API_KEY (or OPENAI_API_KEY) in .env."
 
         try:
             response = client.chat.completions.create(
@@ -185,6 +196,7 @@ class ReActAgent:
             return match.group(1).strip()
         return None
 
+    @mlflow.trace(name="ReActAgent._execute_tool", span_type="TOOL")
     def _execute_tool(self, action: str, action_input: str) -> str:
         """Execute a tool and return the result.
 
@@ -206,6 +218,7 @@ class ReActAgent:
             logger.error("Tool execution failed: %s(%s) → %s", action, action_input, e)
             return f"Error executing {action}: {e}"
 
+    @mlflow.trace(name="ReActAgent.query", span_type="AGENT")
     def query(self, user_input: str) -> dict:
         """Process a user query through the ReAct loop.
 

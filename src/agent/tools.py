@@ -12,6 +12,7 @@ import sqlite3
 from pathlib import Path
 from typing import Optional
 
+import mlflow
 import numpy as np
 import pandas as pd
 import torch
@@ -26,6 +27,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 # =============================================================================
 
 
+@mlflow.trace(name="query_stock_data", span_type="TOOL")
 def query_stock_data(
     query: str,
     start_date: Optional[str] = None,
@@ -123,6 +125,7 @@ def query_stock_data(
 # =============================================================================
 
 
+@mlflow.trace(name="predict_stock_prices", span_type="TOOL")
 def predict_stock_prices(horizon: str = "5") -> str:
     """Generate NVIDIA stock price predictions using the trained LSTM model.
 
@@ -243,6 +246,7 @@ def predict_stock_prices(horizon: str = "5") -> str:
 # =============================================================================
 
 
+@mlflow.trace(name="get_model_metrics", span_type="TOOL")
 def get_model_metrics(query: str = "") -> str:
     """Fetch and analyze model performance metrics from checkpoint.
 
@@ -315,6 +319,7 @@ def get_model_metrics(query: str = "") -> str:
 # =============================================================================
 
 
+@mlflow.trace(name="search_documents", span_type="TOOL")
 def search_documents(query: str) -> str:
     """Search project documents and knowledge base using RAG pipeline.
 

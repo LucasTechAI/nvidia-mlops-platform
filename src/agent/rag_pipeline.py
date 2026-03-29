@@ -14,6 +14,8 @@ import logging
 from pathlib import Path
 from typing import Optional
 
+import mlflow
+
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -244,6 +246,7 @@ class RAGPipeline:
             logger.error("Error indexing golden set: %s", e)
             return 0
 
+    @mlflow.trace(name="RAGPipeline.retrieve", span_type="RETRIEVER")
     def retrieve(self, query: str, top_k: int = 3) -> list[dict]:
         """Retrieve relevant documents for a query.
 
@@ -333,6 +336,7 @@ def get_rag_pipeline() -> RAGPipeline:
     return _rag_pipeline
 
 
+@mlflow.trace(name="retrieve_context", span_type="RETRIEVER")
 def retrieve_context(query: str, top_k: int = 3) -> str:
     """Retrieve relevant context for a query (convenience function).
 
