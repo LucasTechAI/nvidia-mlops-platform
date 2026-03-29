@@ -87,9 +87,7 @@ class ReActAgent:
 
         # Determine LLM provider and model
         self.llm_provider = llm_provider or os.getenv("LLM_PROVIDER", "openrouter")
-        self.model_name = model_name or os.getenv(
-            "LLM_MODEL", "google/gemini-2.0-flash-001"
-        )
+        self.model_name = model_name or os.getenv("LLM_MODEL", "google/gemini-2.0-flash-001")
 
         self._client = None
         logger.info(
@@ -123,9 +121,7 @@ class ReActAgent:
 
                 if self.llm_provider == "openrouter":
                     api_key = os.getenv("OPENROUTER_API_KEY")
-                    base_url = os.getenv(
-                        "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
-                    )
+                    base_url = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
                     self._client = OpenAI(api_key=api_key, base_url=base_url)
                 else:
                     self._client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))

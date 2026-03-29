@@ -93,10 +93,7 @@ def _get_agent_response(query: str) -> str:
         result = agent.query(query)
         return result.get("answer", "I couldn't generate a response. Please try again.")
     except ImportError:
-        return (
-            "⚠️ Agent dependencies not available. Please install openai "
-            "and configure your LLM API key in `.env`."
-        )
+        return "⚠️ Agent dependencies not available. Please install openai and configure your LLM API key in `.env`."
     except Exception as e:
         logger.error("Agent error: %s", str(e))
         return f"⚠️ Agent encountered an error: {str(e)}\n\nMake sure your LLM API key is configured in `.env`."
