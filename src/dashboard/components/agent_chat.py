@@ -90,13 +90,12 @@ def _get_agent_response(query: str) -> str:
         from src.agent.react_agent import create_agent
 
         agent = create_agent()
-        result = agent.invoke({"input": query})
-        return result.get("output", "I couldn't generate a response. Please try again.")
+        result = agent.query(query)
+        return result.get("answer", "I couldn't generate a response. Please try again.")
     except ImportError:
         return (
-            "⚠️ Agent dependencies not available. Please install LangChain "
-            "and configure your LLM API key to use this feature.\n\n"
-            "```bash\npip install langchain langchain-openai\n```"
+            "⚠️ Agent dependencies not available. Please install openai "
+            "and configure your LLM API key in `.env`."
         )
     except Exception as e:
         logger.error("Agent error: %s", str(e))

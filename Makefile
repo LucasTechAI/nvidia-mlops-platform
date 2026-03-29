@@ -1,4 +1,4 @@
-.PHONY: install test lint format train serve dashboard data docker-build docker-up clean help
+.PHONY: install test lint format train serve dashboard data docker-build docker-up clean help services services-stop
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -45,6 +45,12 @@ predict: ## Run prediction
 
 mlflow-ui: ## Start MLflow UI
 	bash scripts/start_mlflow_ui.sh
+
+services: ## Start all services (API, Dashboard, MLflow, Prometheus, Grafana)
+	bash scripts/run_services.sh
+
+services-stop: ## Stop all services
+	bash scripts/run_services.sh --stop
 
 docker-build: ## Build Docker images
 	docker compose build

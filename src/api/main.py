@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.dependencies import model_state
 from src.api.routers import agent_router, data_router, health_router, predict_router, train_router
+from src.config import enable_mlflow_tracing
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -23,6 +24,10 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
     logger.info("Starting NVIDIA Stock Prediction API...")
+
+    # Enable MLflow tracing for LLM calls
+    enable_mlflow_tracing()
+    logger.info("MLflow tracing enabled")
 
     # Load model on startup
     success = model_state.load_model()

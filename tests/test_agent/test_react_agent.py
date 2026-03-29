@@ -12,8 +12,8 @@ class TestReActAgentInit:
         monkeypatch.delenv("LLM_PROVIDER", raising=False)
         monkeypatch.delenv("LLM_MODEL", raising=False)
         agent = ReActAgent()
-        assert agent.llm_provider == "openai"
-        assert agent.model_name == "gpt-4o-mini"
+        assert agent.llm_provider == "openrouter"
+        assert agent.model_name == "google/gemini-2.0-flash-001"
         assert len(agent.tools) == 4
         assert agent.temperature == 0.1
         assert agent.max_iterations == 8

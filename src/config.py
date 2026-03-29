@@ -149,6 +149,29 @@ class MLflowConfig:
     registered_model_name: str = "nvidia-lstm-model"
 
 
+def enable_mlflow_tracing() -> None:
+    """Enable MLflow tracing and autolog for LLM providers.
+
+    Configures MLflow tracking URI, sets the experiment, and enables
+    auto-tracing for OpenAI and Groq so all LLM calls generate traces.
+    """
+    import mlflow
+
+    mlflow.set_tracking_uri(MLflowConfig.tracking_uri)
+    mlflow.set_experiment(MLflowConfig.experiment_name)
+
+    # Auto-trace OpenAI and Groq LLM calls
+    try:
+        mlflow.openai.autolog()
+    except Exception:
+        pass
+
+    try:
+        mlflow.groq.autolog()
+    except Exception:
+        pass
+
+
 # ============================================================================
 # Hyperparameter Optimization Configuration
 # ============================================================================
