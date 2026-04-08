@@ -86,9 +86,7 @@ EARLY_STOPPING_PATIENCE = 10
 
 # MLflow Configuration
 # Use SQLite backend (filesystem backend deprecated since MLflow 2.x, Feb 2026)
-MLFLOW_TRACKING_URI = os.getenv(
-    "MLFLOW_TRACKING_URI", f"sqlite:///{ROOT_DIR / 'mlruns' / 'mlflow.db'}"
-)
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", f"sqlite:///{ROOT_DIR / 'mlruns' / 'mlflow.db'}")
 MLFLOW_EXPERIMENT_NAME = "nvidia-lstm-forecast"
 MLFLOW_ARTIFACT_LOCATION = os.getenv("MLFLOW_ARTIFACT_LOCATION", str(ROOT_DIR / "mlruns" / "artifacts"))
 

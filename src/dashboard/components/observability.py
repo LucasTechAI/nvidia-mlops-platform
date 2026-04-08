@@ -87,8 +87,7 @@ def _render_drift_section():
             drifted = results.get("drifted_features")
             if drifted is None:
                 drifted = sum(
-                    1 for f in results.get("features", {}).values()
-                    if f.get("status") in ("warning", "retrain")
+                    1 for f in results.get("features", {}).values() if f.get("status") in ("warning", "retrain")
                 )
             st.metric("Drifted Features", drifted)
         with col3:

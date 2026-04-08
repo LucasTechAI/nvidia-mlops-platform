@@ -207,8 +207,7 @@ def load_mlflow_metrics() -> pd.DataFrame:
             rows = []
             for key in metric_keys:
                 for point in client.get_metric_history(run_info["run_id"], key):
-                    rows.append({"key": key, "value": point.value,
-                                 "step": point.step, "timestamp": point.timestamp})
+                    rows.append({"key": key, "value": point.value, "step": point.step, "timestamp": point.timestamp})
 
         else:  # file store
             metrics_dir = run_info["path"] / "metrics"
@@ -223,8 +222,14 @@ def load_mlflow_metrics() -> pd.DataFrame:
                     for line in f:
                         parts = line.strip().split()
                         if len(parts) >= 3:
-                            rows.append({"key": key, "value": float(parts[1]),
-                                         "step": int(parts[2]), "timestamp": int(parts[0])})
+                            rows.append(
+                                {
+                                    "key": key,
+                                    "value": float(parts[1]),
+                                    "step": int(parts[2]),
+                                    "timestamp": int(parts[0]),
+                                }
+                            )
 
         if not rows:
             return pd.DataFrame()

@@ -273,9 +273,7 @@ def _train_challenger(experiment_name: str, champion_path: Optional[str] = None)
     output_size = y.shape[1]
 
     # ── Evaluate champion ────────────────────────────────────────────────
-    champion_path_resolved = (
-        Path(champion_path) if champion_path else ROOT_DIR / "models" / "best_model.pth"
-    )
+    champion_path_resolved = Path(champion_path) if champion_path else ROOT_DIR / "models" / "best_model.pth"
     champion_val_loss = float("inf")
     if champion_path_resolved.exists():
         try:
@@ -295,9 +293,7 @@ def _train_challenger(experiment_name: str, champion_path: Optional[str] = None)
             criterion = nn.MSELoss()
             with torch.no_grad():
                 preds = champ_model(torch.FloatTensor(X_val).to(device))
-                champion_val_loss = criterion(
-                    preds, torch.FloatTensor(y_val).to(device)
-                ).item()
+                champion_val_loss = criterion(preds, torch.FloatTensor(y_val).to(device)).item()
             logger.info("Champion val loss: %.6f", champion_val_loss)
         except Exception as exc:
             logger.warning("Could not evaluate champion model: %s — using inf", exc)
