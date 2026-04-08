@@ -120,16 +120,49 @@ def load_checkpoint_info() -> dict:
         return None
 
 
-def _find_latest_mlflow_run() -> Path | None:
-    """Find the latest MLflow run directory (file store)."""
-    # Search in both mlruns/ and data/mlruns/
+def _find_latest_mlflow_run() -> str | None:
+    """Find the MLflow run with the richest per-epoch metric history.
+
+    Strategy:
+    1. Query the SQLite backend for the run with the most metric steps.
+    2. If no run has >1 step, fall back to scanning the file-store mlruns/.
+    Returns a run_id string (SQLite) or a Path (file store) wrapped in a
+    dict: {"type": "client", "run_id": ...} or {"type": "files", "path": ...}.
+    """
+    try:
+        import mlflow
+        from src.config import MLflowConfig
+
+        mlflow.set_tracking_uri(MLflowConfig.tracking_uri)
+        client = mlflow.MlflowClient()
+
+        best_run_id = None
+        best_steps = 0
+
+        for exp in client.search_experiments():
+            runs = client.search_runs(
+                experiment_ids=[exp.experiment_id],
+                order_by=["start_time DESC"],
+                max_results=20,
+            )
+            for run in runs:
+                history = client.get_metric_history(run.info.run_id, "val_loss")
+                if len(history) > best_steps:
+                    best_steps = len(history)
+                    best_run_id = run.info.run_id
+
+        if best_run_id and best_steps > 1:
+            return {"type": "client", "run_id": best_run_id}
+    except Exception:
+        pass
+
+    # Fallback: scan file-store mlruns/
     candidates = [
         project_root / "mlruns",
         project_root / "data" / "mlruns",
     ]
-
-    latest_run = None
-    latest_time = 0
+    best_path = None
+    best_steps = 0
 
     for mlruns_root in candidates:
         if not mlruns_root.exists():
@@ -140,46 +173,57 @@ def _find_latest_mlflow_run() -> Path | None:
             for run_dir in exp_dir.iterdir():
                 if not run_dir.is_dir() or run_dir.name == "models":
                     continue
-                meta_file = run_dir / "meta.yaml"
-                metrics_dir = run_dir / "metrics"
-                if meta_file.exists() and metrics_dir.exists():
-                    mtime = meta_file.stat().st_mtime
-                    if mtime > latest_time:
-                        latest_time = mtime
-                        latest_run = run_dir
+                vl_file = run_dir / "metrics" / "val_loss"
+                if vl_file.exists():
+                    n_steps = sum(1 for _ in vl_file.open())
+                    if n_steps > best_steps:
+                        best_steps = n_steps
+                        best_path = run_dir
 
-    return latest_run
+    if best_path:
+        return {"type": "files", "path": best_path}
+
+    return None
 
 
 def load_mlflow_metrics() -> pd.DataFrame:
-    """Load metrics from MLflow file store."""
-    run_dir = _find_latest_mlflow_run()
-    if run_dir is None:
-        return pd.DataFrame()
-
-    metrics_dir = run_dir / "metrics"
-    if not metrics_dir.exists():
+    """Load per-step metrics from MLflow (SQLite client or file-store fallback)."""
+    run_info = _find_latest_mlflow_run()
+    if run_info is None:
         return pd.DataFrame()
 
     try:
-        rows = []
-        for metric_file in metrics_dir.iterdir():
-            if not metric_file.is_file():
-                continue
-            key = metric_file.name
-            with open(metric_file, "r") as f:
-                for line in f:
-                    parts = line.strip().split(" ")
-                    if len(parts) >= 3:
-                        timestamp, value, step = parts[0], parts[1], parts[2]
-                        rows.append(
-                            {
-                                "key": key,
-                                "value": float(value),
-                                "step": int(step),
-                                "timestamp": int(timestamp),
-                            }
-                        )
+        if run_info["type"] == "client":
+            import mlflow
+            from src.config import MLflowConfig
+
+            mlflow.set_tracking_uri(MLflowConfig.tracking_uri)
+            client = mlflow.MlflowClient()
+            run = client.get_run(run_info["run_id"])
+            metric_keys = list(run.data.metrics.keys())
+
+            rows = []
+            for key in metric_keys:
+                for point in client.get_metric_history(run_info["run_id"], key):
+                    rows.append({"key": key, "value": point.value,
+                                 "step": point.step, "timestamp": point.timestamp})
+
+        else:  # file store
+            metrics_dir = run_info["path"] / "metrics"
+            if not metrics_dir.exists():
+                return pd.DataFrame()
+            rows = []
+            for metric_file in metrics_dir.iterdir():
+                if not metric_file.is_file():
+                    continue
+                key = metric_file.name
+                with open(metric_file) as f:
+                    for line in f:
+                        parts = line.strip().split()
+                        if len(parts) >= 3:
+                            rows.append({"key": key, "value": float(parts[1]),
+                                         "step": int(parts[2]), "timestamp": int(parts[0])})
+
         if not rows:
             return pd.DataFrame()
         return pd.DataFrame(rows).sort_values(["key", "step"]).reset_index(drop=True)
@@ -189,18 +233,26 @@ def load_mlflow_metrics() -> pd.DataFrame:
 
 
 def load_mlflow_params() -> dict:
-    """Load parameters from the latest MLflow run."""
-    run_dir = _find_latest_mlflow_run()
-    if run_dir is None:
+    """Load parameters from the best MLflow run."""
+    run_info = _find_latest_mlflow_run()
+    if run_info is None:
         return {}
-    params_dir = run_dir / "params"
-    if not params_dir.exists():
+    try:
+        if run_info["type"] == "client":
+            import mlflow
+            from src.config import MLflowConfig
+
+            mlflow.set_tracking_uri(MLflowConfig.tracking_uri)
+            client = mlflow.MlflowClient()
+            run = client.get_run(run_info["run_id"])
+            return dict(run.data.params)
+        else:
+            params_dir = run_info["path"] / "params"
+            if not params_dir.exists():
+                return {}
+            return {pf.name: pf.read_text().strip() for pf in params_dir.iterdir() if pf.is_file()}
+    except Exception:
         return {}
-    params = {}
-    for pf in params_dir.iterdir():
-        if pf.is_file():
-            params[pf.name] = pf.read_text().strip()
-    return params
 
 
 def load_hpo_results() -> dict:

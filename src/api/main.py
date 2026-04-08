@@ -7,12 +7,13 @@ NVIDIA Stock Price Prediction API.
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.dependencies import model_state
 from src.api.routers import agent_router, data_router, health_router, predict_router, train_router
 from src.config import enable_mlflow_tracing
+from src.monitoring.metrics import get_metrics, track_request, ACTIVE_REQUESTS
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -88,6 +89,36 @@ app.include_router(predict_router)
 app.include_router(train_router)
 app.include_router(data_router)
 app.include_router(agent_router)
+
+
+# Prometheus metrics middleware
+@app.middleware("http")
+async def prometheus_middleware(request: Request, call_next):
+    """Track request metrics for Prometheus."""
+    import time
+
+    method = request.method
+    endpoint = request.url.path
+
+    ACTIVE_REQUESTS.labels(method=method, endpoint=endpoint).inc()
+    start_time = time.time()
+    try:
+        response = await call_next(request)
+        duration = time.time() - start_time
+        track_request(method, endpoint, response.status_code, duration)
+        return response
+    except Exception:
+        duration = time.time() - start_time
+        track_request(method, endpoint, 500, duration)
+        raise
+    finally:
+        ACTIVE_REQUESTS.labels(method=method, endpoint=endpoint).dec()
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics():
+    """Prometheus metrics endpoint."""
+    return Response(content=get_metrics(), media_type="text/plain; charset=utf-8")
 
 
 @app.get("/")

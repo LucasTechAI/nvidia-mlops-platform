@@ -81,14 +81,18 @@ def _render_drift_section():
 
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Features Analyzed", results.get("features_analyzed", "N/A"))
+            features_analyzed = results.get("features_analyzed") or len(results.get("features", {}))
+            st.metric("Features Analyzed", features_analyzed if features_analyzed else "N/A")
         with col2:
-            st.metric(
-                "Drifted Features",
-                results.get("drifted_features", 0),
-            )
+            drifted = results.get("drifted_features")
+            if drifted is None:
+                drifted = sum(
+                    1 for f in results.get("features", {}).values()
+                    if f.get("status") in ("warning", "retrain")
+                )
+            st.metric("Drifted Features", drifted)
         with col3:
-            st.metric("Method", results.get("method", "KS-test"))
+            st.metric("Method", results.get("method", "PSI"))
 
         with st.expander("📋 Detailed Results"):
             st.json(results)
@@ -119,7 +123,16 @@ def _render_champion_challenger_section():
     if comparison_path.exists():
         try:
             data = json.loads(comparison_path.read_text())
-            _display_comparison(data)
+            # If the file is a stale error result (e.g. drift error before fix),
+            # show a friendly message instead of crashing
+            drift_err = (data.get("drift_results") or {}).get("status") == "error"
+            if drift_err and data.get("comparison") is None:
+                st.info(
+                    "Previous run encountered a drift detection error. "
+                    "Click **Run Champion-Challenger** to generate fresh results."
+                )
+            else:
+                _display_comparison(data)
         except Exception as e:
             st.warning(f"Could not load comparison data: {e}")
     else:
@@ -140,7 +153,8 @@ def _render_champion_challenger_section():
 def _display_comparison(data: dict):
     """Display formatted comparison results."""
     promoted = data.get("promoted", False)
-    comparison = data.get("comparison", {})
+    # data.get() returns None when key exists with value null, so use `or {}`
+    comparison = data.get("comparison") or {}
 
     if promoted:
         st.markdown(
@@ -148,7 +162,7 @@ def _display_comparison(data: dict):
             unsafe_allow_html=True,
         )
     else:
-        reason = data.get("reason", comparison.get("reason", ""))
+        reason = data.get("reason") or comparison.get("reason", "")
         st.markdown(
             f'<div class="info-box">🛡️ <b>Champion Retained</b> — {reason}</div>',
             unsafe_allow_html=True,

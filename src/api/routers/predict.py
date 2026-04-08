@@ -2,6 +2,7 @@
 Prediction endpoints for generating forecasts.
 """
 
+import time as _time
 from datetime import datetime
 from typing import List
 
@@ -9,6 +10,8 @@ import numpy as np
 import pandas as pd
 import torch
 from fastapi import APIRouter, Depends, HTTPException, status
+
+from src.monitoring.metrics import track_prediction, PREDICTION_ERRORS
 
 from src.api.dependencies import ModelState, get_model_state
 from src.api.schemas import (
@@ -94,6 +97,7 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
             detail="Model not loaded. Call /health to check status.",
         )
 
+    _start = _time.time()
     try:
         # Load historical data
         df = load_data_from_db(start_year=2017)
@@ -188,6 +192,7 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
             )
             prediction_items.append(item)
 
+        track_prediction(success=True, duration=_time.time() - _start)
         return PredictResponse(
             predictions=prediction_items,
             last_known_price=float(df["Close"].iloc[-1]),
@@ -198,6 +203,8 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
         )
 
     except Exception as e:
+        track_prediction(success=False, duration=_time.time() - _start)
+        PREDICTION_ERRORS.labels(error_type=type(e).__name__).inc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Prediction failed: {str(e)}",

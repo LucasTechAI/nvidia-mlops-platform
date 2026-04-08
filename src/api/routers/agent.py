@@ -11,6 +11,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from src.monitoring.metrics import track_agent_query
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agent", tags=["agent"])
@@ -104,6 +106,7 @@ async def query_agent(request: AgentQueryRequest):
         tools_used = result.get("tools_used", [])
         reasoning_steps = result.get("iterations", 0)
 
+        track_agent_query(success=True, duration=elapsed, tools=tools_used)
         return AgentQueryResponse(
             answer=result.get("answer", "No answer generated."),
             reasoning_steps=reasoning_steps,
@@ -114,6 +117,7 @@ async def query_agent(request: AgentQueryRequest):
         )
 
     except Exception as e:
+        track_agent_query(success=False, duration=time.time() - start_time, tools=[])
         logger.error("Agent query failed: %s", str(e))
         raise HTTPException(
             status_code=500,
