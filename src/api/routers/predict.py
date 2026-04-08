@@ -2,6 +2,7 @@
 Prediction endpoints for generating forecasts.
 """
 
+import time as _time
 from datetime import datetime
 from typing import List
 
@@ -19,6 +20,7 @@ from src.api.schemas import (
     PredictResponse,
 )
 from src.etl.preprocessing import load_data_from_db
+from src.monitoring.metrics import PREDICTION_ERRORS, track_prediction
 
 router = APIRouter(prefix="/predict", tags=["Prediction"])
 
@@ -94,6 +96,7 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
             detail="Model not loaded. Call /health to check status.",
         )
 
+    _start = _time.time()
     try:
         # Load historical data
         df = load_data_from_db(start_year=2017)
@@ -188,6 +191,7 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
             )
             prediction_items.append(item)
 
+        track_prediction(success=True, duration=_time.time() - _start)
         return PredictResponse(
             predictions=prediction_items,
             last_known_price=float(df["Close"].iloc[-1]),
@@ -198,6 +202,8 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
         )
 
     except Exception as e:
+        track_prediction(success=False, duration=_time.time() - _start)
+        PREDICTION_ERRORS.labels(error_type=type(e).__name__).inc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Prediction failed: {str(e)}",

@@ -10,6 +10,121 @@
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
       "id": 100,
+      "title": "⚙️ System Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] },
+          "mappings": [
+            { "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } }, "type": "value" }
+          ]
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 20,
+      "targets": [
+        { "expr": "up{job=\"fastapi\"}", "legendFormat": "API", "instant": true }
+      ],
+      "title": "API Status",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] },
+          "mappings": [
+            { "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } }, "type": "value" }
+          ]
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 21,
+      "targets": [
+        { "expr": "up{job=\"prometheus\"}", "legendFormat": "Prometheus", "instant": true }
+      ],
+      "title": "Prometheus Status",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] },
+          "mappings": [
+            { "options": { "0": { "text": "NOT LOADED", "color": "red" }, "1": { "text": "LOADED", "color": "green" } }, "type": "value" }
+          ]
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 13,
+      "targets": [
+        { "expr": "model_loaded", "legendFormat": "Model", "instant": true }
+      ],
+      "title": "Model Status",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 100 }, { "color": "red", "value": 500 }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "targets": [
+        { "expr": "sum(http_requests_total)", "legendFormat": "Total", "instant": true }
+      ],
+      "title": "Total HTTP Requests",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 8,
+      "targets": [
+        { "expr": "sum(predictions_total) or vector(0)", "legendFormat": "Total", "instant": true }
+      ],
+      "title": "Total Predictions",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 7,
+      "targets": [
+        { "expr": "sum(prediction_errors_total) or vector(0)", "legendFormat": "Errors", "instant": true }
+      ],
+      "title": "Prediction Errors",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
       "title": "🌐 HTTP Request Metrics",
       "type": "row"
     },
@@ -22,13 +137,13 @@
           "unit": "reqps"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
       "id": 1,
       "options": { "tooltip": { "mode": "multi" } },
       "targets": [
         {
-          "expr": "rate(http_requests_total[5m])",
-          "legendFormat": "{{method}} {{endpoint}} {{status_code}}"
+          "expr": "sum by (endpoint) (rate(http_requests_total[2m]))",
+          "legendFormat": "{{endpoint}}"
         }
       ],
       "title": "HTTP Request Rate (req/s)",
@@ -43,19 +158,19 @@
           "unit": "s"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
       "id": 2,
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket[2m])))",
           "legendFormat": "p50"
         },
         {
-          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[2m])))",
           "legendFormat": "p95"
         },
         {
-          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket[2m])))",
           "legendFormat": "p99"
         }
       ],
@@ -65,12 +180,15 @@
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "fieldConfig": {
-        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 10 }] } }
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 10 }] }
+        }
       },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 9 },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 14 },
       "id": 3,
       "targets": [
-        { "expr": "sum(http_active_requests)", "legendFormat": "Active" }
+        { "expr": "sum(http_active_requests) or vector(0)", "legendFormat": "Active", "instant": true }
       ],
       "title": "Active Requests",
       "type": "stat"
@@ -78,20 +196,47 @@
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "fieldConfig": {
-        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] }, "unit": "short" }
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 10 },
+          "unit": "percent"
+        }
       },
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 9 },
-      "id": 4,
+      "gridPos": { "h": 4, "w": 18, "x": 6, "y": 14 },
+      "id": 14,
       "targets": [
-        { "expr": "sum(http_requests_total)", "legendFormat": "Total" }
+        {
+          "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[2m])) / sum(rate(http_requests_total[2m])) * 100",
+          "legendFormat": "5xx Error Rate %"
+        }
       ],
-      "title": "Total Requests",
-      "type": "stat"
+      "title": "HTTP 5xx Error Rate (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 10, "lineWidth": 2 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 18 },
+      "id": 22,
+      "targets": [
+        {
+          "expr": "sum by (endpoint, status_code) (increase(http_requests_total[2m]))",
+          "legendFormat": "{{endpoint}} [{{status_code}}]"
+        }
+      ],
+      "title": "Requests by Endpoint & Status Code (2m increase)",
+      "type": "timeseries"
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
-      "id": 101,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+      "id": 102,
       "title": "📈 Prediction Metrics",
       "type": "row"
     },
@@ -104,15 +249,15 @@
           "unit": "s"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
       "id": 5,
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, rate(prediction_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(prediction_duration_seconds_bucket[2m])))",
           "legendFormat": "p50"
         },
         {
-          "expr": "histogram_quantile(0.95, rate(prediction_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(prediction_duration_seconds_bucket[2m])))",
           "legendFormat": "p95"
         }
       ],
@@ -124,47 +269,21 @@
       "fieldConfig": {
         "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
       "id": 6,
       "targets": [
         {
-          "expr": "rate(predictions_total[5m])",
+          "expr": "sum by (status) (increase(predictions_total[2m]))",
           "legendFormat": "{{status}}"
         }
       ],
-      "title": "Prediction Rate (by status)",
+      "title": "Predictions (2m increase by status)",
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }, "unit": "short" }
-      },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 22 },
-      "id": 7,
-      "targets": [
-        { "expr": "sum(prediction_errors_total)", "legendFormat": "Errors" }
-      ],
-      "title": "Prediction Errors (Total)",
-      "type": "stat"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] }, "unit": "short" }
-      },
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 22 },
-      "id": 8,
-      "targets": [
-        { "expr": "sum(predictions_total)", "legendFormat": "Total" }
-      ],
-      "title": "Total Predictions",
-      "type": "stat"
-    },
-    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
-      "id": 102,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
+      "id": 103,
       "title": "🤖 Agent / LLM Metrics",
       "type": "row"
     },
@@ -177,15 +296,15 @@
           "unit": "s"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
       "id": 9,
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, rate(agent_query_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(agent_query_duration_seconds_bucket[2m])))",
           "legendFormat": "p50"
         },
         {
-          "expr": "histogram_quantile(0.95, rate(agent_query_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(agent_query_duration_seconds_bucket[2m])))",
           "legendFormat": "p95"
         }
       ],
@@ -197,26 +316,30 @@
       "fieldConfig": {
         "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
       "id": 10,
       "targets": [
         {
-          "expr": "rate(agent_tools_used_total[5m])",
+          "expr": "sum by (tool_name) (increase(agent_tools_used_total[2m]))",
           "legendFormat": "{{tool_name}}"
         }
       ],
-      "title": "Agent Tool Usage Rate",
+      "title": "Agent Tool Usage (2m increase)",
       "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "fieldConfig": {
-        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] }, "unit": "short" }
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
       },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 35 },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 44 },
       "id": 11,
       "targets": [
-        { "expr": "sum(agent_queries_total)", "legendFormat": "Queries" }
+        { "expr": "sum(agent_queries_total) or vector(0)", "legendFormat": "Queries", "instant": true }
       ],
       "title": "Total Agent Queries",
       "type": "stat"
@@ -224,58 +347,57 @@
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "fieldConfig": {
-        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] }, "unit": "short" }
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
       },
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 35 },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 44 },
       "id": 12,
       "targets": [
-        { "expr": "sum(agent_tools_used_total)", "legendFormat": "Tools" }
+        { "expr": "sum(agent_tools_used_total) or vector(0)", "legendFormat": "Tools", "instant": true }
       ],
       "title": "Total Tool Invocations",
-      "type": "stat"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 },
-      "id": 103,
-      "title": "⚙️ System Health",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0 }, { "color": "red", "value": 0 }] }, "unit": "bool_yes_no" }
-      },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 40 },
-      "id": 13,
-      "targets": [
-        { "expr": "model_loaded", "legendFormat": "Loaded" }
-      ],
-      "title": "Model Loaded",
       "type": "stat"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "fillOpacity": 10 },
-          "unit": "percent"
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
-      "id": 14,
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 44 },
+      "id": 23,
       "targets": [
-        {
-          "expr": "rate(http_requests_total{status_code=~\"5..\"}[5m]) / rate(http_requests_total[5m]) * 100",
-          "legendFormat": "Error Rate %"
-        }
+        { "expr": "sum(llm_token_usage_total) or vector(0)", "legendFormat": "Tokens", "instant": true }
       ],
-      "title": "HTTP 5xx Error Rate (%)",
-      "type": "timeseries"
+      "title": "Total LLM Tokens",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.3 }, { "color": "red", "value": 0.6 }] },
+          "unit": "short",
+          "decimals": 4
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 44 },
+      "id": 24,
+      "targets": [
+        { "expr": "data_drift_psi_score or vector(0)", "legendFormat": "PSI", "instant": true }
+      ],
+      "title": "Data Drift (PSI)",
+      "type": "stat"
     }
   ],
-  "refresh": "30s",
+  "refresh": "15s",
   "schemaVersion": 39,
   "tags": ["nvidia", "mlops", "lstm"],
   "templating": {
@@ -291,7 +413,7 @@
       }
     ]
   },
-  "time": { "from": "now-1h", "to": "now" },
+  "time": { "from": "now-30m", "to": "now" },
   "title": "NVIDIA MLOps Platform",
   "uid": "nvidia-mlops-main"
 }

@@ -184,7 +184,7 @@ class TestRunChampionChallenger:
         mock_save.assert_called_once()
 
     @patch("src.training.champion_challenger._save_result")
-    @patch("src.training.train.train_model")
+    @patch("src.training.champion_challenger._train_challenger")
     @patch("src.monitoring.drift.detect_drift_from_db")
     def test_drift_triggers_training(self, mock_drift, mock_train, mock_save):
         mock_drift.return_value = {"drift_detected": True}
@@ -204,7 +204,7 @@ class TestRunChampionChallenger:
         assert result["promoted"] is True  # 0.04 vs 0.05 = 20% improvement
 
     @patch("src.training.champion_challenger._save_result")
-    @patch("src.training.train.train_model")
+    @patch("src.training.champion_challenger._train_challenger")
     @patch("src.monitoring.drift.detect_drift_from_db")
     def test_training_failure(self, mock_drift, mock_train, mock_save):
         mock_drift.return_value = {"drift_detected": True}
@@ -214,7 +214,7 @@ class TestRunChampionChallenger:
         assert "Training exploded" in result.get("error", "")
 
     @patch("src.training.champion_challenger._save_result")
-    @patch("src.training.train.train_model")
+    @patch("src.training.champion_challenger._train_challenger")
     @patch("src.monitoring.drift.detect_drift_from_db")
     def test_forced_run_without_drift(self, mock_drift, mock_train, mock_save):
         mock_drift.return_value = {"drift_detected": False}
@@ -234,7 +234,7 @@ class TestRunChampionChallenger:
         assert result["promoted"] is False
 
     @patch("src.training.champion_challenger._save_result")
-    @patch("src.training.train.train_model")
+    @patch("src.training.champion_challenger._train_challenger")
     @patch("src.monitoring.drift.detect_drift_from_db")
     def test_mlflow_failure_handled(self, mock_drift, mock_train, mock_save):
         mock_drift.return_value = {"drift_detected": True}

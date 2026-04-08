@@ -221,6 +221,127 @@ def compare_models(
     return result
 
 
+def _train_challenger(experiment_name: str, champion_path: Optional[str] = None) -> dict:
+    """Load data, train a challenger model, and evaluate champion vs challenger.
+
+    Returns:
+        dict with ``run_id``, ``best_val_loss`` (challenger) and
+        ``champion_val_loss`` (loaded from checkpoint, or inf if unavailable).
+    """
+    import mlflow
+    import torch
+    import torch.nn as nn
+
+    from src.config import (
+        BATCH_SIZE,
+        BIDIRECTIONAL,
+        DATABASE_PATH,
+        DROPOUT,
+        EARLY_STOPPING_PATIENCE,
+        EPOCHS,
+        HIDDEN_SIZE,
+        LEARNING_RATE,
+        NUM_LAYERS,
+        OPTIMIZER,
+        SEQUENCE_LENGTH,
+        TEST_SPLIT,
+        TRAIN_SPLIT,
+        VAL_SPLIT,
+    )
+    from src.data.preprocessing import (
+        create_sequences,
+        load_data_from_db,
+        normalize_features,
+        train_val_test_split,
+    )
+    from src.models.lstm_model import create_model
+    from src.training.train import train_model
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info("Using device: %s", device)
+
+    # ── Data preparation ──────────────────────────────────────────────────
+    df = load_data_from_db(str(DATABASE_PATH))
+    feature_columns = [c for c in ["Open", "High", "Low", "Close", "Volume"] if c in df.columns]
+    normalized_data, scaler = normalize_features(df, feature_columns)
+    X, y = create_sequences(normalized_data, sequence_length=SEQUENCE_LENGTH)
+    X_train, y_train, X_val, y_val, _X_test, _y_test = train_val_test_split(
+        X, y, train_ratio=TRAIN_SPLIT, val_ratio=VAL_SPLIT, test_ratio=TEST_SPLIT
+    )
+
+    input_size = X.shape[2]
+    output_size = y.shape[1]
+
+    # ── Evaluate champion ────────────────────────────────────────────────
+    champion_path_resolved = Path(champion_path) if champion_path else ROOT_DIR / "models" / "best_model.pth"
+    champion_val_loss = float("inf")
+    if champion_path_resolved.exists():
+        try:
+            champ_model = create_model(
+                input_size=input_size,
+                hidden_size=HIDDEN_SIZE,
+                num_layers=NUM_LAYERS,
+                dropout=DROPOUT,
+                bidirectional=BIDIRECTIONAL,
+                output_size=output_size,
+            )
+            ckpt = torch.load(str(champion_path_resolved), map_location=device)
+            state = ckpt.get("model_state_dict", ckpt)
+            champ_model.load_state_dict(state, strict=False)
+            champ_model.to(device).eval()
+
+            criterion = nn.MSELoss()
+            with torch.no_grad():
+                preds = champ_model(torch.FloatTensor(X_val).to(device))
+                champion_val_loss = criterion(preds, torch.FloatTensor(y_val).to(device)).item()
+            logger.info("Champion val loss: %.6f", champion_val_loss)
+        except Exception as exc:
+            logger.warning("Could not evaluate champion model: %s — using inf", exc)
+    else:
+        logger.warning("Champion checkpoint not found at %s — using inf", champion_path_resolved)
+
+    # ── Train challenger ─────────────────────────────────────────────────
+    challenger_model = create_model(
+        input_size=input_size,
+        hidden_size=HIDDEN_SIZE,
+        num_layers=NUM_LAYERS,
+        dropout=DROPOUT,
+        bidirectional=BIDIRECTIONAL,
+        output_size=output_size,
+    ).to(device)
+
+    config = {
+        "batch_size": BATCH_SIZE,
+        "learning_rate": LEARNING_RATE,
+        "epochs": EPOCHS,
+        "early_stopping_patience": EARLY_STOPPING_PATIENCE,
+        "optimizer": OPTIMIZER,
+    }
+
+    mlflow.set_tracking_uri(str(ROOT_DIR / "mlruns"))
+    mlflow.set_experiment(experiment_name)
+
+    with mlflow.start_run(run_name="challenger_training") as run:
+        _trained, history = train_model(
+            model=challenger_model,
+            train_data=(X_train, y_train),
+            val_data=(X_val, y_val),
+            config=config,
+            device=device,
+            mlflow_tracking=True,
+        )
+        run_id = run.info.run_id
+
+    challenger_loss = min(history["val_loss"])
+    logger.info("Challenger best val loss: %.6f", challenger_loss)
+
+    return {
+        "run_id": run_id,
+        "best_val_loss": challenger_loss,
+        "champion_val_loss": champion_val_loss,
+    }
+
+
 def run_champion_challenger(
     champion_path: Optional[str] = None,
     experiment_name: str = "champion_challenger",
@@ -244,7 +365,6 @@ def run_champion_challenger(
         Dictionary with pipeline results.
     """
     from src.monitoring.drift import detect_drift_from_db
-    from src.training.train import train_model
 
     result = {
         "timestamp": datetime.now().isoformat(),
@@ -276,7 +396,7 @@ def run_champion_challenger(
     logger.info("=" * 60)
 
     try:
-        training_result = train_model(experiment_name=f"{experiment_name}_challenger")
+        training_result = _train_challenger(experiment_name, champion_path=champion_path)
         result["retrained"] = True
         result["training_result"] = {
             "run_id": training_result.get("run_id"),
@@ -288,7 +408,7 @@ def run_champion_challenger(
         _save_result(result)
         return result
 
-    # Step 3 & 4: Compare (metrics already logged by train_model)
+    # Step 3 & 4: Compare
     logger.info("=" * 60)
     logger.info("Step 3: Champion-Challenger Comparison")
     logger.info("=" * 60)

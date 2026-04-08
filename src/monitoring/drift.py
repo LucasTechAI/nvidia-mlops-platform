@@ -30,7 +30,7 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 PSI_WARNING_THRESHOLD = 0.1
 PSI_RETRAIN_THRESHOLD = 0.2
 
-FEATURE_COLUMNS = ["Open", "High", "Low", "Close", "Volume"]
+FEATURE_COLUMNS = ["Close"]
 
 
 def calculate_psi(reference: np.ndarray, current: np.ndarray, n_bins: int = 10) -> float:
@@ -146,6 +146,13 @@ def detect_drift(
         elif results["drift_detected"]:
             results["overall_status"] = "warning"
 
+    # Summary fields consumed by the dashboard
+    results["features_analyzed"] = len(results["features"])
+    results["drifted_features"] = sum(
+        1 for f in results["features"].values() if f.get("status") in ("warning", "retrain")
+    )
+    results["method"] = "PSI"
+
     # Try Evidently for detailed report
     try:
         results["evidently_report"] = _run_evidently_report(reference_data, current_data, available_features)
@@ -230,11 +237,15 @@ def detect_drift_from_db(
 
     conn = sqlite3.connect(DATABASE_PATH)
     try:
-        df = pd.read_sql("SELECT * FROM nvidia_stock ORDER BY Date", conn)
+        df = pd.read_sql("SELECT * FROM nvidia_stock ORDER BY date", conn)
     except Exception as e:
         return {"status": "error", "message": f"Query failed: {str(e)}"}
     finally:
         conn.close()
+
+    # Normalize column names to Title Case so they match FEATURE_COLUMNS
+    # (ETL stores columns in lowercase: open, high, low, close, volume)
+    df.columns = [col.capitalize() for col in df.columns]
 
     if len(df) < 20:
         return {"status": "error", "message": "Insufficient data"}

@@ -11,6 +11,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 from src.config import settings
 from src.models.lstm_model import NvidiaLSTM
+from src.monitoring.metrics import MODEL_LOADED
 
 logger = logging.getLogger(__name__)
 
@@ -98,8 +99,10 @@ class ModelState:
                 self.model = self.model.to(self.device)
                 self.model.eval()
 
+                MODEL_LOADED.set(1)
                 logger.info(f"Model loaded from {checkpoint_path}")
             else:
+                MODEL_LOADED.set(0)
                 logger.warning(f"Checkpoint not found: {checkpoint_path}")
                 return False
 
@@ -121,6 +124,7 @@ class ModelState:
             return True
 
         except Exception as e:
+            MODEL_LOADED.set(0)
             logger.error(f"Failed to load model: {e}")
             return False
 
