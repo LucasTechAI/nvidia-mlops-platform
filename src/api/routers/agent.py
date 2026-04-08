@@ -84,6 +84,7 @@ async def query_agent(request: AgentQueryRequest):
     The agent uses reasoning-action loops with tools to answer
     financial questions about NVIDIA stock data.
     """
+    start_time = time.time()
     try:
         from src.agent.react_agent import create_agent
 
@@ -92,8 +93,6 @@ async def query_agent(request: AgentQueryRequest):
             temperature=request.temperature,
             max_iterations=request.max_iterations,
         )
-
-        start_time = time.time()
 
         if request.use_guardrails:
             result = agent.query_with_guardrails(request.query)
