@@ -11,8 +11,6 @@ import pandas as pd
 import torch
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.monitoring.metrics import track_prediction, PREDICTION_ERRORS
-
 from src.api.dependencies import ModelState, get_model_state
 from src.api.schemas import (
     InferenceRequest,
@@ -22,6 +20,7 @@ from src.api.schemas import (
     PredictResponse,
 )
 from src.etl.preprocessing import load_data_from_db
+from src.monitoring.metrics import PREDICTION_ERRORS, track_prediction
 
 router = APIRouter(prefix="/predict", tags=["Prediction"])
 

@@ -244,9 +244,9 @@ def _train_challenger(experiment_name: str, champion_path: Optional[str] = None)
         NUM_LAYERS,
         OPTIMIZER,
         SEQUENCE_LENGTH,
+        TEST_SPLIT,
         TRAIN_SPLIT,
         VAL_SPLIT,
-        TEST_SPLIT,
     )
     from src.data.preprocessing import (
         create_sequences,

@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.dependencies import model_state
 from src.api.routers import agent_router, data_router, health_router, predict_router, train_router
 from src.config import enable_mlflow_tracing
-from src.monitoring.metrics import get_metrics, track_request, ACTIVE_REQUESTS
+from src.monitoring.metrics import ACTIVE_REQUESTS, get_metrics, track_request
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")

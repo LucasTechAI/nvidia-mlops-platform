@@ -131,6 +131,7 @@ def _find_latest_mlflow_run() -> str | None:
     """
     try:
         import mlflow
+
         from src.config import MLflowConfig
 
         mlflow.set_tracking_uri(MLflowConfig.tracking_uri)
@@ -195,6 +196,7 @@ def load_mlflow_metrics() -> pd.DataFrame:
     try:
         if run_info["type"] == "client":
             import mlflow
+
             from src.config import MLflowConfig
 
             mlflow.set_tracking_uri(MLflowConfig.tracking_uri)
@@ -240,6 +242,7 @@ def load_mlflow_params() -> dict:
     try:
         if run_info["type"] == "client":
             import mlflow
+
             from src.config import MLflowConfig
 
             mlflow.set_tracking_uri(MLflowConfig.tracking_uri)
