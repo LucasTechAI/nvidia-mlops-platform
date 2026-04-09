@@ -11,6 +11,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!dashboard-frontend/src/lib/
 lib64/
 parts/
 sdist/
@@ -93,6 +94,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+!dashboard-frontend/.env.local
 
 # Coverage
 .coverage

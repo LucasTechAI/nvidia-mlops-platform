@@ -11,7 +11,16 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.dependencies import model_state
-from src.api.routers import agent_router, data_router, health_router, predict_router, train_router
+from src.api.routers import (
+    agent_router,
+    data_router,
+    evaluation_router,
+    health_router,
+    model_router,
+    monitoring_router,
+    predict_router,
+    train_router,
+)
 from src.config import enable_mlflow_tracing
 from src.monitoring.metrics import ACTIVE_REQUESTS, get_metrics, track_request
 
@@ -89,6 +98,9 @@ app.include_router(predict_router)
 app.include_router(train_router)
 app.include_router(data_router)
 app.include_router(agent_router)
+app.include_router(model_router)
+app.include_router(monitoring_router)
+app.include_router(evaluation_router)
 
 
 # Prometheus metrics middleware

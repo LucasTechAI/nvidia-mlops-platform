@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+:root {
+  --nvidia-green: #76b900;
+  --nvidia-dark: #5a8f00;
+  --nvidia-light: #9ed700;
+  --surface: #0e1117;
+  --surface-card: #1a1c24;
+  --surface-hover: #262730;
+  --surface-border: #2d3040;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-hover) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--surface-hover);
+  border-radius: 3px;
+}
+
+body {
+  background: var(--surface);
+  color: #fafafa;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+@layer components {
+  .stat-card {
+    @apply relative overflow-hidden rounded-xl border border-surface-border bg-surface-card p-5 transition-all duration-300;
+  }
+
+  .stat-card:hover {
+    @apply border-nvidia/30;
+    box-shadow: 0 0 20px rgba(118, 185, 0, 0.08);
+  }
+
+  .stat-card::before {
+    content: "";
+    @apply absolute left-0 top-0 h-full w-1 bg-nvidia;
+  }
+
+  .tab-active {
+    @apply border-b-2 border-nvidia text-nvidia;
+  }
+
+  .tab-inactive {
+    @apply border-b-2 border-transparent text-white/50 hover:text-white/80;
+  }
+
+  .glow-green {
+    box-shadow: 0 0 15px rgba(118, 185, 0, 0.15);
+  }
+
+  .gradient-card {
+    background: linear-gradient(145deg, #1a1c24, #262730);
+  }
+}
+
+/* Recharts overrides for dark theme */
+.recharts-cartesian-grid line {
+  stroke: rgba(255, 255, 255, 0.05) !important;
+}
+
+.recharts-text {
+  fill: rgba(255, 255, 255, 0.6) !important;
+  font-size: 11px !important;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #1a1c24 !important;
+  border: 1px solid rgba(118, 185, 0, 0.3) !important;
+  border-radius: 8px !important;
+}

@@ -31,7 +31,7 @@ train: ## Run model training
 serve: ## Start FastAPI API server
 	bash scripts/run_api.sh
 
-dashboard: ## Start Streamlit dashboard
+dashboard: ## Start Next.js dashboard
 	bash scripts/run_dashboard.sh
 
 data: ## Run ETL pipeline
