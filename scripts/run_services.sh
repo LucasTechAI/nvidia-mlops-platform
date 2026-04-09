@@ -68,7 +68,7 @@ stop_services() {
     fi
 
     # Kill any leftover processes on our ports
-    for port in 8000 8501 5000; do
+    for port in 8000 3001 5000; do
         pid=$(lsof -ti :"$port" 2>/dev/null || true)
         if [ -n "$pid" ]; then
             kill "$pid" 2>/dev/null || true
@@ -150,22 +150,18 @@ echo "fastapi=$!" >> "$PIDFILE"
 wait_for "http://localhost:8000/health" "FastAPI"
 
 # ═════════════════════════════════════════════════════════════════════════════
-# 3. Streamlit Dashboard  (:8501)
+# 3. Next.js Dashboard  (:3001)
 # ═════════════════════════════════════════════════════════════════════════════
-echo -e "${CYAN}  [3/5] Starting Streamlit Dashboard...${NC}"
+echo -e "${CYAN}  [3/5] Starting Next.js Dashboard...${NC}"
+cd "$PROJECT_ROOT/dashboard-frontend"
+if [ ! -d "node_modules" ]; then
+    echo -e "  ${YELLOW}Installing frontend dependencies...${NC}"
+    npm install > "$LOGDIR/npm-install.log" 2>&1
+fi
+npm run dev > "$LOGDIR/nextjs.log" 2>&1 &
+echo "nextjs=$!" >> "$PIDFILE"
 cd "$PROJECT_ROOT"
-PYTHONPATH="$PROJECT_ROOT" $PYTHON -m streamlit run src/dashboard/app.py \
-    --server.port=8501 \
-    --server.address=0.0.0.0 \
-    --server.headless=true \
-    --browser.gatherUsageStats=false \
-    --theme.primaryColor="#76B900" \
-    --theme.backgroundColor="#0E1117" \
-    --theme.secondaryBackgroundColor="#262730" \
-    --theme.textColor="#FAFAFA" \
-    > "$LOGDIR/streamlit.log" 2>&1 &
-echo "streamlit=$!" >> "$PIDFILE"
-wait_for "http://localhost:8501" "Streamlit"
+wait_for "http://localhost:3001" "Next.js"
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 4. Prometheus  (:9090)  — via Docker
@@ -221,7 +217,7 @@ echo -e "${BOLD}${GREEN}  ✅ All services running!${NC}"
 echo ""
 echo -e "  ${CYAN}FastAPI${NC}      http://localhost:8000"
 echo -e "  ${CYAN}Swagger${NC}      http://localhost:8000/docs"
-echo -e "  ${CYAN}Streamlit${NC}    http://localhost:8501"
+echo -e "  ${CYAN}Next.js${NC}      http://localhost:3001"
 echo -e "  ${CYAN}MLflow${NC}       http://localhost:5000"
 echo -e "  ${CYAN}Prometheus${NC}   http://localhost:9090"
 echo -e "  ${CYAN}Grafana${NC}      http://localhost:3000  (admin/admin)"
