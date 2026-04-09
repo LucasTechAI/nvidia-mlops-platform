@@ -35,23 +35,23 @@ export const api = {
   data: {
     historical: (limit?: number) =>
       request<Record<string, unknown>>(
-        `/data/historical${limit ? `?limit=${limit}` : ""}`
+        `/data${limit ? `?limit=${limit}` : ""}`
       ),
     recent: (days: number = 30) =>
-      request<Record<string, unknown>>(`/data/recent?days=${days}`),
-    stats: () => request<Record<string, unknown>>("/data/stats"),
+      request<Record<string, unknown>>(`/data/latest?days=${days}`),
+    stats: () => request<Record<string, unknown>>("/data/summary"),
     columns: () => request<{ columns: string[] }>("/data/columns"),
   },
 
   /* ──────── Predictions ──────── */
   predict: {
     forecast: (params: {
-      horizon_days?: number;
-      include_confidence?: boolean;
-      mc_samples?: number;
+      horizon?: number;
+      with_uncertainty?: boolean;
+      n_samples?: number;
       confidence_level?: number;
     }) =>
-      request<Record<string, unknown>>("/predict/forecast", {
+      request<Record<string, unknown>>("/predict", {
         method: "POST",
         body: JSON.stringify(params),
       }),
@@ -95,7 +95,7 @@ export const api = {
   agent: {
     query: (params: {
       query: string;
-      use_rag?: boolean;
+      use_guardrails?: boolean;
       temperature?: number;
       max_iterations?: number;
     }) =>

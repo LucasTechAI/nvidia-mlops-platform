@@ -29,8 +29,8 @@ interface PredictionPoint {
 }
 
 interface HistoricalPoint {
-  Date: string;
-  Close: number;
+  date: string;
+  close: number;
   [key: string]: unknown;
 }
 
@@ -52,7 +52,7 @@ export default function PredictionsPage() {
         const data = (res as { data?: HistoricalPoint[] }).data || [];
         setHistoricalData(data);
         if (data.length > 0) {
-          setCurrentPrice(data[data.length - 1].Close);
+          setCurrentPrice(data[data.length - 1].close);
         }
       } catch (err) {
         console.error("Failed to load historical data:", err);
@@ -67,18 +67,18 @@ export default function PredictionsPage() {
     setError(null);
     try {
       const res = await api.predict.forecast({
-        horizon_days: horizon,
-        include_confidence: showConfidence,
-        mc_samples: 100,
+        horizon: horizon,
+        with_uncertainty: showConfidence,
+        n_samples: 100,
         confidence_level: 0.95,
       });
       const forecastRes = res as {
         predictions?: PredictionPoint[];
-        current_price?: number;
+        last_known_price?: number;
       };
       setPredictions(forecastRes.predictions || []);
-      if (forecastRes.current_price) {
-        setCurrentPrice(forecastRes.current_price);
+      if (forecastRes.last_known_price) {
+        setCurrentPrice(forecastRes.last_known_price);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Forecast failed");
@@ -90,8 +90,8 @@ export default function PredictionsPage() {
   // Build chart data combining historical + predictions
   const chartData = [
     ...historicalData.map((d) => ({
-      date: d.Date,
-      historical: d.Close,
+      date: d.date,
+      historical: d.close,
     })),
     ...predictions.map((p) => ({
       date: p.date,
