@@ -23,9 +23,16 @@ async def run_drift_detection():
         from src.monitoring.drift import detect_drift_from_db
 
         results = detect_drift_from_db()
-        if results is None:
-            raise HTTPException(status_code=404, detail="No data available for drift detection")
+    except ImportError:
+        raise HTTPException(status_code=501, detail="Drift detection module not available")
+    except Exception as e:
+        logger.error(f"Drift detection failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
+    if results is None:
+        raise HTTPException(status_code=404, detail="No data available for drift detection")
+
+    try:
         # Serialize results
         serializable = {}
         for key, val in results.items():
@@ -47,10 +54,8 @@ async def run_drift_detection():
                 serializable[key] = val
 
         return serializable
-    except ImportError:
-        raise HTTPException(status_code=501, detail="Drift detection module not available")
     except Exception as e:
-        logger.error(f"Drift detection failed: {e}")
+        logger.error(f"Drift serialization failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -74,9 +79,9 @@ async def get_champion_challenger():
 async def run_champion_challenger():
     """Run champion-challenger pipeline."""
     try:
-        from src.training.champion_challenger import run_champion_challenger_pipeline
+        from src.training.champion_challenger import run_champion_challenger
 
-        results = run_champion_challenger_pipeline()
+        results = run_champion_challenger()
         if results is None:
             raise HTTPException(status_code=500, detail="Pipeline returned no results")
 

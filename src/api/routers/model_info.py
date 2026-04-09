@@ -4,7 +4,6 @@ Model Information Router.
 Provides endpoints for model architecture, training history, and HPO results.
 """
 
-import json
 import logging
 from pathlib import Path
 
@@ -39,16 +38,14 @@ def _load_checkpoint() -> dict | None:
     try:
         data = torch.load(path, map_location="cpu", weights_only=False)
         # Handle bare state_dict
-        if isinstance(data, dict) and "model_state_dict" not in data and all(
-            isinstance(v, torch.Tensor) for v in list(data.values())[:3]
+        if (
+            isinstance(data, dict)
+            and "model_state_dict" not in data
+            and all(isinstance(v, torch.Tensor) for v in list(data.values())[:3])
         ):
             state_dict = data
-            input_size = (
-                state_dict["lstm.weight_ih_l0"].shape[1] if "lstm.weight_ih_l0" in state_dict else 5
-            )
-            hidden_size = (
-                state_dict["lstm.weight_hh_l0"].shape[1] if "lstm.weight_hh_l0" in state_dict else 128
-            )
+            input_size = state_dict["lstm.weight_ih_l0"].shape[1] if "lstm.weight_ih_l0" in state_dict else 5
+            hidden_size = state_dict["lstm.weight_hh_l0"].shape[1] if "lstm.weight_hh_l0" in state_dict else 128
             output_size = state_dict["fc.bias"].shape[0] if "fc.bias" in state_dict else 1
             num_layers = sum(1 for k in state_dict if k.startswith("lstm.weight_ih_l")) or 2
             data = {

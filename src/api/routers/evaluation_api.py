@@ -50,9 +50,16 @@ async def run_explainability():
         from src.explainability.feature_importance import compute_permutation_importance
 
         results = compute_permutation_importance()
-        if results is None:
-            raise HTTPException(status_code=404, detail="No explainability results")
+    except ImportError:
+        raise HTTPException(status_code=501, detail="Explainability module not available")
+    except Exception as e:
+        logger.error(f"Explainability computation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
+    if results is None:
+        raise HTTPException(status_code=404, detail="No explainability results")
+
+    try:
         # Serialize
         serializable = []
         if isinstance(results, list):
@@ -74,10 +81,8 @@ async def run_explainability():
                     serializable.append({"feature": k, "importance": v})
 
         return {"features": serializable}
-    except ImportError:
-        raise HTTPException(status_code=501, detail="Explainability module not available")
     except Exception as e:
-        logger.error(f"Explainability computation failed: {e}")
+        logger.error(f"Explainability serialization failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
