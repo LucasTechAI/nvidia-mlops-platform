@@ -133,9 +133,11 @@ export default function MetricsPage() {
           <StatCard
             label="Early Stopping"
             value={
-              trainingInfo.early_stopping_patience
-                ? `Patience ${trainingInfo.early_stopping_patience}`
-                : "Enabled"
+              trainingInfo["Early Stopped"] === true
+                ? "Triggered"
+                : trainingInfo.early_stopping_patience
+                  ? `Patience ${trainingInfo.early_stopping_patience}`
+                  : "Enabled"
             }
             icon={<Target className="h-5 w-5 text-purple-400" />}
             accentColor="#a78bfa"

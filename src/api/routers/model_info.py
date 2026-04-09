@@ -90,7 +90,8 @@ async def get_model_info():
     config = checkpoint.get("model_config", {})
     state = checkpoint.get("model_state_dict", {})
     training_info = checkpoint.get("training_info", {})
-    test_metrics = checkpoint.get("test_metrics", {})
+    # Support both key names: "test_results" (actual) and "test_metrics" (legacy)
+    test_metrics = checkpoint.get("test_results", checkpoint.get("test_metrics", {}))
 
     # Serialize config values
     config_serializable = {}
@@ -123,15 +124,21 @@ async def get_model_info():
         else:
             training_serializable[k] = v
 
+    # Extract epoch/loss from training_info if not at top level
+    best_epoch = checkpoint.get("best_epoch") or training_info.get("Best Epoch", 0)
+    total_epochs = checkpoint.get("epoch") or training_info.get("Total Epochs", 0)
+    best_loss = checkpoint.get("best_loss") or training_info.get("Best Val Loss")
+    loss = checkpoint.get("loss") or (best_loss if best_loss is not None else 0.0)
+
     return {
         "model_config": config_serializable,
         "parameters": params,
         "training_info": training_serializable,
         "test_metrics": metrics_serializable,
-        "epoch": checkpoint.get("epoch", 0),
-        "best_epoch": checkpoint.get("best_epoch", 0),
-        "loss": float(checkpoint.get("loss", 0.0)),
-        "best_loss": float(checkpoint.get("best_loss", 0.0)) if checkpoint.get("best_loss") else None,
+        "epoch": int(total_epochs),
+        "best_epoch": int(best_epoch),
+        "loss": float(loss),
+        "best_loss": float(best_loss) if best_loss is not None else None,
         "features": checkpoint.get("features", []),
     }
 
@@ -143,7 +150,19 @@ async def get_training_history():
     if checkpoint is None:
         raise HTTPException(status_code=404, detail="No model checkpoint found")
 
+    # Support both formats: nested "training_history" dict or top-level lists
     history = checkpoint.get("training_history", {})
+    if not history:
+        # Try top-level train_losses / val_losses (actual checkpoint format)
+        train_losses = checkpoint.get("train_losses", [])
+        val_losses = checkpoint.get("val_losses", [])
+        if train_losses or val_losses:
+            history = {}
+            if train_losses:
+                history["train_loss"] = train_losses
+            if val_losses:
+                history["val_loss"] = val_losses
+
     if not history:
         raise HTTPException(status_code=404, detail="No training history in checkpoint")
 
