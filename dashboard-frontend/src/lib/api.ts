@@ -35,26 +35,34 @@ export const api = {
   data: {
     historical: (limit?: number) =>
       request<Record<string, unknown>>(
-        `/data/historical${limit ? `?limit=${limit}` : ""}`
+        `/data${limit ? `?limit=${limit}` : ""}`
       ),
     recent: (days: number = 30) =>
-      request<Record<string, unknown>>(`/data/recent?days=${days}`),
-    stats: () => request<Record<string, unknown>>("/data/stats"),
+      request<Record<string, unknown>>(`/data/latest?days=${days}`),
+    stats: () => request<Record<string, unknown>>("/data/summary"),
     columns: () => request<{ columns: string[] }>("/data/columns"),
+    live: () =>
+      request<{ data: { date: string; close: number }[]; db_last_date: string; live_count: number }>(
+        "/data/live"
+      ),
   },
 
   /* ──────── Predictions ──────── */
   predict: {
     forecast: (params: {
-      horizon_days?: number;
-      include_confidence?: boolean;
-      mc_samples?: number;
+      horizon?: number;
+      with_uncertainty?: boolean;
+      n_samples?: number;
       confidence_level?: number;
     }) =>
-      request<Record<string, unknown>>("/predict/forecast", {
+      request<Record<string, unknown>>("/predict", {
         method: "POST",
         body: JSON.stringify(params),
       }),
+    backtest: (days: number = 60) =>
+      request<{ backtest: { date: string; actual: number; predicted: number }[]; days: number }>(
+        `/predict/backtest?days=${days}`
+      ),
   },
 
   /* ──────── Model ──────── */
@@ -71,6 +79,10 @@ export const api = {
       request<Record<string, unknown>>("/monitoring/drift", {
         method: "POST",
       }),
+    allTriggers: () =>
+      request<Record<string, unknown>>("/monitoring/drift/all-triggers", {
+        method: "POST",
+      }),
     championChallenger: () =>
       request<Record<string, unknown>>("/monitoring/champion-challenger"),
     runChampionChallenger: () =>
@@ -78,6 +90,8 @@ export const api = {
         "/monitoring/champion-challenger/run",
         { method: "POST" }
       ),
+    runsHistory: () =>
+      request<Record<string, unknown>>("/monitoring/runs/history"),
   },
 
   /* ──────── Evaluation ──────── */
@@ -95,7 +109,7 @@ export const api = {
   agent: {
     query: (params: {
       query: string;
-      use_rag?: boolean;
+      use_guardrails?: boolean;
       temperature?: number;
       max_iterations?: number;
     }) =>

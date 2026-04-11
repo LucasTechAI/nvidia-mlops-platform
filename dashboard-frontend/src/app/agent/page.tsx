@@ -9,7 +9,8 @@ interface Message {
   content: string;
   timestamp: Date;
   sources?: string[];
-  steps?: string[];
+  reasoningCount?: number;
+  elapsedTime?: number;
 }
 
 const EXAMPLE_QUERIES = [
@@ -45,7 +46,7 @@ export default function AgentPage() {
     try {
       const res = await api.agent.query({
         query: text,
-        use_rag: true,
+        use_guardrails: true,
         temperature: 0.1,
         max_iterations: 8,
       });
@@ -53,16 +54,19 @@ export default function AgentPage() {
       const agentRes = res as {
         answer?: string;
         response?: string;
-        sources?: string[];
-        reasoning_steps?: string[];
+        tools_used?: string[];
+        reasoning_steps?: number;
+        elapsed_time?: number;
+        model_used?: string;
       };
 
       const assistantMsg: Message = {
         role: "assistant",
         content: agentRes.answer || agentRes.response || JSON.stringify(res),
         timestamp: new Date(),
-        sources: agentRes.sources,
-        steps: agentRes.reasoning_steps,
+        sources: agentRes.tools_used,
+        reasoningCount: agentRes.reasoning_steps ?? 0,
+        elapsedTime: agentRes.elapsed_time,
       };
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err) {
@@ -149,23 +153,17 @@ export default function AgentPage() {
                     {msg.content}
                   </div>
 
-                  {/* Reasoning steps */}
-                  {msg.steps && msg.steps.length > 0 && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-nvidia/70 hover:text-nvidia">
-                        Reasoning steps ({msg.steps.length})
-                      </summary>
-                      <div className="mt-1 space-y-1 border-l-2 border-nvidia/20 pl-3">
-                        {msg.steps.map((step, j) => (
-                          <p key={j} className="text-xs text-white/40">
-                            {step}
-                          </p>
-                        ))}
-                      </div>
-                    </details>
+                  {/* Reasoning info */}
+                  {msg.reasoningCount !== undefined && msg.reasoningCount > 0 && (
+                    <div className="mt-2 flex items-center gap-3 text-[10px] text-white/30">
+                      <span>🧠 {msg.reasoningCount} reasoning steps</span>
+                      {msg.elapsedTime !== undefined && (
+                        <span>⏱ {msg.elapsedTime.toFixed(2)}s</span>
+                      )}
+                    </div>
                   )}
 
-                  {/* Sources */}
+                  {/* Tools used */}
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {msg.sources.map((src, j) => (

@@ -90,7 +90,8 @@ async def get_model_info():
     config = checkpoint.get("model_config", {})
     state = checkpoint.get("model_state_dict", {})
     training_info = checkpoint.get("training_info", {})
-    test_metrics = checkpoint.get("test_metrics", {})
+    # Support both key names: "test_results" (actual) and "test_metrics" (legacy)
+    test_metrics = checkpoint.get("test_results", checkpoint.get("test_metrics", {}))
 
     # Serialize config values
     config_serializable = {}
@@ -123,39 +124,120 @@ async def get_model_info():
         else:
             training_serializable[k] = v
 
+    # Extract epoch/loss from training_info if not at top level
+    best_epoch = checkpoint.get("best_epoch") or training_info.get("Best Epoch", 0)
+    total_epochs = checkpoint.get("epoch") or training_info.get("Total Epochs", 0)
+    best_loss = checkpoint.get("best_loss") or training_info.get("Best Val Loss")
+    loss = checkpoint.get("loss") or (best_loss if best_loss is not None else 0.0)
+
     return {
         "model_config": config_serializable,
         "parameters": params,
         "training_info": training_serializable,
         "test_metrics": metrics_serializable,
-        "epoch": checkpoint.get("epoch", 0),
-        "best_epoch": checkpoint.get("best_epoch", 0),
-        "loss": float(checkpoint.get("loss", 0.0)),
-        "best_loss": float(checkpoint.get("best_loss", 0.0)) if checkpoint.get("best_loss") else None,
+        "epoch": int(total_epochs),
+        "best_epoch": int(best_epoch),
+        "loss": float(loss),
+        "best_loss": float(best_loss) if best_loss is not None else None,
         "features": checkpoint.get("features", []),
     }
 
 
 @router.get("/training-history")
 async def get_training_history():
-    """Get training curves (loss, RMSE, MAE, R² per epoch)."""
+    """Get training curves (loss, RMSE, MAE, R² per epoch) + test metrics."""
+    import math
+
     checkpoint = _load_checkpoint()
     if checkpoint is None:
         raise HTTPException(status_code=404, detail="No model checkpoint found")
 
+    # Support both formats: nested "training_history" dict or top-level lists
     history = checkpoint.get("training_history", {})
+    if not history:
+        # Try top-level train_losses / val_losses (legacy checkpoint format)
+        train_losses = checkpoint.get("train_losses", [])
+        val_losses = checkpoint.get("val_losses", [])
+        if train_losses or val_losses:
+            history = {}
+            if train_losses:
+                history["train_loss"] = train_losses
+                # Derive train_rmse from MSE loss (rmse = sqrt(mse))
+                history["train_rmse"] = [math.sqrt(v) for v in train_losses]
+            if val_losses:
+                history["val_loss"] = val_losses
+                # Derive val_rmse from MSE loss
+                history["val_rmse"] = [math.sqrt(v) for v in val_losses]
+
     if not history:
         raise HTTPException(status_code=404, detail="No training history in checkpoint")
 
-    # Convert numpy/tensor arrays to lists
+    # Convert numpy/tensor arrays and scalars to plain Python floats
     result = {}
     for key, values in history.items():
         if hasattr(values, "tolist"):
             result[key] = values.tolist()
         elif isinstance(values, list):
-            result[key] = [float(v) if isinstance(v, (int, float)) else v for v in values]
+            result[key] = [float(v) for v in values]
         else:
             result[key] = values
+
+    # ── Compute test metrics in *normalized* space ──
+    # Train/val curves use normalized data so test must too for comparison.
+    try:
+        import sqlite3
+
+        import numpy as np
+        import torch
+
+        from src.api.dependencies import ModelState
+        from src.config import DATABASE_PATH
+        from src.data.preprocessing import create_sequences
+
+        state = ModelState()
+        if state.is_ready and state.model is not None and state.scaler is not None:
+            conn = sqlite3.connect(DATABASE_PATH)
+            df = __import__("pandas").read_sql(
+                "SELECT * FROM nvidia_stock ORDER BY date",
+                conn,
+            )
+            conn.close()
+            df.columns = [c.capitalize() for c in df.columns]
+
+            feature_cols = ["Open", "High", "Low", "Close", "Volume"]
+            available = [c for c in feature_cols if c in df.columns]
+            raw = df[available].values
+            normalized = state.scaler.transform(raw)
+
+            seq_len = state.model_config.get("sequence_length", 60)
+            X, y = create_sequences(normalized, seq_len)
+
+            # Test split = last 15 %
+            n = len(X)
+            test_start = int(n * 0.85)
+            X_test = torch.FloatTensor(X[test_start:]).to(state.device)
+            y_test = torch.FloatTensor(y[test_start:]).to(state.device)
+
+            state.model.eval()
+            with torch.no_grad():
+                preds = state.model(X_test)
+            preds_np = preds.cpu().numpy().flatten()
+            y_np = y_test.cpu().numpy().flatten()
+
+            test_mse = float(np.mean((preds_np - y_np) ** 2))
+            test_rmse = float(np.sqrt(test_mse))
+            test_mae = float(np.mean(np.abs(preds_np - y_np)))
+            ss_res = float(np.sum((y_np - preds_np) ** 2))
+            ss_tot = float(np.sum((y_np - np.mean(y_np)) ** 2))
+            test_r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
+
+            result["test_loss"] = test_mse
+            result["test_rmse"] = test_rmse
+            result["test_mae"] = test_mae
+            result["test_r2"] = float(test_r2)
+            result["test_n_samples"] = len(y_np)
+    except Exception as e:
+        logger.warning("Could not compute normalized test metrics: %s", e)
 
     return result
 

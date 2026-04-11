@@ -82,9 +82,11 @@ class TestTrainEpoch:
     def test_returns_float_loss(self, small_model, train_loader, device):
         criterion = nn.MSELoss()
         optimizer = torch.optim.Adam(small_model.parameters(), lr=0.001)
-        loss = train_epoch(small_model, train_loader, criterion, optimizer, device)
+        loss, metrics = train_epoch(small_model, train_loader, criterion, optimizer, device)
         assert isinstance(loss, float)
         assert loss >= 0
+        assert isinstance(metrics, dict)
+        assert "rmse" in metrics
 
     def test_loss_decreases_over_epochs(self, small_model, train_loader, device):
         criterion = nn.MSELoss()
@@ -120,8 +122,10 @@ class TestValidateEpoch:
         assert loss >= 0
         assert "rmse" in metrics
         assert "mae" in metrics
-        assert "mape" in metrics
-        assert all(v >= 0 for v in metrics.values())
+        assert "r2" in metrics
+        # R2 can be negative for bad predictions
+        assert metrics["rmse"] >= 0
+        assert metrics["mae"] >= 0
 
     def test_model_in_eval_mode_after(self, small_model, val_loader, device):
         criterion = nn.MSELoss()

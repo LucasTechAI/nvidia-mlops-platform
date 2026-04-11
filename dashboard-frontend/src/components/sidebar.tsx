@@ -10,13 +10,17 @@ import {
   ClipboardList,
   Bot,
   Activity,
+  Home,
+  GitBranch,
 } from "lucide-react";
 import { clsx } from "clsx";
 
 const NAV_ITEMS = [
+  { href: "/home", label: "Home", icon: Home, emoji: "🏠" },
   { href: "/predictions", label: "Stock Predictions", icon: BarChart3, emoji: "📊" },
-  { href: "/metrics", label: "Model Metrics", icon: LineChart, emoji: "📈" },
   { href: "/model-schema", label: "Model Architecture", icon: Brain, emoji: "🧠" },
+  { href: "/metrics", label: "Model Metrics", icon: LineChart, emoji: "📈" },
+  { href: "/architecture", label: "Project Architecture", icon: GitBranch, emoji: "🏗️" },
   { href: "/observability", label: "Observability", icon: Search, emoji: "🔍" },
   { href: "/evaluation", label: "Evaluation", icon: ClipboardList, emoji: "📋" },
   { href: "/agent", label: "AI Agent", icon: Bot, emoji: "🤖" },

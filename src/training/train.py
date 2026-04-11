@@ -28,7 +28,7 @@ def train_epoch(
     criterion: nn.Module,
     optimizer: optim.Optimizer,
     device: torch.device,
-) -> float:
+) -> Tuple[float, Dict[str, float]]:
     """
     Train the model for one epoch.
 
@@ -40,11 +40,13 @@ def train_epoch(
         device: Device to train on
 
     Returns:
-        Average training loss for the epoch
+        Tuple of (average_loss, metrics_dict) with rmse, mae, r2
     """
     model.train()
     total_loss = 0.0
     num_batches = 0
+    all_predictions = []
+    all_targets = []
 
     for batch_x, batch_y in train_loader:
         batch_x = batch_x.to(device)
@@ -75,8 +77,23 @@ def train_epoch(
         total_loss += loss.item()
         num_batches += 1
 
+        # Collect predictions for metrics (detached from graph)
+        all_predictions.append(outputs.detach().cpu().numpy())
+        all_targets.append(batch_y.cpu().numpy())
+
     avg_loss = total_loss / num_batches
-    return avg_loss
+
+    # Compute epoch-level training metrics
+    predictions = np.concatenate(all_predictions, axis=0)
+    targets = np.concatenate(all_targets, axis=0)
+    rmse = float(np.sqrt(np.mean((predictions - targets) ** 2)))
+    mae = float(np.mean(np.abs(predictions - targets)))
+    ss_res = np.sum((targets - predictions) ** 2)
+    ss_tot = np.sum((targets - np.mean(targets)) ** 2)
+    r2 = float(1 - ss_res / ss_tot) if ss_tot > 0 else 0.0
+
+    metrics = {"rmse": rmse, "mae": mae, "r2": r2}
+    return avg_loss, metrics
 
 
 def validate_epoch(
@@ -145,7 +162,12 @@ def validate_epoch(
     else:
         mape = 0.0  # If all values near zero, set MAPE to 0
 
-    metrics = {"rmse": rmse, "mae": mae, "mape": mape}
+    # R² score
+    ss_res = np.sum((targets - predictions) ** 2)
+    ss_tot = np.sum((targets - np.mean(targets)) ** 2)
+    r2 = float(1 - ss_res / ss_tot) if ss_tot > 0 else 0.0
+
+    metrics = {"rmse": rmse, "mae": mae, "mape": mape, "r2": r2}
 
     return avg_loss, metrics
 
@@ -332,9 +354,13 @@ def train_model(
     history = {
         "train_loss": [],
         "val_loss": [],
+        "train_rmse": [],
         "val_rmse": [],
+        "train_mae": [],
         "val_mae": [],
         "val_mape": [],
+        "train_r2": [],
+        "val_r2": [],
     }
 
     # Early stopping
@@ -349,7 +375,7 @@ def train_model(
 
     for epoch in range(epochs):
         # Train
-        train_loss = train_epoch(model, train_loader, criterion, optimizer, device)
+        train_loss, train_metrics = train_epoch(model, train_loader, criterion, optimizer, device)
 
         # Validate
         val_loss, val_metrics = validate_epoch(model, val_loader, criterion, device)
@@ -357,17 +383,25 @@ def train_model(
         # Store history
         history["train_loss"].append(train_loss)
         history["val_loss"].append(val_loss)
+        history["train_rmse"].append(train_metrics["rmse"])
         history["val_rmse"].append(val_metrics["rmse"])
+        history["train_mae"].append(train_metrics["mae"])
         history["val_mae"].append(val_metrics["mae"])
         history["val_mape"].append(val_metrics["mape"])
+        history["train_r2"].append(train_metrics["r2"])
+        history["val_r2"].append(val_metrics["r2"])
 
         # Log to MLflow
         if mlflow_tracking:
             mlflow.log_metric("train_loss", train_loss, step=epoch)
             mlflow.log_metric("val_loss", val_loss, step=epoch)
+            mlflow.log_metric("train_rmse", train_metrics["rmse"], step=epoch)
             mlflow.log_metric("val_rmse", val_metrics["rmse"], step=epoch)
+            mlflow.log_metric("train_mae", train_metrics["mae"], step=epoch)
             mlflow.log_metric("val_mae", val_metrics["mae"], step=epoch)
             mlflow.log_metric("val_mape", val_metrics["mape"], step=epoch)
+            mlflow.log_metric("train_r2", train_metrics["r2"], step=epoch)
+            mlflow.log_metric("val_r2", val_metrics["r2"], step=epoch)
 
         # Log progress
         if (epoch + 1) % 10 == 0 or epoch == 0:

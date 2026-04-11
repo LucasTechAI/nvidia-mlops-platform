@@ -1,10 +1,14 @@
 """Champion-Challenger model evaluation pipeline.
 
 Implements automated model promotion with champion-challenger comparison:
-1. Detect drift → trigger retraining
-2. Train challenger model on new data
+1. Detect retrain triggers (PSI drift, staleness, CI breach)
+2. Train challenger model using **Optuna HPO** on new data
 3. Compare challenger vs champion on holdout set
 4. Only promote if challenger significantly outperforms champion
+
+The challenger uses Bayesian hyperparameter optimization (Optuna TPE sampler)
+to search for the best configuration, giving it a fair chance to beat the
+champion even when data dynamics have changed.
 
 Thresholds:
     - δ RMSE ≤ -0.5% → promote challenger as new champion
@@ -13,6 +17,7 @@ Thresholds:
 References:
     - MLflow Model Registry: https://mlflow.org/docs/latest/model-registry.html
     - Sato, Wider, Windheuser (2019) — Continuous Delivery for ML
+    - Akiba et al. (2019) — Optuna: A Next-generation Hyperparameter Optimization Framework
 """
 
 import json
@@ -221,28 +226,47 @@ def compare_models(
     return result
 
 
-def _train_challenger(experiment_name: str, champion_path: Optional[str] = None) -> dict:
-    """Load data, train a challenger model, and evaluate champion vs challenger.
+def _train_challenger(
+    experiment_name: str,
+    champion_path: Optional[str] = None,
+    n_trials: int = 20,
+) -> dict:
+    """Train a challenger model using Optuna HPO and compare with champion.
+
+    Instead of retraining with fixed hyperparameters, the challenger runs
+    a Bayesian hyperparameter search (Optuna TPE sampler) to find the best
+    configuration for the current data distribution. This gives the
+    challenger a fair advantage to beat the champion when data has shifted.
+
+    Pipeline:
+        1. Load & prepare data
+        2. Evaluate champion on validation set
+        3. Run Optuna HPO (n_trials) to find best hyperparameters
+        4. Train final challenger with best params (full epochs)
+        5. Return both losses for comparison
+
+    Args:
+        experiment_name: MLflow experiment name.
+        champion_path: Path to champion checkpoint. Defaults to best_model.pth.
+        n_trials: Number of Optuna trials for HPO (default 20 for speed).
 
     Returns:
-        dict with ``run_id``, ``best_val_loss`` (challenger) and
-        ``champion_val_loss`` (loaded from checkpoint, or inf if unavailable).
+        dict with ``run_id``, ``best_val_loss`` (challenger),
+        ``champion_val_loss``, and ``optuna_best_params``.
     """
     import mlflow
+    import optuna
     import torch
     import torch.nn as nn
 
     from src.config import (
-        BATCH_SIZE,
         BIDIRECTIONAL,
         DATABASE_PATH,
         DROPOUT,
         EARLY_STOPPING_PATIENCE,
         EPOCHS,
         HIDDEN_SIZE,
-        LEARNING_RATE,
         NUM_LAYERS,
-        OPTIMIZER,
         SEQUENCE_LENGTH,
         TEST_SPLIT,
         TRAIN_SPLIT,
@@ -300,45 +324,120 @@ def _train_challenger(experiment_name: str, champion_path: Optional[str] = None)
     else:
         logger.warning("Champion checkpoint not found at %s — using inf", champion_path_resolved)
 
-    # ── Train challenger ─────────────────────────────────────────────────
+    # ── Optuna HPO for challenger ────────────────────────────────────────
+    logger.info("=" * 60)
+    logger.info("Running Optuna HPO with %d trials for challenger", n_trials)
+    logger.info("=" * 60)
+
+    # Suppress Optuna's verbose logging
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    def _optuna_objective(trial: optuna.Trial) -> float:
+        """Optuna objective: train LSTM with suggested params, return val loss."""
+        # Suggest hyperparameters
+        hp_hidden_size = trial.suggest_categorical("hidden_size", [32, 64, 128, 256])
+        hp_num_layers = trial.suggest_int("num_layers", 1, 4)
+        hp_learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2, log=True)
+        hp_dropout = trial.suggest_float("dropout", 0.1, 0.5)
+        hp_batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
+
+        model = create_model(
+            input_size=input_size,
+            hidden_size=hp_hidden_size,
+            num_layers=hp_num_layers,
+            dropout=hp_dropout,
+            bidirectional=BIDIRECTIONAL,
+            output_size=output_size,
+        ).to(device)
+
+        config = {
+            "batch_size": hp_batch_size,
+            "learning_rate": hp_learning_rate,
+            "epochs": min(EPOCHS, 30),  # Reduced epochs for HPO speed
+            "early_stopping_patience": 5,
+            "optimizer": "Adam",
+        }
+
+        try:
+            _trained, history = train_model(
+                model=model,
+                train_data=(X_train, y_train),
+                val_data=(X_val, y_val),
+                config=config,
+                device=device,
+                mlflow_tracking=False,  # Don't clutter MLflow during HPO
+            )
+            best_val_loss = min(history["val_loss"])
+            return best_val_loss
+        except Exception as e:
+            logger.warning("Optuna trial %d failed: %s", trial.number, e)
+            raise optuna.TrialPruned(str(e))
+
+    study = optuna.create_study(
+        study_name=f"challenger_hpo_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        direction="minimize",
+        sampler=optuna.samplers.TPESampler(seed=42),
+        pruner=optuna.pruners.MedianPruner(n_startup_trials=5),
+    )
+    study.optimize(_optuna_objective, n_trials=n_trials)
+
+    best_params = study.best_params
+    best_hpo_loss = study.best_value
+    logger.info("Optuna best val loss: %.6f", best_hpo_loss)
+    logger.info("Optuna best params: %s", best_params)
+
+    # ── Train final challenger with best params (full epochs) ────────────
+    logger.info("Training final challenger with Optuna best params (full epochs)")
+
     challenger_model = create_model(
         input_size=input_size,
-        hidden_size=HIDDEN_SIZE,
-        num_layers=NUM_LAYERS,
-        dropout=DROPOUT,
+        hidden_size=best_params["hidden_size"],
+        num_layers=best_params["num_layers"],
+        dropout=best_params["dropout"],
         bidirectional=BIDIRECTIONAL,
         output_size=output_size,
     ).to(device)
 
-    config = {
-        "batch_size": BATCH_SIZE,
-        "learning_rate": LEARNING_RATE,
+    final_config = {
+        "batch_size": best_params["batch_size"],
+        "learning_rate": best_params["learning_rate"],
         "epochs": EPOCHS,
         "early_stopping_patience": EARLY_STOPPING_PATIENCE,
-        "optimizer": OPTIMIZER,
+        "optimizer": "Adam",
     }
 
     mlflow.set_tracking_uri(str(ROOT_DIR / "mlruns"))
     mlflow.set_experiment(experiment_name)
 
-    with mlflow.start_run(run_name="challenger_training") as run:
+    with mlflow.start_run(run_name="challenger_optuna_training") as run:
+        # Log Optuna HPO metadata
+        mlflow.log_params({f"optuna_{k}": v for k, v in best_params.items()})
+        mlflow.log_metric("optuna_n_trials", n_trials)
+        mlflow.log_metric("optuna_best_trial_loss", best_hpo_loss)
+        mlflow.set_tag("training_method", "optuna_hpo")
+        mlflow.set_tag("sampler", "TPE")
+        mlflow.set_tag("n_completed_trials", len(study.trials))
+
         _trained, history = train_model(
             model=challenger_model,
             train_data=(X_train, y_train),
             val_data=(X_val, y_val),
-            config=config,
+            config=final_config,
             device=device,
             mlflow_tracking=True,
         )
         run_id = run.info.run_id
 
     challenger_loss = min(history["val_loss"])
-    logger.info("Challenger best val loss: %.6f", challenger_loss)
+    logger.info("Challenger final val loss: %.6f (HPO trial best: %.6f)", challenger_loss, best_hpo_loss)
 
     return {
         "run_id": run_id,
         "best_val_loss": challenger_loss,
         "champion_val_loss": champion_val_loss,
+        "optuna_best_params": best_params,
+        "optuna_n_trials": n_trials,
+        "optuna_best_trial_loss": best_hpo_loss,
     }
 
 
@@ -350,8 +449,8 @@ def run_champion_challenger(
     """Run the full champion-challenger pipeline.
 
     Steps:
-        1. Check for drift
-        2. If drift detected (or forced), train challenger
+        1. Check for retrain triggers (PSI drift, staleness, CI breach)
+        2. If any trigger fires (or forced), train challenger
         3. Evaluate both on holdout set
         4. Compare and decide promotion
         5. Log results to MLflow
@@ -359,12 +458,12 @@ def run_champion_challenger(
     Args:
         champion_path: Path to champion model checkpoint. Defaults to best_model.pth.
         experiment_name: MLflow experiment name.
-        retrain_on_drift: If True, only retrain when drift detected.
+        retrain_on_drift: If True, only retrain when at least one trigger fires.
 
     Returns:
         Dictionary with pipeline results.
     """
-    from src.monitoring.drift import detect_drift_from_db
+    from src.monitoring.drift import detect_all_triggers
 
     result = {
         "timestamp": datetime.now().isoformat(),
@@ -372,23 +471,32 @@ def run_champion_challenger(
         "retrained": False,
         "comparison": None,
         "promoted": False,
+        "active_triggers": [],
     }
 
-    # Step 1: Drift detection
+    # Step 1: Multi-trigger detection
     logger.info("=" * 60)
-    logger.info("Step 1: Drift Detection")
+    logger.info("Step 1: Multi-Trigger Retrain Detection")
     logger.info("=" * 60)
 
-    drift_results = detect_drift_from_db()
-    drift_detected = drift_results.get("drift_detected", False)
-    result["drift_detected"] = drift_detected
-    result["drift_results"] = drift_results
+    trigger_report = detect_all_triggers(model_path=champion_path)
+    retrain_recommended = trigger_report.get("retrain_recommended", False)
+    active_triggers = trigger_report.get("active_triggers", [])
 
-    if retrain_on_drift and not drift_detected:
-        logger.info("No drift detected. Skipping retraining.")
-        result["reason"] = "No drift detected"
+    result["drift_detected"] = retrain_recommended
+    result["active_triggers"] = active_triggers
+    result["trigger_report"] = trigger_report
+
+    if retrain_on_drift and not retrain_recommended:
+        logger.info("No retrain triggers active. Skipping retraining.")
+        result["reason"] = "No retrain triggers active"
         _save_result(result)
         return result
+
+    logger.info(
+        "Retrain triggered by: %s",
+        ", ".join(active_triggers) if active_triggers else "forced",
+    )
 
     # Step 2: Train challenger
     logger.info("=" * 60)
@@ -401,6 +509,9 @@ def run_champion_challenger(
         result["training_result"] = {
             "run_id": training_result.get("run_id"),
             "best_val_loss": training_result.get("best_val_loss"),
+            "optuna_best_params": training_result.get("optuna_best_params"),
+            "optuna_n_trials": training_result.get("optuna_n_trials"),
+            "optuna_best_trial_loss": training_result.get("optuna_best_trial_loss"),
         }
     except Exception as e:
         logger.error("Challenger training failed: %s", str(e))
@@ -430,9 +541,10 @@ def run_champion_challenger(
         with mlflow.start_run(run_name="champion_challenger_evaluation"):
             mlflow.log_params(
                 {
-                    "drift_detected": drift_detected,
+                    "drift_detected": result["drift_detected"],
                     "retrained": result["retrained"],
                     "promoted": comparison.promote,
+                    "active_triggers": ", ".join(active_triggers) if active_triggers else "forced",
                 }
             )
             mlflow.log_metrics(
@@ -441,10 +553,14 @@ def run_champion_challenger(
                     "challenger_rmse": challenger_m.rmse,
                     "rmse_delta": comparison.rmse_delta,
                     "rmse_delta_pct": comparison.rmse_delta_pct,
+                    "n_active_triggers": len(active_triggers),
+                    "optuna_n_trials": training_result.get("optuna_n_trials", 0),
                 }
             )
             mlflow.set_tag("pipeline", "champion_challenger")
             mlflow.set_tag("promotion_decision", "promote" if comparison.promote else "keep_champion")
+            mlflow.set_tag("trigger_types", ", ".join(active_triggers) if active_triggers else "none")
+            mlflow.set_tag("challenger_method", "optuna_hpo")
     except Exception as e:
         logger.warning("MLflow logging failed: %s", str(e))
 

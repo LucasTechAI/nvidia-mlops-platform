@@ -75,8 +75,8 @@ stop_services() {
         fi
     done
 
-    # Stop Prometheus & Grafana containers if running
-    docker rm -f nvidia-prometheus nvidia-grafana 2>/dev/null || true
+    # Stop Prometheus & Grafana containers if running (both old and new names)
+    docker rm -f nvidia-prometheus nvidia-grafana prometheus grafana 2>/dev/null || true
 
     echo -e "  ${GREEN}✅ All services stopped${NC}"
     echo ""
@@ -91,6 +91,19 @@ fi
 # ─── Cleanup on exit ────────────────────────────────────────────────────────
 trap stop_services INT TERM
 
+# ─── Kill any process already using our ports ────────────────────────────────
+MYPID=$$
+for port in 5000 8000 3001 9090 3000; do
+    pids=$(lsof -ti :"$port" 2>/dev/null || true)
+    if [ -n "$pids" ]; then
+        echo -e "  ${YELLOW}⚠ Port $port in use — killing...${NC}"
+        for p in $pids; do
+            [ "$p" != "$MYPID" ] && kill -9 "$p" 2>/dev/null || true
+        done
+        sleep 0.5
+    fi
+done
+
 # ─── Stop any existing services first ────────────────────────────────────────
 if [ -f "$PIDFILE" ]; then
     echo -e "${YELLOW}  Stopping previous services...${NC}"
@@ -102,7 +115,7 @@ echo ""
 echo -e "${BOLD}${GREEN}"
 echo "  ╔═══════════════════════════════════════════════════════════╗"
 echo "  ║                                                           ║"
-echo "  ║     🟢  NVIDIA MLOps Platform — Local Services  🟢      ║"
+echo "  ║     🟢  NVIDIA MLOps Platform — Local Services  🟢        ║"
 echo "  ║                                                           ║"
 echo "  ╚═══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
@@ -158,17 +171,25 @@ if [ ! -d "node_modules" ]; then
     echo -e "  ${YELLOW}Installing frontend dependencies...${NC}"
     npm install > "$LOGDIR/npm-install.log" 2>&1
 fi
-npm run dev > "$LOGDIR/nextjs.log" 2>&1 &
+# Build if .next doesn't exist
+if [ ! -d ".next" ]; then
+    echo -e "  ${YELLOW}Building frontend (first time)...${NC}"
+    npx next build > "$LOGDIR/nextjs-build.log" 2>&1
+fi
+npm run start > "$LOGDIR/nextjs.log" 2>&1 &
 echo "nextjs=$!" >> "$PIDFILE"
 cd "$PROJECT_ROOT"
-wait_for "http://localhost:3001" "Next.js"
+wait_for "http://localhost:3001" "Next.js" 30
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 4. Prometheus  (:9090)  — via Docker
 # ═════════════════════════════════════════════════════════════════════════════
 echo -e "${CYAN}  [4/5] Starting Prometheus...${NC}"
 if command -v docker &> /dev/null && docker info &> /dev/null 2>&1; then
-    docker rm -f nvidia-prometheus 2>/dev/null || true
+    docker rm -f nvidia-prometheus prometheus 2>/dev/null || true
+    # Kill anything on port 9090
+    for p in $(lsof -ti :9090 2>/dev/null); do [ "$p" != "$$" ] && kill -9 "$p" 2>/dev/null || true; done
+    sleep 0.5
     if docker run -d \
         --name nvidia-prometheus \
         -p 9090:9090 \
@@ -191,7 +212,10 @@ fi
 # ═════════════════════════════════════════════════════════════════════════════
 echo -e "${CYAN}  [5/5] Starting Grafana...${NC}"
 if command -v docker &> /dev/null && docker info &> /dev/null 2>&1; then
-    docker rm -f nvidia-grafana 2>/dev/null || true
+    docker rm -f nvidia-grafana grafana 2>/dev/null || true
+    # Kill anything on port 3000
+    for p in $(lsof -ti :3000 2>/dev/null); do [ "$p" != "$$" ] && kill -9 "$p" 2>/dev/null || true; done
+    sleep 0.5
     if docker run -d \
         --name nvidia-grafana \
         -p 3000:3000 \
