@@ -213,14 +213,16 @@ async def get_live_data() -> dict:
 
         items = []
         for _, row in live.iterrows():
-            items.append({
-                "date": row["Date"].strftime("%Y-%m-%d"),
-                "close": round(float(row["Close"]), 2),
-                "open": round(float(row["Open"]), 2),
-                "high": round(float(row["High"]), 2),
-                "low": round(float(row["Low"]), 2),
-                "volume": int(row["Volume"]),
-            })
+            items.append(
+                {
+                    "date": row["Date"].strftime("%Y-%m-%d"),
+                    "close": round(float(row["Close"]), 2),
+                    "open": round(float(row["Open"]), 2),
+                    "high": round(float(row["High"]), 2),
+                    "low": round(float(row["Low"]), 2),
+                    "volume": int(row["Volume"]),
+                }
+            )
 
         return {
             "data": items,

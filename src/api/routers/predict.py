@@ -267,18 +267,20 @@ async def backtest(
 
             # Inverse-transform predicted Close
             dummy = np.zeros((1, n_features))
-            dummy[0, :len(pred_np)] = pred_np
+            dummy[0, : len(pred_np)] = pred_np
             pred_price = float(state.scaler.inverse_transform(dummy)[0, close_idx])
 
             actual_idx = idx + sequence_length
             actual_price = float(df["Close"].iloc[actual_idx])
             date_str = df["date"].iloc[actual_idx].strftime("%Y-%m-%d")
 
-            results.append({
-                "date": date_str,
-                "actual": round(actual_price, 2),
-                "predicted": round(pred_price, 2),
-            })
+            results.append(
+                {
+                    "date": date_str,
+                    "actual": round(actual_price, 2),
+                    "predicted": round(pred_price, 2),
+                }
+            )
 
         return {"backtest": results, "days": len(results)}
 

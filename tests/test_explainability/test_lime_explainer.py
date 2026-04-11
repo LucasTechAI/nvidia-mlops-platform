@@ -90,7 +90,11 @@ class TestExplainWithLime:
         X, _ = synthetic_data
         monkeypatch.setattr("src.explainability.lime_explainer.RESULTS_DIR", tmp_path)
         result = explain_with_lime(
-            model, X, sample_index=0, num_samples=50, device=device,
+            model,
+            X,
+            sample_index=0,
+            num_samples=50,
+            device=device,
         )
         assert "method" in result
         assert result["method"] == "lime"
@@ -104,7 +108,11 @@ class TestExplainWithLime:
         X, _ = synthetic_data
         monkeypatch.setattr("src.explainability.lime_explainer.RESULTS_DIR", tmp_path)
         result = explain_with_lime(
-            model, X, sample_index=0, num_samples=50, device=device,
+            model,
+            X,
+            sample_index=0,
+            num_samples=50,
+            device=device,
         )
         # Should have weights for the 5 features
         assert len(result["feature_weights"]) > 0
@@ -115,8 +123,12 @@ class TestExplainWithLime:
         monkeypatch.setattr("src.explainability.lime_explainer.RESULTS_DIR", tmp_path)
         names = ["A", "B", "C", "D", "E"]
         result = explain_with_lime(
-            model, X, sample_index=0, feature_names=names,
-            num_samples=50, device=device,
+            model,
+            X,
+            sample_index=0,
+            feature_names=names,
+            num_samples=50,
+            device=device,
         )
         assert result["feature_names"] == names
 
@@ -166,7 +178,11 @@ class TestExplainBatchWithLime:
         X, _ = synthetic_data
         monkeypatch.setattr("src.explainability.lime_explainer.RESULTS_DIR", tmp_path)
         result = explain_batch_with_lime(
-            model, X, n_explain=3, num_samples=30, device=device,
+            model,
+            X,
+            n_explain=3,
+            num_samples=30,
+            device=device,
         )
         assert result["method"] == "lime_batch"
         assert "mean_abs_weights" in result
@@ -178,7 +194,11 @@ class TestExplainBatchWithLime:
         X, _ = synthetic_data
         monkeypatch.setattr("src.explainability.lime_explainer.RESULTS_DIR", tmp_path)
         result = explain_batch_with_lime(
-            model, X, n_explain=5, num_samples=30, device=device,
+            model,
+            X,
+            n_explain=5,
+            num_samples=30,
+            device=device,
         )
         assert result["n_explained"] == 5
         assert len(result["per_sample_explanations"]) == 5
@@ -187,7 +207,11 @@ class TestExplainBatchWithLime:
         X, _ = synthetic_data
         monkeypatch.setattr("src.explainability.lime_explainer.RESULTS_DIR", tmp_path)
         result = explain_batch_with_lime(
-            model, X, n_explain=3, num_samples=30, device=device,
+            model,
+            X,
+            n_explain=3,
+            num_samples=30,
+            device=device,
         )
         ranking = result["global_ranking"]
         means = result["mean_abs_weights"]
@@ -207,7 +231,11 @@ class TestExplainBatchWithLime:
         monkeypatch.setattr("src.explainability.lime_explainer.RESULTS_DIR", tmp_path)
         X = np.random.randn(5, 10, 5).astype(np.float32)
         result = explain_batch_with_lime(
-            model, X, n_explain=100, num_samples=30, device=device,
+            model,
+            X,
+            n_explain=100,
+            num_samples=30,
+            device=device,
         )
         assert result["n_explained"] == 5
 

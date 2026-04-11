@@ -186,15 +186,17 @@ def explain_with_lime(
         "sample_index": sample_index,
         "output_index": output_index,
         "predicted_value": predicted_value,
-        "intercept": float(explanation.intercept[0]) if hasattr(explanation.intercept, '__iter__') else float(explanation.intercept),
+        "intercept": (
+            float(explanation.intercept[0])
+            if hasattr(explanation.intercept, "__iter__")
+            else float(explanation.intercept)
+        ),
         "local_r2": float(explanation.score),
         "num_samples": num_samples,
         "num_features": num_features,
         "feature_names": feature_names,
         "feature_weights": feature_weights,
-        "feature_weights_sorted": dict(
-            sorted(feature_weights.items(), key=lambda kv: abs(kv[1]), reverse=True)
-        ),
+        "feature_weights_sorted": dict(sorted(feature_weights.items(), key=lambda kv: abs(kv[1]), reverse=True)),
     }
 
     # Save JSON
@@ -265,12 +267,14 @@ def explain_batch_with_lime(
         )
         for fname, w in expl["feature_weights"].items():
             all_weights.setdefault(fname, []).append(abs(w))
-        per_sample.append({
-            "sample_index": int(idx),
-            "predicted_value": expl["predicted_value"],
-            "local_r2": expl["local_r2"],
-            "feature_weights": expl["feature_weights"],
-        })
+        per_sample.append(
+            {
+                "sample_index": int(idx),
+                "predicted_value": expl["predicted_value"],
+                "local_r2": expl["local_r2"],
+                "feature_weights": expl["feature_weights"],
+            }
+        )
 
     # Aggregate
     mean_abs_weights = {fn: float(np.mean(ws)) for fn, ws in all_weights.items()}
@@ -285,9 +289,7 @@ def explain_batch_with_lime(
         "feature_names": list(mean_abs_weights.keys()),
         "mean_abs_weights": mean_abs_weights,
         "std_abs_weights": std_abs_weights,
-        "global_ranking": list(
-            dict(sorted(mean_abs_weights.items(), key=lambda kv: kv[1], reverse=True)).keys()
-        ),
+        "global_ranking": list(dict(sorted(mean_abs_weights.items(), key=lambda kv: kv[1], reverse=True)).keys()),
         "per_sample_explanations": per_sample,
     }
 
@@ -345,10 +347,15 @@ def plot_lime_explanation(
     ax.grid(axis="x", alpha=0.3)
 
     ax.text(
-        0.98, 0.02,
+        0.98,
+        0.02,
         f"Local R² = {results.get('local_r2', 0):.3f}",
-        transform=ax.transAxes, ha="right", va="bottom",
-        fontsize=9, color="gray", style="italic",
+        transform=ax.transAxes,
+        ha="right",
+        va="bottom",
+        fontsize=9,
+        color="gray",
+        style="italic",
     )
 
     plt.tight_layout()
@@ -391,9 +398,13 @@ def plot_lime_global(
     fig, ax = plt.subplots(figsize=figsize)
     colors = plt.cm.Purples(np.linspace(0.3, 0.8, len(names)))
     ax.barh(
-        range(len(names_sorted)), values_sorted,
-        xerr=errs_sorted, color=[colors[i] for i in range(len(names))],
-        edgecolor="white", linewidth=0.5, capsize=4,
+        range(len(names_sorted)),
+        values_sorted,
+        xerr=errs_sorted,
+        color=[colors[i] for i in range(len(names))],
+        edgecolor="white",
+        linewidth=0.5,
+        capsize=4,
     )
 
     ax.set_yticks(range(len(names_sorted)))

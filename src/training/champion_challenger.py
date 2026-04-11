@@ -260,14 +260,12 @@ def _train_challenger(
     import torch.nn as nn
 
     from src.config import (
-        BATCH_SIZE,
         BIDIRECTIONAL,
         DATABASE_PATH,
         DROPOUT,
         EARLY_STOPPING_PATIENCE,
         EPOCHS,
         HIDDEN_SIZE,
-        LEARNING_RATE,
         NUM_LAYERS,
         SEQUENCE_LENGTH,
         TEST_SPLIT,

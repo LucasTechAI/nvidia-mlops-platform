@@ -1,10 +1,7 @@
 """Tests for the multi-trigger retrain system: staleness + CI breach + combined."""
 
 import json
-import tempfile
-from datetime import datetime, timedelta
-from pathlib import Path
-from unittest.mock import patch
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -12,13 +9,10 @@ import pytest
 
 from src.monitoring.drift import (
     CI_BREACH_RATIO_THRESHOLD,
-    CI_CONFIDENCE_LEVEL,
-    STALENESS_DAYS_THRESHOLD,
     check_model_staleness,
     check_prediction_breach,
     detect_all_triggers,
 )
-
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # Trigger 2: Model Staleness

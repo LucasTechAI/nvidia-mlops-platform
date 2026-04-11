@@ -27,7 +27,7 @@ Referência: Evidently AI — Open-source ML monitoring
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -202,9 +202,7 @@ def check_prediction_breach(
     actuals = np.asarray(actuals, dtype=float).ravel()
 
     if len(predictions) != len(actuals):
-        raise ValueError(
-            f"Length mismatch: predictions={len(predictions)}, actuals={len(actuals)}"
-        )
+        raise ValueError(f"Length mismatch: predictions={len(predictions)}, actuals={len(actuals)}")
 
     n = len(predictions)
     if n < 5:
@@ -523,18 +521,10 @@ def detect_drift_from_db(
         result["training_cutoff_date"] = training_cutoff_date
 
     if "Date" in df.columns:
-        result["reference_start"] = (
-            str(reference["Date"].min().date()) if len(reference) > 0 else None
-        )
-        result["reference_end"] = (
-            str(reference["Date"].max().date()) if len(reference) > 0 else None
-        )
-        result["current_start"] = (
-            str(current["Date"].min().date()) if len(current) > 0 else None
-        )
-        result["current_end"] = (
-            str(current["Date"].max().date()) if len(current) > 0 else None
-        )
+        result["reference_start"] = str(reference["Date"].min().date()) if len(reference) > 0 else None
+        result["reference_end"] = str(reference["Date"].max().date()) if len(reference) > 0 else None
+        result["current_start"] = str(current["Date"].min().date()) if len(current) > 0 else None
+        result["current_end"] = str(current["Date"].max().date()) if len(current) > 0 else None
 
     return result
 
@@ -648,10 +638,7 @@ def detect_all_triggers(
             "prediction_ci_breach": f"Prediction CI Breach (> {CI_BREACH_RATIO_THRESHOLD:.0%} outside CI)",
         }
         reasons = [trigger_names.get(t, t) for t in report["active_triggers"]]
-        report["summary"] = (
-            f"Retraining recommended — {n_active} trigger(s) active: "
-            + "; ".join(reasons)
-        )
+        report["summary"] = f"Retraining recommended — {n_active} trigger(s) active: " + "; ".join(reasons)
 
     logger.info("Multi-trigger report: %s", report["summary"])
 
@@ -685,14 +672,18 @@ if __name__ == "__main__":
                 print(f"  {feat}: PSI={info['psi']:.6f} ({info['status']})")
         elif trigger_name == "staleness":
             print(f"  Stale: {trigger_result.get('stale', 'N/A')}")
-            print(f"  Age: {trigger_result.get('age_days', 'N/A')} days (max {trigger_result.get('threshold_days', 'N/A')})")
+            age_days = trigger_result.get("age_days", "N/A")
+            threshold = trigger_result.get("threshold_days", "N/A")
+            print(f"  Age: {age_days} days (max {threshold})")
         elif trigger_name == "prediction_breach":
             status = trigger_result.get("status", "")
             if status == "skipped":
                 print(f"  Skipped: {trigger_result.get('reason', 'N/A')}")
             else:
                 print(f"  Breach: {trigger_result.get('breach_detected', 'N/A')}")
-                print(f"  Ratio: {trigger_result.get('breach_ratio', 0):.1%} (threshold {trigger_result.get('breach_threshold', 0):.0%})")
+                breach_ratio = trigger_result.get("breach_ratio", 0)
+                breach_threshold = trigger_result.get("breach_threshold", 0)
+                print(f"  Ratio: {breach_ratio:.1%} (threshold {breach_threshold:.0%})")
 
     print(f"\n{'Summary:':<20} {report.get('summary', '')}")
     print("=" * 60)

@@ -198,7 +198,8 @@ async def get_training_history():
         if state.is_ready and state.model is not None and state.scaler is not None:
             conn = sqlite3.connect(DATABASE_PATH)
             df = __import__("pandas").read_sql(
-                "SELECT * FROM nvidia_stock ORDER BY date", conn,
+                "SELECT * FROM nvidia_stock ORDER BY date",
+                conn,
             )
             conn.close()
             df.columns = [c.capitalize() for c in df.columns]

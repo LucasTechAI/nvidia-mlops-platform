@@ -194,7 +194,8 @@ async def run_all_triggers():
                     actuals = np.array(act_list)
                     logger.info(
                         "CI-breach: obtained %d prediction-actual pairs for %dd post-training window",
-                        len(pred_list), forecast_days,
+                        len(pred_list),
+                        forecast_days,
                     )
         else:
             logger.info("CI-breach: model not loaded, skipping predictions")
@@ -227,7 +228,6 @@ async def get_runs_history():
     Scans both file-based and SQLite-backed MLflow stores to collect
     every training run with its metrics & hyperparameters.
     """
-    import os
     from datetime import datetime as _dt
 
     import yaml
@@ -288,18 +288,20 @@ async def get_runs_history():
                         except Exception:
                             pass
 
-                runs_list.append({
-                    "run_id": run_id,
-                    "run_name": meta.get("run_name", "—"),
-                    "experiment": exp_name,
-                    "status": "FINISHED" if meta.get("status") == 3 else str(meta.get("status", "?")),
-                    "start_time": _dt.fromtimestamp(start_ms / 1000).isoformat() if start_ms else None,
-                    "end_time": _dt.fromtimestamp(end_ms / 1000).isoformat() if end_ms else None,
-                    "duration_s": round((end_ms - start_ms) / 1000, 1) if end_ms and start_ms else None,
-                    "metrics": {k: round(v, 6) for k, v in metrics.items()},
-                    "params": params,
-                    "source": "file",
-                })
+                runs_list.append(
+                    {
+                        "run_id": run_id,
+                        "run_name": meta.get("run_name", "—"),
+                        "experiment": exp_name,
+                        "status": "FINISHED" if meta.get("status") == 3 else str(meta.get("status", "?")),
+                        "start_time": _dt.fromtimestamp(start_ms / 1000).isoformat() if start_ms else None,
+                        "end_time": _dt.fromtimestamp(end_ms / 1000).isoformat() if end_ms else None,
+                        "duration_s": round((end_ms - start_ms) / 1000, 1) if end_ms and start_ms else None,
+                        "metrics": {k: round(v, 6) for k, v in metrics.items()},
+                        "params": params,
+                        "source": "file",
+                    }
+                )
 
     # ── 2. SQLite-backed runs ──
     mlflow_db = mlruns_root / "mlflow.db"
@@ -316,8 +318,7 @@ async def get_runs_history():
             exp_map = dict(cur.fetchall())
 
             cur.execute(
-                "SELECT run_uuid, name, status, start_time, end_time, experiment_id "
-                "FROM runs ORDER BY start_time DESC"
+                "SELECT run_uuid, name, status, start_time, end_time, experiment_id FROM runs ORDER BY start_time DESC"
             )
             for row in cur.fetchall():
                 rid, rname, status, start_ms, end_ms, eid = row
@@ -332,22 +333,26 @@ async def get_runs_history():
                 params = dict(cur2.fetchall())
 
                 status_str = {
-                    "FINISHED": "FINISHED", "RUNNING": "RUNNING",
-                    "FAILED": "FAILED", "KILLED": "KILLED",
+                    "FINISHED": "FINISHED",
+                    "RUNNING": "RUNNING",
+                    "FAILED": "FAILED",
+                    "KILLED": "KILLED",
                 }.get(status, status)
 
-                runs_list.append({
-                    "run_id": rid,
-                    "run_name": rname or "—",
-                    "experiment": exp_map.get(str(eid), str(eid)),
-                    "status": status_str,
-                    "start_time": _dt.fromtimestamp(start_ms / 1000).isoformat() if start_ms else None,
-                    "end_time": _dt.fromtimestamp(end_ms / 1000).isoformat() if end_ms else None,
-                    "duration_s": round((end_ms - start_ms) / 1000, 1) if end_ms and start_ms else None,
-                    "metrics": metrics,
-                    "params": params,
-                    "source": "db",
-                })
+                runs_list.append(
+                    {
+                        "run_id": rid,
+                        "run_name": rname or "—",
+                        "experiment": exp_map.get(str(eid), str(eid)),
+                        "status": status_str,
+                        "start_time": _dt.fromtimestamp(start_ms / 1000).isoformat() if start_ms else None,
+                        "end_time": _dt.fromtimestamp(end_ms / 1000).isoformat() if end_ms else None,
+                        "duration_s": round((end_ms - start_ms) / 1000, 1) if end_ms and start_ms else None,
+                        "metrics": metrics,
+                        "params": params,
+                        "source": "db",
+                    }
+                )
             conn.close()
         except Exception as e:
             logger.warning("Could not read mlflow.db: %s", e)
