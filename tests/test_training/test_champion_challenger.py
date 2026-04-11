@@ -174,20 +174,26 @@ class TestSaveResult:
 
 class TestRunChampionChallenger:
     @patch("src.training.champion_challenger._save_result")
-    @patch("src.monitoring.drift.detect_drift_from_db")
-    def test_no_drift_skips_retraining(self, mock_drift, mock_save):
-        mock_drift.return_value = {"drift_detected": False}
+    @patch("src.monitoring.drift.detect_all_triggers")
+    def test_no_drift_skips_retraining(self, mock_triggers, mock_save):
+        mock_triggers.return_value = {
+            "retrain_recommended": False,
+            "active_triggers": [],
+        }
         result = run_champion_challenger(retrain_on_drift=True)
         assert result["drift_detected"] is False
         assert result["retrained"] is False
-        assert result["reason"] == "No drift detected"
+        assert result["reason"] == "No retrain triggers active"
         mock_save.assert_called_once()
 
     @patch("src.training.champion_challenger._save_result")
     @patch("src.training.champion_challenger._train_challenger")
-    @patch("src.monitoring.drift.detect_drift_from_db")
-    def test_drift_triggers_training(self, mock_drift, mock_train, mock_save):
-        mock_drift.return_value = {"drift_detected": True}
+    @patch("src.monitoring.drift.detect_all_triggers")
+    def test_drift_triggers_training(self, mock_triggers, mock_train, mock_save):
+        mock_triggers.return_value = {
+            "retrain_recommended": True,
+            "active_triggers": ["psi_drift"],
+        }
         mock_train.return_value = {
             "run_id": "test123",
             "best_val_loss": 0.04,
@@ -205,9 +211,12 @@ class TestRunChampionChallenger:
 
     @patch("src.training.champion_challenger._save_result")
     @patch("src.training.champion_challenger._train_challenger")
-    @patch("src.monitoring.drift.detect_drift_from_db")
-    def test_training_failure(self, mock_drift, mock_train, mock_save):
-        mock_drift.return_value = {"drift_detected": True}
+    @patch("src.monitoring.drift.detect_all_triggers")
+    def test_training_failure(self, mock_triggers, mock_train, mock_save):
+        mock_triggers.return_value = {
+            "retrain_recommended": True,
+            "active_triggers": ["staleness"],
+        }
         mock_train.side_effect = RuntimeError("Training exploded")
         result = run_champion_challenger(retrain_on_drift=True)
         assert result["retrained"] is False
@@ -215,9 +224,12 @@ class TestRunChampionChallenger:
 
     @patch("src.training.champion_challenger._save_result")
     @patch("src.training.champion_challenger._train_challenger")
-    @patch("src.monitoring.drift.detect_drift_from_db")
-    def test_forced_run_without_drift(self, mock_drift, mock_train, mock_save):
-        mock_drift.return_value = {"drift_detected": False}
+    @patch("src.monitoring.drift.detect_all_triggers")
+    def test_forced_run_without_drift(self, mock_triggers, mock_train, mock_save):
+        mock_triggers.return_value = {
+            "retrain_recommended": False,
+            "active_triggers": [],
+        }
         mock_train.return_value = {
             "run_id": "abc",
             "best_val_loss": 0.05,
@@ -235,9 +247,12 @@ class TestRunChampionChallenger:
 
     @patch("src.training.champion_challenger._save_result")
     @patch("src.training.champion_challenger._train_challenger")
-    @patch("src.monitoring.drift.detect_drift_from_db")
-    def test_mlflow_failure_handled(self, mock_drift, mock_train, mock_save):
-        mock_drift.return_value = {"drift_detected": True}
+    @patch("src.monitoring.drift.detect_all_triggers")
+    def test_mlflow_failure_handled(self, mock_triggers, mock_train, mock_save):
+        mock_triggers.return_value = {
+            "retrain_recommended": True,
+            "active_triggers": ["psi_drift"],
+        }
         mock_train.return_value = {
             "run_id": "x",
             "best_val_loss": 0.03,
