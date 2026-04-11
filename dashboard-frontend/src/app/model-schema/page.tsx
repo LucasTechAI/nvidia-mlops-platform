@@ -2,30 +2,69 @@
 
 import { useEffect, useState } from "react";
 import {
-  PieChart,
-  Pie,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Cell,
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { Cpu, Layers, Hash, Box } from "lucide-react";
+import { Cpu, Layers, Hash, Box, Info, Trophy, SlidersHorizontal } from "lucide-react";
 import StatCard from "@/components/stat-card";
 import LoadingSpinner from "@/components/loading-spinner";
 import { api } from "@/lib/api";
 
 const COLORS = ["#76B900", "#4ECDC4", "#45B7D1", "#FF6B35"];
 
+function SectionHeader({ title, tooltip }: { title: string; tooltip: string }) {
+  const [showTip, setShowTip] = useState(false);
+  return (
+    <div className="mb-4 flex items-center gap-2">
+      <h3 className="text-lg font-semibold">{title}</h3>
+      <div
+        className="relative"
+        onMouseEnter={() => setShowTip(true)}
+        onMouseLeave={() => setShowTip(false)}
+      >
+        <Info className="h-3.5 w-3.5 cursor-help text-white/25 transition-colors hover:text-white/60" />
+        {showTip && (
+          <div className="absolute bottom-full left-1/2 z-50 mb-2 w-72 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-white/70 shadow-xl">
+            {tooltip}
+            <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ModelSchemaPage() {
   const [modelInfo, setModelInfo] = useState<Record<string, unknown> | null>(null);
+  const [hpo, setHpo] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.model
-      .info()
-      .then((data) => setModelInfo(data))
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed"))
-      .finally(() => setLoading(false));
+    const fetchAll = async () => {
+      try {
+        const data = await api.model.info();
+        setModelInfo(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed");
+      } finally {
+        setLoading(false);
+      }
+      // HPO is optional
+      try {
+        const hpoRes = await api.model.hpoResults();
+        setHpo(hpoRes);
+      } catch {
+        /* HPO data not available */
+      }
+    };
+    fetchAll();
   }, []);
 
   if (loading) return <LoadingSpinner text="Loading model architecture..." />;
@@ -97,6 +136,45 @@ export default function ModelSchemaPage() {
         </p>
       </div>
 
+      {/* Model Purpose */}
+      <div className="rounded-xl border border-nvidia/20 bg-gradient-to-br from-nvidia/5 via-surface-card to-surface-card p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-nvidia/10 text-2xl">
+            🎯
+          </div>
+          <div>
+            <h3 className="mb-2 text-lg font-semibold">Model Purpose</h3>
+            <p className="text-sm leading-relaxed text-white/60">
+              This model uses an{" "}
+              <span className="font-medium text-nvidia">LSTM (Long Short-Term Memory)</span> neural network to
+              forecast the <span className="font-medium text-nvidia">Close price</span> of{" "}
+              <span className="font-medium text-nvidia">NVIDIA (NVDA)</span> stock over the
+              next 30 days. LSTMs are especially effective for time series due to their ability to
+              memorize long-term dependencies — it analyzes {seqLength} days of history across 5 input features
+              (Open, High, Low, Close and Volume) to identify trend patterns, seasonality and volatility,
+              outputting a single Close price prediction with confidence intervals via Monte Carlo Dropout.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[
+                { label: "Type", value: "Recurrent LSTM" },
+                { label: "Asset", value: "NVDA" },
+                { label: "Target", value: "Close Price" },
+                { label: "Horizon", value: "30 days" },
+                { label: "Window", value: `${seqLength} days` },
+                { label: "Input", value: `OHLCV (${inputSize} features)` },
+              ].map((tag) => (
+                <span
+                  key={tag.label}
+                  className="rounded-md border border-nvidia/20 bg-nvidia/5 px-2.5 py-1 text-xs text-white/60"
+                >
+                  <span className="font-medium text-nvidia">{tag.label}:</span> {tag.value}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Model Overview */}
       <div>
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-white/30">
@@ -104,14 +182,32 @@ export default function ModelSchemaPage() {
         </p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="gradient-card rounded-xl border border-nvidia/20 p-5">
-            <h4 className="text-sm font-semibold text-nvidia">🔷 Architecture Type</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-nvidia">🔷 Architecture Type</h4>
+              <div className="group relative">
+                <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
+                <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+                  LSTM é uma rede neural recorrente projetada para aprender padrões em séries temporais. É ideal para previsão de preços de ações por capturar dependências de longo prazo.
+                  <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
+                </div>
+              </div>
+            </div>
             <p className="mt-1 font-semibold text-white">LSTM (Long Short-Term Memory)</p>
             <p className="mt-1 text-sm text-white/50">
               A recurrent neural network capable of learning long-term dependencies in sequential data.
             </p>
           </div>
           <div className="gradient-card rounded-xl border border-blue-400/20 p-5">
-            <h4 className="text-sm font-semibold text-blue-400">⚡ Key Characteristics</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-blue-400">⚡ Key Characteristics</h4>
+              <div className="group relative">
+                <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
+                <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+                  Características principais da LSTM: processamento sequencial para dados ordenados no tempo, células de memória para reter informações, e gates para controlar o fluxo de dados.
+                  <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
+                </div>
+              </div>
+            </div>
             <div className="mt-2 space-y-2">
               {[
                 "Sequential Processing — Processes data one step at a time",
@@ -135,26 +231,62 @@ export default function ModelSchemaPage() {
           ⚙️ Architecture Configuration
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="Input Size" value={inputSize} subtitle="Number of input features" icon={<Box className="h-5 w-5 text-nvidia" />} />
-          <StatCard label="Hidden Size" value={hiddenSize} subtitle="LSTM hidden state dim" icon={<Layers className="h-5 w-5 text-sky-400" />} accentColor="#38bdf8" />
-          <StatCard label="Num Layers" value={numLayers} subtitle="Stacked LSTM layers" icon={<Hash className="h-5 w-5 text-amber-400" />} accentColor="#fbbf24" />
-          <StatCard label="Output Size" value={outputSize} subtitle="Prediction dimension" icon={<Cpu className="h-5 w-5 text-purple-400" />} accentColor="#a78bfa" />
+          <StatCard label="Input Size" value={inputSize} subtitle="Number of input features" icon={<Box className="h-5 w-5 text-nvidia" />} tooltip="Número de features de entrada (Open, High, Low, Close, Volume). Cada timestep tem essas 5 dimensões." />
+          <StatCard label="Hidden Size" value={hiddenSize} subtitle="LSTM hidden state dim" icon={<Layers className="h-5 w-5 text-sky-400" />} accentColor="#38bdf8" tooltip="Dimensão do estado oculto da LSTM. Valores maiores permitem capturar padrões mais complexos, mas aumentam o risco de overfitting." />
+          <StatCard label="Num Layers" value={numLayers} subtitle="Stacked LSTM layers" icon={<Hash className="h-5 w-5 text-amber-400" />} accentColor="#fbbf24" tooltip="Número de camadas LSTM empilhadas. Mais camadas permitem abstrações hierárquicas, mas tornam o treinamento mais lento." />
+          <StatCard label="Output Size" value={`${outputSize} → 1`} subtitle="OHLCV out → Close only" icon={<Cpu className="h-5 w-5 text-purple-400" />} accentColor="#a78bfa" tooltip="The FC layer outputs 5 values (OHLCV), but only the Close price (index 3) is extracted for the final prediction." />
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-lg border border-surface-border bg-surface-card p-4">
-            <p className="text-xs text-white/40">Dropout</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs text-white/40">Dropout</p>
+              <div className="group relative">
+                <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
+                <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+                  Taxa de dropout aplicada entre as camadas LSTM e antes da camada densa. Desativa aleatoriamente neurônios durante o treino para evitar overfitting.
+                  <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
+                </div>
+              </div>
+            </div>
             <p className="text-xl font-bold">{(dropout * 100).toFixed(0)}%</p>
           </div>
           <div className="rounded-lg border border-surface-border bg-surface-card p-4">
-            <p className="text-xs text-white/40">Bidirectional</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs text-white/40">Bidirectional</p>
+              <div className="group relative">
+                <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
+                <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+                  Se ativado, a LSTM processa a sequência nos dois sentidos (passado→futuro e futuro→passado), dobrando o hidden size efetivo.
+                  <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
+                </div>
+              </div>
+            </div>
             <p className="text-xl font-bold">{bidirectional ? "Yes ✅" : "No ❌"}</p>
           </div>
           <div className="rounded-lg border border-surface-border bg-surface-card p-4">
-            <p className="text-xs text-white/40">Sequence Length</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs text-white/40">Sequence Length</p>
+              <div className="group relative">
+                <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
+                <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+                  Número de dias passados que o modelo analisa para fazer uma previsão. 60 dias = ~3 meses de histórico por previsão.
+                  <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
+                </div>
+              </div>
+            </div>
             <p className="text-xl font-bold">{seqLength}</p>
           </div>
           <div className="rounded-lg border border-surface-border bg-surface-card p-4">
-            <p className="text-xs text-white/40">Directions</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs text-white/40">Directions</p>
+              <div className="group relative">
+                <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
+                <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+                  Número de direções de processamento. 1 = unidirecional (só olha o passado), 2 = bidirecional.
+                  <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
+                </div>
+              </div>
+            </div>
             <p className="text-xl font-bold">{bidirectional ? 2 : 1}</p>
           </div>
         </div>
@@ -162,9 +294,16 @@ export default function ModelSchemaPage() {
 
       {/* Model Tree */}
       <div>
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-          🌳 Model Tree Structure
-        </p>
+        <div className="mb-3 flex items-center gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">🌳 Model Tree Structure</p>
+          <div className="group relative">
+            <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
+            <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+              Visualização hierárquica do modelo mostrando cada camada, seus parâmetros e a forma dos tensores em cada etapa.
+              <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
+            </div>
+          </div>
+        </div>
         <div className="gradient-card rounded-xl border border-nvidia/30 p-6 font-mono text-sm">
           <div className="font-semibold text-nvidia">📦 NvidiaLSTM</div>
           <div className="ml-5 mt-2 border-l-2 border-nvidia/30 pl-5 space-y-3">
@@ -229,7 +368,21 @@ export default function ModelSchemaPage() {
               </div>
               <div className="ml-7 mt-1 border-l-2 border-[#FF6B35]/20 pl-4 text-xs text-white/60 space-y-0.5">
                 <div>├─ <span className="text-[#FF8C5A]">in_features:</span> {hiddenSize}</div>
-                <div>└─ <span className="text-[#FF8C5A]">out_features:</span> {outputSize}</div>
+                <div>└─ <span className="text-[#FF8C5A]">out_features:</span> {outputSize} <span className="text-white/30">(OHLCV)</span></div>
+              </div>
+            </div>
+
+            {/* Close Extraction */}
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[#F59E0B]">🎯</span>
+                <span className="font-semibold text-[#F59E0B]">Close Extraction</span>
+                <span className="rounded bg-[#F59E0B]/20 px-2 py-0.5 text-xs text-[#F59E0B]">
+                  index [3]
+                </span>
+              </div>
+              <div className="ml-7 mt-1 border-l-2 border-[#F59E0B]/20 pl-4 text-xs text-white/50">
+                Output has {outputSize} features (O,H,L,C,V) → only <span className="font-medium text-[#F59E0B]">Close</span> is used
               </div>
             </div>
 
@@ -238,7 +391,7 @@ export default function ModelSchemaPage() {
               <span className="text-[#96CEB4]">📤</span>
               <span className="font-semibold text-[#96CEB4]">Output</span>
               <span className="rounded bg-[#96CEB4]/20 px-2 py-0.5 text-xs text-[#96CEB4]">
-                shape: (batch, {outputSize})
+                shape: (batch, 1) — Close Price
               </span>
             </div>
           </div>
@@ -258,9 +411,16 @@ export default function ModelSchemaPage() {
 
       {/* Parameter Analysis */}
       <div>
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-          📊 Parameter Analysis
-        </p>
+        <div className="mb-3 flex items-center gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">📊 Parameter Analysis</p>
+          <div className="group relative">
+            <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
+            <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+              Análise quantitativa dos parâmetros do modelo. Cada parâmetro é um peso aprendido durante o treinamento. Mais parâmetros = maior capacidade, mas mais risco de overfitting.
+              <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
+            </div>
+          </div>
+        </div>
         <div className="grid grid-cols-3 gap-4">
           <div className="rounded-lg border border-surface-border bg-surface-card p-4">
             <p className="text-xs text-white/40">Total Parameters</p>
@@ -276,30 +436,28 @@ export default function ModelSchemaPage() {
           </div>
         </div>
 
-        {/* Pie chart */}
+        {/* Bar chart */}
         {pieData.length > 0 && (
           <div className="mt-4 rounded-xl border border-surface-border bg-surface-card p-6">
             <h4 className="mb-2 text-sm font-semibold text-white/80">
               Parameter Distribution by Layer Type
             </h4>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={4}
-                  dataKey="value"
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
-                >
-                  {pieData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={pieData} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }}
+                  tickLine={false}
+                  tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fill: "rgba(255,255,255,0.6)", fontSize: 11 }}
+                  tickLine={false}
+                  width={130}
+                />
                 <Tooltip
                   contentStyle={{
                     background: "#1a1c24",
@@ -308,7 +466,12 @@ export default function ModelSchemaPage() {
                   }}
                   formatter={(value: number) => [value.toLocaleString(), "Parameters"]}
                 />
-              </PieChart>
+                <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={28}>
+                  {pieData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         )}
@@ -317,7 +480,7 @@ export default function ModelSchemaPage() {
       {/* Layer Detail Table */}
       {params?.layers && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-          <h3 className="mb-4 text-lg font-semibold">📋 Detailed Layer Information</h3>
+          <SectionHeader title="📋 Detailed Layer Information" tooltip="Tabela com cada camada do modelo, sua forma (shape), número de parâmetros e tipo de dado. Permite entender onde estão concentrados os pesos do modelo." />
           <div className="overflow-auto">
             <table className="w-full text-sm">
               <thead>
@@ -345,15 +508,16 @@ export default function ModelSchemaPage() {
 
       {/* Data Flow */}
       <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-        <h3 className="mb-4 text-lg font-semibold">🔄 Data Flow</h3>
+          <SectionHeader title="🔄 Data Flow" tooltip="Fluxo completo dos dados desde a entrada até a previsão final. Mostra como os dados são transformados em cada etapa do modelo." />
         <div className="space-y-4">
           {[
             { step: "1. Input Preparation", desc: `Historical prices are normalized and shaped into sequences of ${seqLength} time steps.`, shape: `(batch, ${seqLength}, ${inputSize})` },
             { step: "2. LSTM Processing", desc: `${numLayers} stacked LSTM layers process the sequence, learning temporal patterns.`, shape: `(batch, ${seqLength}, ${hiddenSize})` },
             { step: "3. Final Hidden State", desc: "The last hidden state from the final LSTM layer is extracted.", shape: `(batch, ${hiddenSize})` },
             { step: "4. Dropout", desc: `Dropout with rate ${dropout} is applied for regularization.`, shape: `(batch, ${hiddenSize})` },
-            { step: "5. Dense Layer", desc: "Fully connected layer maps hidden state to prediction.", shape: `(batch, ${outputSize})` },
-            { step: "6. Inverse Transform", desc: "Prediction is converted back to original price scale.", shape: "Predicted Price ($)" },
+            { step: "5. Dense Layer", desc: `Fully connected layer maps hidden state to ${outputSize} OHLCV outputs.`, shape: `(batch, ${outputSize})` },
+            { step: "6. Close Extraction", desc: "Only the Close price (index 3) is extracted from the 5-feature output.", shape: "(batch, 1)" },
+            { step: "7. Inverse Transform", desc: "Close prediction is converted back to original price scale.", shape: "Predicted Close ($)" },
           ].map((s) => (
             <div key={s.step} className="flex items-start justify-between gap-4 rounded-lg bg-surface-hover p-4">
               <div>
@@ -371,7 +535,7 @@ export default function ModelSchemaPage() {
       {/* Training Configuration */}
       {Object.keys(trainingInfo).length > 0 && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-          <h3 className="mb-4 text-lg font-semibold">🎯 Training Configuration</h3>
+          <SectionHeader title="🎯 Training Configuration" tooltip="Hiperparâmetros usados no treinamento do modelo. Estes valores controlam a velocidade de aprendizado, regularização e critérios de parada." />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <h4 className="mb-2 text-sm font-semibold text-white/60">Optimizer &amp; Learning</h4>
@@ -410,6 +574,80 @@ export default function ModelSchemaPage() {
           </div>
         </div>
       )}
+
+      {/* Best Parameters */}
+      {(() => {
+        const hpoParams = (hpo as Record<string, unknown>)?.best_params as Record<string, number> | undefined;
+        const hasHpo = hpoParams && Object.keys(hpoParams).length > 0;
+
+        // Fallback: use model config + training info as best params
+        const bestParams: Record<string, number | string> = hasHpo
+          ? hpoParams
+          : {
+              hidden_size: hiddenSize,
+              num_layers: numLayers,
+              dropout: dropout,
+              learning_rate: Number(trainingInfo.learning_rate ?? 0.001),
+              batch_size: Number(trainingInfo.batch_size ?? 32),
+              sequence_length: seqLength,
+              best_epoch: Number(trainingInfo["Best Epoch"] ?? trainingInfo.best_epoch ?? "-"),
+              total_epochs: Number(trainingInfo["Total Epochs"] ?? trainingInfo.total_epochs ?? "-"),
+            };
+
+        const labelMap: Record<string, { label: string; icon: string; format: (v: number) => string }> = {
+          hidden_size: { label: "Hidden Size", icon: "🧠", format: (v) => String(v) },
+          num_layers: { label: "Num Layers", icon: "📚", format: (v) => String(v) },
+          learning_rate: { label: "Learning Rate", icon: "📈", format: (v) => v < 0.01 ? v.toExponential(2) : String(v) },
+          dropout: { label: "Dropout", icon: "💧", format: (v) => `${(v * 100).toFixed(0)}%` },
+          batch_size: { label: "Batch Size", icon: "📦", format: (v) => String(v) },
+          weight_decay: { label: "Weight Decay", icon: "⚖️", format: (v) => v < 0.01 ? v.toExponential(2) : String(v) },
+          sequence_length: { label: "Sequence Length", icon: "📏", format: (v) => String(v) },
+          epochs: { label: "Epochs", icon: "🔄", format: (v) => String(v) },
+          best_epoch: { label: "Best Epoch", icon: "🏅", format: (v) => String(v) },
+          total_epochs: { label: "Total Epochs", icon: "🔄", format: (v) => String(v) },
+        };
+
+        return (
+          <div className="rounded-xl border border-amber-400/30 bg-gradient-to-br from-amber-400/5 to-transparent p-6">
+            <SectionHeader
+              title="🏆 Best Parameters"
+              tooltip={hasHpo
+                ? "Best hyperparameters found by automatic optimization (HPO — Hyperparameter Optimization). Selected via Bayesian search to maximize performance."
+                : "Parameters used to train the current model. This configuration produced the best result (lowest validation loss)."
+              }
+            />
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2">
+              <Trophy className="h-4 w-4 text-amber-400" />
+              <span className="text-xs text-amber-300/80">
+                {hasHpo
+                  ? "Automatically optimized via Optuna — selected for best performance"
+                  : "Model configuration with best performance (lowest validation loss)"}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {Object.entries(bestParams)
+                .filter(([, val]) => val !== "-" && val !== 0 && !isNaN(Number(val)))
+                .map(([key, val]) => {
+                  const meta = labelMap[key] ?? { label: key.replace(/_/g, " "), icon: "⚙️", format: (v: number) => String(v) };
+                  return (
+                    <div
+                      key={key}
+                      className="group relative rounded-lg border border-surface-border bg-surface-card p-4 transition-colors hover:border-amber-400/30"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm">{meta.icon}</span>
+                        <p className="text-xs text-white/40">{meta.label}</p>
+                      </div>
+                      <p className="mt-1 text-xl font-bold text-amber-400">
+                        {typeof val === "number" ? meta.format(val) : String(val)}
+                      </p>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

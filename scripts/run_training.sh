@@ -195,6 +195,7 @@ with mlflow.start_run(run_name='lstm_training'):
         'test_results': test_results,
         'train_losses': history['train_loss'],
         'val_losses': history['val_loss'],
+        'training_history': history,
     }
     torch.save(checkpoint, model_path)
     logger.info(f'Saved rich checkpoint to {model_path}')

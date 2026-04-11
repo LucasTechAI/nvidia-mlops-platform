@@ -41,6 +41,10 @@ export const api = {
       request<Record<string, unknown>>(`/data/latest?days=${days}`),
     stats: () => request<Record<string, unknown>>("/data/summary"),
     columns: () => request<{ columns: string[] }>("/data/columns"),
+    live: () =>
+      request<{ data: { date: string; close: number }[]; db_last_date: string; live_count: number }>(
+        "/data/live"
+      ),
   },
 
   /* ──────── Predictions ──────── */
@@ -55,6 +59,10 @@ export const api = {
         method: "POST",
         body: JSON.stringify(params),
       }),
+    backtest: (days: number = 60) =>
+      request<{ backtest: { date: string; actual: number; predicted: number }[]; days: number }>(
+        `/predict/backtest?days=${days}`
+      ),
   },
 
   /* ──────── Model ──────── */
@@ -71,6 +79,10 @@ export const api = {
       request<Record<string, unknown>>("/monitoring/drift", {
         method: "POST",
       }),
+    allTriggers: () =>
+      request<Record<string, unknown>>("/monitoring/drift/all-triggers", {
+        method: "POST",
+      }),
     championChallenger: () =>
       request<Record<string, unknown>>("/monitoring/champion-challenger"),
     runChampionChallenger: () =>
@@ -78,6 +90,8 @@ export const api = {
         "/monitoring/champion-challenger/run",
         { method: "POST" }
       ),
+    runsHistory: () =>
+      request<Record<string, unknown>>("/monitoring/runs/history"),
   },
 
   /* ──────── Evaluation ──────── */

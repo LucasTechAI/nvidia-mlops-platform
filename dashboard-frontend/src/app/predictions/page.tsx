@@ -43,6 +43,23 @@ export default function PredictionsPage() {
   const [predictions, setPredictions] = useState<PredictionPoint[]>([]);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  const [liveData, setLiveData] = useState<{ date: string; close: number }[]>([]);
+  const [dbLastDate, setDbLastDate] = useState<string | null>(null);
+
+  // Load live data (newer than DB) from Yahoo Finance
+  useEffect(() => {
+    async function loadLive() {
+      try {
+        const res = await api.data.live();
+        setLiveData(res.data || []);
+        setDbLastDate(res.db_last_date || null);
+      } catch (err) {
+        console.error("Failed to load live data:", err);
+      }
+    }
+    loadLive();
+  }, []);
+
 
   // Load historical data
   useEffect(() => {
@@ -87,18 +104,50 @@ export default function PredictionsPage() {
     }
   }, [horizon, showConfidence]);
 
-  // Build chart data combining historical + predictions
+  // Auto-generate forecast on page load
+  useEffect(() => {
+    generateForecast();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Build chart data combining historical + predictions + live
+  // Normalize date to YYYY-MM-DD for consistent matching
+  const normalizeDate = (d: string) => d.slice(0, 10);
+
+  // Create a map of live data by date for quick lookup
+  const liveByDate = new Map(liveData.map((d) => [normalizeDate(d.date), d.close]));
+  const predByDate = new Map(predictions.map((p) => [normalizeDate(p.date), p]));
+  const histByDate = new Set(historicalData.map((h) => normalizeDate(h.date)));
+
   const chartData = [
     ...historicalData.map((d) => ({
-      date: d.date,
+      date: normalizeDate(d.date),
       historical: d.close,
     })),
-    ...predictions.map((p) => ({
-      date: p.date,
-      predicted: p.predicted_price,
-      lower: p.lower_bound,
-      upper: p.upper_bound,
-    })),
+    ...predictions.map((p) => {
+      const dateKey = normalizeDate(p.date);
+      const liveClose = liveByDate.get(dateKey);
+      return {
+        date: dateKey,
+        predicted: p.predicted_price,
+        lower: p.lower_bound,
+        upper: p.upper_bound,
+        confidenceBand: p.lower_bound != null && p.upper_bound != null
+          ? [p.lower_bound, p.upper_bound]
+          : undefined,
+        ...(liveClose != null ? { real: liveClose } : {}),
+      };
+    }),
+    // Also include live days that go beyond prediction horizon
+    ...liveData
+      .filter((d) => {
+        const dk = normalizeDate(d.date);
+        return !predByDate.has(dk) && !histByDate.has(dk);
+      })
+      .map((d) => ({
+        date: normalizeDate(d.date),
+        real: d.close,
+      })),
   ];
 
   // Daily changes from predictions
@@ -258,7 +307,14 @@ export default function PredictionsPage() {
       {/* Forecast Chart */}
       <div className="rounded-xl border border-surface-border bg-surface-card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Price Forecast</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-semibold">Price Forecast</h3>
+            {liveData.length > 0 && (
+              <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">
+                {liveData.length} live {liveData.length === 1 ? "day" : "days"} (after {dbLastDate})
+              </span>
+            )}
+          </div>
           {predictions.length > 0 && (
             <button
               onClick={downloadCSV}
@@ -283,7 +339,7 @@ export default function PredictionsPage() {
               <YAxis
                 tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }}
                 tickLine={false}
-                domain={["auto", "auto"]}
+                domain={[0, "auto"]}
                 tickFormatter={(v) => `$${v}`}
               />
               <Tooltip
@@ -293,34 +349,42 @@ export default function PredictionsPage() {
                   borderRadius: 8,
                   color: "#fff",
                 }}
-                formatter={(value: number, name: string) => [
-                  `$${value?.toFixed(2)}`,
-                  name === "historical"
-                    ? "Historical"
-                    : name === "predicted"
-                      ? "Predicted"
-                      : name,
+                formatter={(value: unknown, name: string) => {
+                  if (name === "confidenceBand" && Array.isArray(value)) {
+                    return [`$${Number(value[0]).toFixed(2)} – $${Number(value[1]).toFixed(2)}`, "95% Confidence"];
+                  }
+                  const num = Number(value);
+                  const label =
+                    name === "historical" ? "Historical"
+                    : name === "predicted" ? "Predicted"
+                    : name === "real" ? "Real (Live)"
+                    : name;
+                  return [`$${num.toFixed(2)}`, label];
+                }}
+              />
+              <Legend
+                verticalAlign="top"
+                align="right"
+                iconType="line"
+                wrapperStyle={{ paddingBottom: 12, fontSize: 12, color: "rgba(255,255,255,0.6)" }}
+                payload={[
+                  { value: "Historical", type: "line", color: "#4ECDC4" },
+                  { value: "Predicted", type: "line", color: "#76B900" },
+                  ...(liveData.length > 0 ? [{ value: "Real (Live)", type: "line" as const, color: "#FBBF24" }] : []),
+                  ...(showConfidence ? [{ value: "95% Confidence", type: "rect" as const, color: "rgba(118,185,0,0.35)" }] : []),
                 ]}
               />
-              <Legend />
 
-              {/* Confidence band */}
+              {/* Confidence band as a single area range */}
               {showConfidence && (
                 <Area
                   type="monotone"
-                  dataKey="upper"
-                  stroke="none"
-                  fill="rgba(118,185,0,0.1)"
-                  name="Upper Bound"
-                />
-              )}
-              {showConfidence && (
-                <Area
-                  type="monotone"
-                  dataKey="lower"
-                  stroke="none"
-                  fill="rgba(118,185,0,0.1)"
-                  name="Lower Bound"
+                  dataKey="confidenceBand"
+                  stroke="rgba(118,185,0,0.4)"
+                  strokeWidth={1}
+                  fill="rgba(118,185,0,0.15)"
+                  name="confidenceBand"
+                  legendType="none"
                 />
               )}
 
@@ -344,6 +408,19 @@ export default function PredictionsPage() {
                 dot={false}
                 name="Predicted"
               />
+
+              {/* Real (Live) line — actual market data more recent than DB */}
+              {liveData.length > 0 && (
+                <Line
+                  type="monotone"
+                  dataKey="real"
+                  stroke="#FBBF24"
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: "#FBBF24", stroke: "#FBBF24" }}
+                  name="Real (Live)"
+                  connectNulls
+                />
+              )}
             </ComposedChart>
           </ResponsiveContainer>
         ) : (
@@ -435,6 +512,7 @@ export default function PredictionsPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

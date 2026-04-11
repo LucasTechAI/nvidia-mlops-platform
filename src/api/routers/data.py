@@ -179,3 +179,59 @@ async def get_columns() -> dict:
         "target_column": "Close",
         "date_column": "Date",
     }
+
+
+@router.get("/live")
+async def get_live_data() -> dict:
+    """
+    Fetch the latest NVDA data from Yahoo Finance and return
+    only the trading days that are **newer** than what the DB has.
+    This lets the frontend overlay real market data on top of forecasts.
+    """
+    try:
+        from yfinance import Ticker
+
+        # Last date already in the database
+        df_db = load_data_from_db(start_year=2017)
+        df_db["date"] = pd.to_datetime(df_db["Date"])
+        last_db_date = df_db["date"].max()
+
+        # Fetch recent data from Yahoo Finance (last 3 months to be safe)
+        nvidia = Ticker("NVDA")
+        live = nvidia.history(period="3mo", interval="1d")
+
+        if live.empty:
+            return {"data": [], "db_last_date": last_db_date.strftime("%Y-%m-%d")}
+
+        live = live.reset_index()
+        if "Datetime" in live.columns:
+            live.rename(columns={"Datetime": "Date"}, inplace=True)
+
+        live["Date"] = pd.to_datetime(live["Date"]).dt.tz_localize(None)
+        # Keep only rows strictly after the last DB date
+        live = live[live["Date"] > last_db_date].sort_values("Date")
+
+        items = []
+        for _, row in live.iterrows():
+            items.append({
+                "date": row["Date"].strftime("%Y-%m-%d"),
+                "close": round(float(row["Close"]), 2),
+                "open": round(float(row["Open"]), 2),
+                "high": round(float(row["High"]), 2),
+                "low": round(float(row["Low"]), 2),
+                "volume": int(row["Volume"]),
+            })
+
+        return {
+            "data": items,
+            "db_last_date": last_db_date.strftime("%Y-%m-%d"),
+            "live_count": len(items),
+        }
+
+    except ImportError:
+        raise HTTPException(status_code=501, detail="yfinance not installed")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch live data: {str(e)}",
+        )

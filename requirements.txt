@@ -25,6 +25,9 @@ matplotlib>=3.8.0
 seaborn>=0.13.0
 plotly>=5.18.0
 
+# Explainability
+lime>=0.2.0
+
 # Additional dependencies
 scipy>=1.12.0
 

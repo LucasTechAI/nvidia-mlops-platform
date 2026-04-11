@@ -210,6 +210,85 @@ async def predict(request: PredictRequest, state: ModelState = Depends(get_model
         )
 
 
+@router.get("/backtest")
+async def backtest(
+    days: int = 60,
+    state: ModelState = Depends(get_model_state),
+):
+    """
+    Run model on recent historical data and return actual vs predicted prices.
+
+    Useful for visualising how well the model fits known data.
+    """
+    if not state.is_ready:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Model not loaded.",
+        )
+
+    try:
+        df = load_data_from_db(start_year=2017)
+
+        rename_map = {col: col.capitalize() for col in df.columns if col.islower()}
+        if rename_map:
+            df = df.rename(columns=rename_map)
+
+        df["date"] = pd.to_datetime(df["Date"])
+        df = df.sort_values("date").reset_index(drop=True)
+
+        sequence_length = state.model_config.get("sequence_length", 60)
+        feature_columns = ["Open", "High", "Low", "Close", "Volume"]
+        available_features = [col for col in feature_columns if col in df.columns]
+        feature_data = df[available_features].values
+        normalized = state.scaler.transform(feature_data)
+
+        n_features = state.scaler.n_features_in_
+        close_idx = 3  # Close column index in OHLCV
+
+        # We need at least sequence_length + days rows
+        total_needed = sequence_length + days
+        if len(normalized) < total_needed:
+            days = len(normalized) - sequence_length
+
+        start_idx = len(normalized) - days - sequence_length
+
+        state.model.eval()
+        results = []
+
+        for i in range(days):
+            idx = start_idx + i
+            seq = normalized[idx : idx + sequence_length]
+            seq_tensor = torch.FloatTensor(seq).unsqueeze(0).to(state.device)
+
+            with torch.no_grad():
+                pred = state.model(seq_tensor)
+
+            pred_np = pred.cpu().numpy().flatten()
+
+            # Inverse-transform predicted Close
+            dummy = np.zeros((1, n_features))
+            dummy[0, :len(pred_np)] = pred_np
+            pred_price = float(state.scaler.inverse_transform(dummy)[0, close_idx])
+
+            actual_idx = idx + sequence_length
+            actual_price = float(df["Close"].iloc[actual_idx])
+            date_str = df["date"].iloc[actual_idx].strftime("%Y-%m-%d")
+
+            results.append({
+                "date": date_str,
+                "actual": round(actual_price, 2),
+                "predicted": round(pred_price, 2),
+            })
+
+        return {"backtest": results, "days": len(results)}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Backtest failed: {str(e)}",
+        )
+
+
 @router.post("/inference", response_model=InferenceResponse)
 async def inference(request: InferenceRequest, state: ModelState = Depends(get_model_state)) -> InferenceResponse:
     """

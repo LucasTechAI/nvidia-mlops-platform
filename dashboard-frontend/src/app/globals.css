@@ -41,7 +41,7 @@ body {
 
 @layer components {
   .stat-card {
-    @apply relative overflow-hidden rounded-xl border border-surface-border bg-surface-card p-5 transition-all duration-300;
+    @apply relative rounded-xl border border-surface-border bg-surface-card p-5 transition-all duration-300;
   }
 
   .stat-card:hover {
@@ -51,7 +51,7 @@ body {
 
   .stat-card::before {
     content: "";
-    @apply absolute left-0 top-0 h-full w-1 bg-nvidia;
+    @apply absolute left-0 top-0 h-full w-1 rounded-l-xl bg-nvidia;
   }
 
   .tab-active {
