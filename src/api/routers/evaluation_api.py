@@ -32,10 +32,7 @@ async def get_evaluation_results():
         champion = comparison.get("champion", data.get("champion", {}))
         challenger = comparison.get("challenger", data.get("challenger", {}))
         promoted = data.get("promoted", comparison.get("promote", False))
-        promotion_reason = (
-            data.get("promotion_reason", "")
-            or comparison.get("reason", "")
-        )
+        promotion_reason = data.get("promotion_reason", "") or comparison.get("reason", "")
 
         # If non-RMSE metrics are all zero, recalculate from the current model
         def _metrics_incomplete(m: dict) -> bool:
@@ -117,7 +114,7 @@ def _enrich_metrics_from_model(champion: dict, challenger: dict):
         if arr.ndim == 2 and arr.shape[1] >= n_feat:
             dummy = arr.copy()
         elif arr.ndim == 2:
-            dummy[:, :arr.shape[1]] = arr
+            dummy[:, : arr.shape[1]] = arr
         else:
             dummy[:, idx] = arr.flatten()
         return state.scaler.inverse_transform(dummy)[:, idx]
@@ -187,11 +184,15 @@ async def get_explainability_cached():
         features = []
         if "feature_names" in results and "importances_mean" in results:
             for i, name in enumerate(results["feature_names"]):
-                features.append({
-                    "feature": name,
-                    "importance": float(results["importances_mean"][i]),
-                    "std": float(results["importances_std"][i]) if i < len(results.get("importances_std", [])) else 0.0,
-                })
+                features.append(
+                    {
+                        "feature": name,
+                        "importance": float(results["importances_mean"][i]),
+                        "std": float(results["importances_std"][i])
+                        if i < len(results.get("importances_std", []))
+                        else 0.0,
+                    }
+                )
         return {
             "features": features,
             "baseline_rmse": results.get("baseline_rmse", 0.0),
@@ -251,15 +252,18 @@ async def run_explainability():
             importances_std = results.get("importances_std", [0] * len(feature_names))
 
             for i, name in enumerate(feature_names):
-                features.append({
-                    "feature": name,
-                    "importance": float(importances_mean[i]),
-                    "std": float(importances_std[i]) if i < len(importances_std) else 0.0,
-                })
+                features.append(
+                    {
+                        "feature": name,
+                        "importance": float(importances_mean[i]),
+                        "std": float(importances_std[i]) if i < len(importances_std) else 0.0,
+                    }
+                )
 
         # Persist to cache so GET /explainability can return it instantly next time
         try:
             import datetime
+
             cache_path = PROJECT_ROOT / "outputs" / "explainability" / "permutation_importance.json"
             cache_path.parent.mkdir(parents=True, exist_ok=True)
             with open(cache_path, "w") as f:
@@ -374,6 +378,7 @@ async def run_lime():
 async def run_llm_evaluation():
     """Run RAGAS + LLM-Judge evaluation on the golden set."""
     import sys
+
     sys.path.insert(0, str(PROJECT_ROOT))
     try:
         from evaluation.llm_judge import run_llm_judge_evaluation

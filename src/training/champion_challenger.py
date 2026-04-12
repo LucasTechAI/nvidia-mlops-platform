@@ -519,6 +519,7 @@ def run_champion_challenger(
     logger.info("=" * 60)
     try:
         from src.etl import refresh_stock_data
+
         refresh_stock_data()
     except Exception as e:
         logger.warning("ETL refresh failed (continuing with existing data): %s", e)
@@ -585,20 +586,14 @@ def run_champion_challenger(
 
     if _challenger_model is not None and _test_data is not None and _scaler is not None:
         X_test, y_test = _test_data
-        test_dataset = TensorDataset(
-            torch.FloatTensor(X_test), torch.FloatTensor(y_test)
-        )
+        test_dataset = TensorDataset(torch.FloatTensor(X_test), torch.FloatTensor(y_test))
         test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
-        challenger_m = evaluate_model(
-            _challenger_model, test_loader, _scaler, device=_device, target_idx=_target_idx
-        )
+        challenger_m = evaluate_model(_challenger_model, test_loader, _scaler, device=_device, target_idx=_target_idx)
         logger.info("Challenger full metrics: %s", challenger_m.to_dict())
 
         if _champion_model is not None:
-            champion_m = evaluate_model(
-                _champion_model, test_loader, _scaler, device=_device, target_idx=_target_idx
-            )
+            champion_m = evaluate_model(_champion_model, test_loader, _scaler, device=_device, target_idx=_target_idx)
             logger.info("Champion full metrics: %s", champion_m.to_dict())
         else:
             champion_loss = training_result.get("champion_val_loss", float("inf"))

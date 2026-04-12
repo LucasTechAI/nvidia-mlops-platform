@@ -171,7 +171,7 @@ class LogDatabase:
         sql = f"""
             SELECT id, timestamp, level, source, module, func_name, message, extra
             FROM logs
-            WHERE {' AND '.join(clauses)}
+            WHERE {" AND ".join(clauses)}
             ORDER BY created_at DESC
             LIMIT ? OFFSET ?
         """
@@ -349,6 +349,7 @@ class SQLiteLogHandler(logging.Handler):
         except Exception as exc:
             # Fallback — avoid infinite recursion
             import sys
+
             print(f"[SQLiteLogHandler] flush error: {exc}", file=sys.stderr)
 
     def flush(self):
@@ -454,9 +455,7 @@ def seed_sample_logs():
     now = datetime.utcnow()
     for i in range(200):
         minutes_ago = random.randint(0, 120)
-        ts = (now - timedelta(minutes=minutes_ago, seconds=random.randint(0, 59))).isoformat(
-            timespec="milliseconds"
-        )
+        ts = (now - timedelta(minutes=minutes_ago, seconds=random.randint(0, 59))).isoformat(timespec="milliseconds")
         source = random.choice(sources)
         level = random.choice(levels)
         msg_list = messages.get(source, ["Log entry"])

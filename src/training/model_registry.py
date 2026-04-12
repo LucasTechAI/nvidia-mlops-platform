@@ -186,9 +186,17 @@ class ModelRegistry:
                     metrics_json, params_json, tags_json, created_at, updated_at)
                    VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
                 (
-                    model_name, version, "None", source_path, run_id, description,
-                    json.dumps(metrics or {}), json.dumps(params or {}),
-                    json.dumps(tags or {}), now, now,
+                    model_name,
+                    version,
+                    "None",
+                    source_path,
+                    run_id,
+                    description,
+                    json.dumps(metrics or {}),
+                    json.dumps(params or {}),
+                    json.dumps(tags or {}),
+                    now,
+                    now,
                 ),
             )
 
@@ -208,10 +216,17 @@ class ModelRegistry:
             )
 
         info = ModelVersionInfo(
-            model_name=model_name, version=version, stage="None",
-            source_path=source_path, run_id=run_id, description=description,
-            metrics=metrics or {}, params=params or {}, tags=tags or {},
-            created_at=now, updated_at=now,
+            model_name=model_name,
+            version=version,
+            stage="None",
+            source_path=source_path,
+            run_id=run_id,
+            description=description,
+            metrics=metrics or {},
+            params=params or {},
+            tags=tags or {},
+            created_at=now,
+            updated_at=now,
         )
         logger.info("Created %s v%d", model_name, version)
         return info
@@ -262,8 +277,7 @@ class ModelRegistry:
                            (model_name, version, from_stage, to_stage,
                             transitioned_by, reason, timestamp)
                            VALUES (?,?,?,?,?,?,?)""",
-                        (model_name, old_v, "Production", "Archived",
-                         transitioned_by, f"Replaced by v{version}", now),
+                        (model_name, old_v, "Production", "Archived", transitioned_by, f"Replaced by v{version}", now),
                     )
                     logger.info("Archived %s v%d (replaced by v%d)", model_name, old_v, version)
 
@@ -277,8 +291,7 @@ class ModelRegistry:
                    (model_name, version, from_stage, to_stage,
                     transitioned_by, reason, timestamp)
                    VALUES (?,?,?,?,?,?,?)""",
-                (model_name, version, from_stage, target_stage,
-                 transitioned_by, reason, now),
+                (model_name, version, from_stage, target_stage, transitioned_by, reason, now),
             )
 
         logger.info("Transitioned %s v%d: %s → %s", model_name, version, from_stage, target_stage)
@@ -333,17 +346,21 @@ class ModelRegistry:
 
                     improvement = (prod_rmse - cand_rmse) / prod_rmse if prod_rmse > 0 else 0
                     passed = improvement >= min_rmse_improvement
-                    checks.append({
-                        "check": "rmse_improvement",
-                        "passed": passed,
-                        "detail": f"Improvement: {improvement:.2%} (min: {min_rmse_improvement:.2%})",
-                    })
+                    checks.append(
+                        {
+                            "check": "rmse_improvement",
+                            "passed": passed,
+                            "detail": f"Improvement: {improvement:.2%} (min: {min_rmse_improvement:.2%})",
+                        }
+                    )
                 else:
-                    checks.append({
-                        "check": "rmse_improvement",
-                        "passed": True,
-                        "detail": "No current production model",
-                    })
+                    checks.append(
+                        {
+                            "check": "rmse_improvement",
+                            "passed": True,
+                            "detail": "No current production model",
+                        }
+                    )
 
         all_passed = all(c["passed"] for c in checks)
         return PromotionGateResult(
@@ -389,10 +406,17 @@ class ModelRegistry:
             if not row:
                 return None
             return ModelVersionInfo(
-                model_name=row["model_name"], version=row["version"], stage=row["stage"],
-                source_path=row["source_path"], run_id=row["run_id"], description=row["description"],
-                metrics=json.loads(row["metrics_json"]), params=json.loads(row["params_json"]),
-                tags=json.loads(row["tags_json"]), created_at=row["created_at"], updated_at=row["updated_at"],
+                model_name=row["model_name"],
+                version=row["version"],
+                stage=row["stage"],
+                source_path=row["source_path"],
+                run_id=row["run_id"],
+                description=row["description"],
+                metrics=json.loads(row["metrics_json"]),
+                params=json.loads(row["params_json"]),
+                tags=json.loads(row["tags_json"]),
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
             )
 
     def get_production_version(self, model_name: str) -> Optional[ModelVersionInfo]:
@@ -476,7 +500,9 @@ class ModelRegistry:
         )
         self.transition_stage("nvidia-lstm-forecast", 2, "Staging", reason="Passed champion-challenger evaluation")
         self.transition_stage(
-            "nvidia-lstm-forecast", 2, "Production",
+            "nvidia-lstm-forecast",
+            2,
+            "Production",
             reason="Promoted after validation \u2014 RMSE improved 17.9%",
         )
 

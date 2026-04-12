@@ -46,30 +46,35 @@ except Exception as _exc:
 # Seed MLOps demo data (business metrics, SLA, feature store, registry, canary)
 try:
     from src.monitoring.business_metrics import BusinessMetricsTracker
+
     BusinessMetricsTracker.get_instance().seed_sample_data()
 except Exception as _exc:
     logger.warning("Could not seed business metrics: %s", _exc)
 
 try:
     from src.monitoring.sla_monitor import SLAMonitor
+
     SLAMonitor.get_instance().seed_sample_data()
 except Exception as _exc:
     logger.warning("Could not seed SLA data: %s", _exc)
 
 try:
     from src.data.feature_store import FeatureStore
+
     FeatureStore.get_instance().seed_sample_data()
 except Exception as _exc:
     logger.warning("Could not seed feature store: %s", _exc)
 
 try:
     from src.training.model_registry import ModelRegistry
+
     ModelRegistry.get_instance().seed_sample_data()
 except Exception as _exc:
     logger.warning("Could not seed model registry: %s", _exc)
 
 try:
     from src.monitoring.canary_deploy import CanaryDeployManager
+
     CanaryDeployManager.get_instance().seed_sample_data()
 except Exception as _exc:
     logger.warning("Could not seed canary deploy: %s", _exc)
@@ -170,6 +175,7 @@ async def prometheus_middleware(request: Request, call_next):
         # Record in SLA monitor
         try:
             from src.monitoring.sla_monitor import SLAMonitor
+
             SLAMonitor.get_instance().record_request(method, endpoint, response.status_code, duration * 1000)
         except Exception:
             pass

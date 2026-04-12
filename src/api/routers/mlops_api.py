@@ -18,11 +18,13 @@ router = APIRouter(tags=["mlops"])
 #  Business Metrics
 # ═══════════════════════════════════════════════════════════════
 
+
 @router.get("/business-metrics/snapshot")
 async def business_snapshot():
     """Get current business metrics snapshot (P&L, ROI, Sharpe, etc.)."""
     try:
         from src.monitoring.business_metrics import BusinessMetricsTracker
+
         tracker = BusinessMetricsTracker.get_instance()
         snap = tracker.compute_snapshot()
         return asdict(snap)
@@ -36,6 +38,7 @@ async def pnl_history(days: int = Query(30, ge=1, le=365)):
     """Get P&L time-series for charting."""
     try:
         from src.monitoring.business_metrics import BusinessMetricsTracker
+
         tracker = BusinessMetricsTracker.get_instance()
         return {"history": tracker.get_pnl_history(limit=days)}
     except Exception as e:
@@ -48,6 +51,7 @@ async def daily_summaries(days: int = Query(30, ge=1, le=365)):
     """Get daily aggregated business summaries."""
     try:
         from src.monitoring.business_metrics import BusinessMetricsTracker
+
         tracker = BusinessMetricsTracker.get_instance()
         return {"summaries": tracker.get_daily_summaries(days=days)}
     except Exception as e:
@@ -59,11 +63,13 @@ async def daily_summaries(days: int = Query(30, ge=1, le=365)):
 #  SLA Monitor
 # ═══════════════════════════════════════════════════════════════
 
+
 @router.get("/sla/report")
 async def sla_report(period_minutes: int = Query(60, ge=1, le=10080)):
     """Get SLA compliance report for the given time window."""
     try:
         from src.monitoring.sla_monitor import SLAMonitor
+
         monitor = SLAMonitor.get_instance()
         report = monitor.compute_sla(period_minutes=period_minutes)
         return asdict(report)
@@ -77,6 +83,7 @@ async def sla_uptime_history(days: int = Query(7, ge=1, le=90)):
     """Get daily uptime history."""
     try:
         from src.monitoring.sla_monitor import SLAMonitor
+
         monitor = SLAMonitor.get_instance()
         return {"history": monitor.get_uptime_history(days=days)}
     except Exception as e:
@@ -88,11 +95,13 @@ async def sla_uptime_history(days: int = Query(7, ge=1, le=90)):
 #  Feature Store
 # ═══════════════════════════════════════════════════════════════
 
+
 @router.get("/feature-store/list")
 async def list_feature_sets():
     """List all registered feature sets."""
     try:
         from src.data.feature_store import FeatureStore
+
         store = FeatureStore.get_instance()
         return {"feature_sets": store.list_feature_sets()}
     except Exception as e:
@@ -105,6 +114,7 @@ async def get_feature_set_info(name: str, version: Optional[int] = None):
     """Get metadata for a specific feature set."""
     try:
         from src.data.feature_store import FeatureStore
+
         store = FeatureStore.get_instance()
         meta = store.get_feature_set_meta(name, version)
         if not meta:
@@ -122,6 +132,7 @@ async def get_feature_lineage(name: str, version: Optional[int] = None):
     """Get lineage information for a feature set."""
     try:
         from src.data.feature_store import FeatureStore
+
         store = FeatureStore.get_instance()
         lineage = store.get_lineage(name, version)
         return {"lineage": lineage}
@@ -135,6 +146,7 @@ async def preview_feature_set(name: str, version: Optional[int] = None, rows: in
     """Preview first N rows of a feature set."""
     try:
         from src.data.feature_store import FeatureStore
+
         store = FeatureStore.get_instance()
         df = store.get_feature_set(name, version)
         preview = df.head(rows).reset_index()
@@ -154,11 +166,13 @@ async def preview_feature_set(name: str, version: Optional[int] = None, rows: in
 #  Model Registry
 # ═══════════════════════════════════════════════════════════════
 
+
 @router.get("/model-registry/models")
 async def list_registered_models():
     """List all registered models."""
     try:
         from src.training.model_registry import ModelRegistry
+
         registry = ModelRegistry.get_instance()
         return {"models": registry.list_models()}
     except Exception as e:
@@ -171,6 +185,7 @@ async def list_model_versions(model_name: str):
     """List all versions of a registered model."""
     try:
         from src.training.model_registry import ModelRegistry
+
         registry = ModelRegistry.get_instance()
         versions = registry.list_versions(model_name)
         return {"model_name": model_name, "versions": versions}
@@ -184,6 +199,7 @@ async def get_production_model(model_name: str):
     """Get the current production model version."""
     try:
         from src.training.model_registry import ModelRegistry
+
         registry = ModelRegistry.get_instance()
         prod = registry.get_production_version(model_name)
         if not prod:
@@ -201,6 +217,7 @@ async def promote_model(model_name: str, version: int, target_stage: str = Query
     """Promote a model version to a target stage (with gate checks)."""
     try:
         from src.training.model_registry import ModelRegistry
+
         registry = ModelRegistry.get_instance()
 
         # Check promotion gates
@@ -223,6 +240,7 @@ async def rollback_model(model_name: str, reason: str = Query("manual rollback")
     """Rollback to the previous production version."""
     try:
         from src.training.model_registry import ModelRegistry
+
         registry = ModelRegistry.get_instance()
         result = registry.rollback_production(model_name, reason)
         if not result:
@@ -240,6 +258,7 @@ async def model_transition_history(model_name: str, limit: int = Query(50, ge=1,
     """Get stage transition history for a model."""
     try:
         from src.training.model_registry import ModelRegistry
+
         registry = ModelRegistry.get_instance()
         return {"history": registry.get_transition_history(model_name, limit)}
     except Exception as e:
@@ -251,11 +270,13 @@ async def model_transition_history(model_name: str, limit: int = Query(50, ge=1,
 #  Canary Deployments
 # ═══════════════════════════════════════════════════════════════
 
+
 @router.get("/canary/deployments")
 async def list_canary_deployments(model_name: Optional[str] = None, limit: int = Query(20, ge=1, le=100)):
     """List canary deployments."""
     try:
         from src.monitoring.canary_deploy import CanaryDeployManager
+
         mgr = CanaryDeployManager.get_instance()
         return {"deployments": mgr.list_deployments(model_name, limit)}
     except Exception as e:
@@ -268,6 +289,7 @@ async def canary_status(deployment_id: str):
     """Get status of a canary deployment."""
     try:
         from src.monitoring.canary_deploy import CanaryDeployManager
+
         mgr = CanaryDeployManager.get_instance()
         status = mgr.get_status(deployment_id)
         if not status:
@@ -289,6 +311,7 @@ async def start_canary(
     """Start a new canary deployment."""
     try:
         from src.monitoring.canary_deploy import CanaryDeployManager
+
         mgr = CanaryDeployManager.get_instance()
         dep_id = mgr.start_canary(model_name, canary_version, baseline_version)
         return {"deployment_id": dep_id, "state": "canary", "canary_weight": 5}
@@ -302,6 +325,7 @@ async def evaluate_canary(deployment_id: str):
     """Evaluate current canary step and decide next action."""
     try:
         from src.monitoring.canary_deploy import CanaryDeployManager
+
         mgr = CanaryDeployManager.get_instance()
         action = mgr.evaluate_step(deployment_id)
         status = mgr.get_status(deployment_id)
@@ -316,6 +340,7 @@ async def canary_rollback_history(limit: int = Query(20, ge=1, le=100)):
     """Get rollback history across all canary deployments."""
     try:
         from src.monitoring.canary_deploy import CanaryDeployManager
+
         mgr = CanaryDeployManager.get_instance()
         return {"rollbacks": mgr.get_rollback_history(limit)}
     except Exception as e:
@@ -388,6 +413,7 @@ async def cost_analysis(days: int = Query(30, ge=1, le=365)):
         training_runs = 3  # default seed count
         try:
             from src.training.model_registry import ModelRegistry
+
             reg = ModelRegistry.get_instance()
             versions = reg.list_versions("nvidia-lstm-forecast")
             training_runs = max(len(versions), 3)
@@ -398,12 +424,11 @@ async def cost_analysis(days: int = Query(30, ge=1, le=365)):
         total_requests = 0
         try:
             from src.monitoring.sla_monitor import SLAMonitor
+
             sla = SLAMonitor.get_instance()
             report = sla.get_report(period_minutes=days * 1440)
             total_requests = (
-                report.get("total_requests", 0)
-                if isinstance(report, dict)
-                else getattr(report, "total_requests", 0)
+                report.get("total_requests", 0) if isinstance(report, dict) else getattr(report, "total_requests", 0)
             )
         except Exception:
             total_requests = 5000 * days  # fallback estimate
@@ -508,26 +533,30 @@ async def cost_analysis(days: int = Query(30, ge=1, le=365)):
             day = datetime.utcnow() - timedelta(days=days - 1 - i)
             day_infra = infra_total / days
             day_llm = llm_total / days
-            daily_cost_history.append({
-                "date": day.strftime("%Y-%m-%d"),
-                "infra": round(day_infra, 2),
-                "llm": round(day_llm, 4),
-                "total": round(day_infra + day_llm, 2),
-            })
+            daily_cost_history.append(
+                {
+                    "date": day.strftime("%Y-%m-%d"),
+                    "infra": round(day_infra, 2),
+                    "llm": round(day_llm, 4),
+                    "total": round(day_infra + day_llm, 2),
+                }
+            )
 
         # ── Model comparison (what if you used a different model?) ──
         model_comparison = []
         for model_id, pricing in LLM_PRICING.items():
             input_cost = (total_input_tokens / 1_000_000) * pricing["input"]
             output_cost = (total_output_tokens / 1_000_000) * pricing["output"]
-            model_comparison.append({
-                "model": pricing["name"],
-                "model_id": model_id,
-                "input_cost": round(input_cost, 4),
-                "output_cost": round(output_cost, 4),
-                "total_cost": round(input_cost + output_cost, 4),
-                "is_current": model_id == llm_model,
-            })
+            model_comparison.append(
+                {
+                    "model": pricing["name"],
+                    "model_id": model_id,
+                    "input_cost": round(input_cost, 4),
+                    "output_cost": round(output_cost, 4),
+                    "total_cost": round(input_cost + output_cost, 4),
+                    "is_current": model_id == llm_model,
+                }
+            )
         model_comparison.sort(key=lambda x: x["total_cost"])
 
         grand_total = round(infra_total + llm_total, 2)

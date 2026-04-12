@@ -186,10 +186,7 @@ async def get_training_history():
             result[key] = values
 
     # If per-epoch test metrics already exist in history, skip re-computation
-    has_per_epoch_test = (
-        isinstance(result.get("test_loss"), list)
-        and len(result.get("test_loss", [])) > 1
-    )
+    has_per_epoch_test = isinstance(result.get("test_loss"), list) and len(result.get("test_loss", [])) > 1
 
     if not has_per_epoch_test:
         # ── Compute test metrics in *normalized* space (single-value fallback) ──

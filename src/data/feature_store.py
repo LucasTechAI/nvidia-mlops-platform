@@ -339,6 +339,7 @@ class FeatureStore:
                 return
 
         import random
+
         random.seed(42)
 
         dates = pd.date_range(end=datetime.utcnow(), periods=252, freq="B")

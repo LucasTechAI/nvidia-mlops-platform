@@ -37,13 +37,13 @@ class DeploymentState(str, Enum):
 
 # Default canary configuration
 DEFAULT_CANARY_CONFIG = {
-    "initial_weight_pct": 5,       # Start with 5% traffic
-    "weight_step_pct": 10,         # Increase by 10% each step
-    "step_interval_sec": 300,      # 5 min between steps
-    "max_error_rate_pct": 2.0,     # Rollback if > 2% errors
-    "max_latency_p95_ms": 600,     # Rollback if p95 > 600ms
-    "min_requests_per_step": 10,   # Wait for at least 10 requests per step
-    "promotion_threshold_pct": 80, # Promote when canary handles 80%+ traffic
+    "initial_weight_pct": 5,  # Start with 5% traffic
+    "weight_step_pct": 10,  # Increase by 10% each step
+    "step_interval_sec": 300,  # 5 min between steps
+    "max_error_rate_pct": 2.0,  # Rollback if > 2% errors
+    "max_latency_p95_ms": 600,  # Rollback if p95 > 600ms
+    "min_requests_per_step": 10,  # Wait for at least 10 requests per step
+    "promotion_threshold_pct": 80,  # Promote when canary handles 80%+ traffic
 }
 
 CREATE_TABLES = """
@@ -196,8 +196,17 @@ class CanaryDeployManager:
                     baseline_version, state, canary_weight,
                     config_json, started_at, updated_at)
                    VALUES (?,?,?,?,?,?,?,?,?)""",
-                (deployment_id, model_name, canary_version, baseline_version, DeploymentState.CANARY.value,
-                 initial_weight, json.dumps(deploy_config), now, now),
+                (
+                    deployment_id,
+                    model_name,
+                    canary_version,
+                    baseline_version,
+                    DeploymentState.CANARY.value,
+                    initial_weight,
+                    json.dumps(deploy_config),
+                    now,
+                    now,
+                ),
             )
             # Record first step
             cur.execute(
@@ -207,8 +216,13 @@ class CanaryDeployManager:
                 (deployment_id, 1, initial_weight, "start_canary", now),
             )
 
-        logger.info("Started canary deploy %s: v%d (canary) vs v%d (baseline) @ %d%%",
-                     deployment_id, canary_version, baseline_version, initial_weight)
+        logger.info(
+            "Started canary deploy %s: v%d (canary) vs v%d (baseline) @ %d%%",
+            deployment_id,
+            canary_version,
+            baseline_version,
+            initial_weight,
+        )
         return deployment_id
 
     # ── Route request ─────────────────────────────────────────
@@ -298,20 +312,22 @@ class CanaryDeployManager:
             # Check rollback conditions
             if canary_reqs >= config["min_requests_per_step"]:
                 if error_rate > config["max_error_rate_pct"]:
-                    msg = (
-                        f"Error rate {error_rate:.1f}%"
-                        f" > {config['max_error_rate_pct']}%"
-                    )
+                    msg = f"Error rate {error_rate:.1f}% > {config['max_error_rate_pct']}%"
                     return self._do_rollback(
-                        deployment_id, deploy, msg, error_rate, canary_p95,
+                        deployment_id,
+                        deploy,
+                        msg,
+                        error_rate,
+                        canary_p95,
                     )
                 if canary_p95 > config["max_latency_p95_ms"]:
-                    msg = (
-                        f"p95 latency {canary_p95:.0f}ms"
-                        f" > {config['max_latency_p95_ms']}ms"
-                    )
+                    msg = f"p95 latency {canary_p95:.0f}ms > {config['max_latency_p95_ms']}ms"
                     return self._do_rollback(
-                        deployment_id, deploy, msg, error_rate, canary_p95,
+                        deployment_id,
+                        deploy,
+                        msg,
+                        error_rate,
+                        canary_p95,
                     )
 
             # Check promotion
@@ -455,8 +471,18 @@ class CanaryDeployManager:
                     baseline_version, state, canary_weight,
                     config_json, started_at, updated_at, completed_at)
                    VALUES (?,?,?,?,?,?,?,?,?,?)""",
-                (dep1, "nvidia-lstm-forecast", 2, 1, "promoted", 100,
-                 json.dumps(DEFAULT_CANARY_CONFIG), started, completed, completed),
+                (
+                    dep1,
+                    "nvidia-lstm-forecast",
+                    2,
+                    1,
+                    "promoted",
+                    100,
+                    json.dumps(DEFAULT_CANARY_CONFIG),
+                    started,
+                    completed,
+                    completed,
+                ),
             )
             for i, w in enumerate([5, 15, 25, 35, 45, 55, 65, 75, 85, 100], 1):
                 ts = (now - timedelta(days=3) + timedelta(minutes=i * 12)).isoformat()
@@ -467,11 +493,20 @@ class CanaryDeployManager:
                         baseline_requests, baseline_errors,
                         baseline_p95_ms, health_ok, action, timestamp)
                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-                    (dep1, i, w, random.randint(20, 100),
-                     random.randint(0, 1), random.uniform(80, 200),
-                     random.randint(50, 200), random.randint(0, 2),
-                     random.uniform(90, 180), 1,
-                     "promoted" if w == 100 else "ramp_up", ts),
+                    (
+                        dep1,
+                        i,
+                        w,
+                        random.randint(20, 100),
+                        random.randint(0, 1),
+                        random.uniform(80, 200),
+                        random.randint(50, 200),
+                        random.randint(0, 2),
+                        random.uniform(90, 180),
+                        1,
+                        "promoted" if w == 100 else "ramp_up",
+                        ts,
+                    ),
                 )
 
         # Deployment 2: Rolled back (v3 canary failed)
@@ -485,8 +520,18 @@ class CanaryDeployManager:
                     baseline_version, state, canary_weight,
                     config_json, started_at, updated_at, completed_at)
                    VALUES (?,?,?,?,?,?,?,?,?,?)""",
-                (dep2, "nvidia-lstm-forecast", 3, 2, "rolled_back", 0,
-                 json.dumps(DEFAULT_CANARY_CONFIG), started, completed, completed),
+                (
+                    dep2,
+                    "nvidia-lstm-forecast",
+                    3,
+                    2,
+                    "rolled_back",
+                    0,
+                    json.dumps(DEFAULT_CANARY_CONFIG),
+                    started,
+                    completed,
+                    completed,
+                ),
             )
             for i, w in enumerate([5, 15, 25], 1):
                 ts = (now - timedelta(days=1) + timedelta(minutes=i * 5)).isoformat()
@@ -498,11 +543,20 @@ class CanaryDeployManager:
                         baseline_requests, baseline_errors,
                         baseline_p95_ms, health_ok, action, timestamp)
                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-                    (dep2, i, w, random.randint(15, 40), errs,
-                     random.uniform(100, 800 if i == 3 else 200),
-                     random.randint(50, 100), random.randint(0, 1),
-                     random.uniform(90, 160), 0 if i == 3 else 1,
-                     "rolled_back" if i == 3 else "ramp_up", ts),
+                    (
+                        dep2,
+                        i,
+                        w,
+                        random.randint(15, 40),
+                        errs,
+                        random.uniform(100, 800 if i == 3 else 200),
+                        random.randint(50, 100),
+                        random.randint(0, 1),
+                        random.uniform(90, 160),
+                        0 if i == 3 else 1,
+                        "rolled_back" if i == 3 else "ramp_up",
+                        ts,
+                    ),
                 )
             cur.execute(
                 """INSERT INTO rollback_log

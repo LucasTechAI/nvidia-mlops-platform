@@ -25,10 +25,10 @@ DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "sla_metrics.
 
 # SLA thresholds
 SLA_TARGETS = {
-    "uptime_pct": 99.5,           # 99.5% uptime target
-    "latency_p95_ms": 500,        # p95 latency < 500ms
-    "latency_p99_ms": 2000,       # p99 latency < 2s
-    "error_rate_pct": 1.0,        # < 1% error rate
+    "uptime_pct": 99.5,  # 99.5% uptime target
+    "latency_p95_ms": 500,  # p95 latency < 500ms
+    "latency_p99_ms": 2000,  # p99 latency < 2s
+    "error_rate_pct": 1.0,  # < 1% error rate
     "inference_latency_ms": 200,  # model inference < 200ms
 }
 
@@ -154,8 +154,7 @@ class SLAMonitor:
                    (timestamp, method, endpoint, status_code,
                     latency_ms, is_error)
                    VALUES (?,?,?,?,?,?)""",
-                (datetime.utcnow().isoformat(), method, endpoint,
-                 status_code, latency_ms, is_error),
+                (datetime.utcnow().isoformat(), method, endpoint, status_code, latency_ms, is_error),
             )
 
     # ── Compute SLA ───────────────────────────────────────────
@@ -190,6 +189,7 @@ class SLAMonitor:
 
             if latencies:
                 import numpy as np
+
                 arr = np.array(latencies)
                 report.avg_latency_ms = round(float(np.mean(arr)), 1)
                 report.p50_latency_ms = round(float(np.percentile(arr, 50)), 1)
@@ -208,17 +208,13 @@ class SLAMonitor:
         # Check violations
         report.violations = []
         if report.uptime_pct < SLA_TARGETS["uptime_pct"]:
-            report.violations.append(
-                f"Uptime {report.uptime_pct}% < target {SLA_TARGETS['uptime_pct']}%"
-            )
+            report.violations.append(f"Uptime {report.uptime_pct}% < target {SLA_TARGETS['uptime_pct']}%")
         if report.p95_latency_ms > SLA_TARGETS["latency_p95_ms"]:
             report.violations.append(
                 f"p95 latency {report.p95_latency_ms}ms > target {SLA_TARGETS['latency_p95_ms']}ms"
             )
         if report.error_rate_pct > SLA_TARGETS["error_rate_pct"]:
-            report.violations.append(
-                f"Error rate {report.error_rate_pct}% > target {SLA_TARGETS['error_rate_pct']}%"
-            )
+            report.violations.append(f"Error rate {report.error_rate_pct}% > target {SLA_TARGETS['error_rate_pct']}%")
 
         report.overall_sla_met = len(report.violations) == 0
         return report
@@ -252,18 +248,21 @@ class SLAMonitor:
                 )
                 req_row = cur.fetchone()
 
-            result.append({
-                "date": day.strftime("%Y-%m-%d"),
-                "uptime_pct": uptime,
-                "checks": total,
-                "requests": req_row["reqs"],
-                "avg_latency_ms": round(req_row["avg_lat"] or 0, 1),
-            })
+            result.append(
+                {
+                    "date": day.strftime("%Y-%m-%d"),
+                    "uptime_pct": uptime,
+                    "checks": total,
+                    "requests": req_row["reqs"],
+                    "avg_latency_ms": round(req_row["avg_lat"] or 0, 1),
+                }
+            )
         return result
 
     def seed_sample_data(self):
         """Seed realistic SLA data for demo."""
         import random
+
         random.seed(123)
 
         with self._cursor() as cur:
@@ -287,9 +286,7 @@ class SLAMonitor:
                        (timestamp, endpoint, status,
                         latency_ms, status_code)
                        VALUES (?,?,?,?,?)""",
-                    (ts, "/health",
-                     "healthy" if healthy else "unhealthy",
-                     max(1, latency), 200 if healthy else 503),
+                    (ts, "/health", "healthy" if healthy else "unhealthy", max(1, latency), 200 if healthy else 503),
                 )
 
             # Simulate ~3 requests per minute
@@ -304,8 +301,7 @@ class SLAMonitor:
                            (timestamp, method, endpoint,
                             status_code, latency_ms, is_error)
                            VALUES (?,?,?,?,?,?)""",
-                        (ts, "GET" if ep != "/predict" else "POST",
-                         ep, code, lat, 1 if code >= 500 else 0),
+                        (ts, "GET" if ep != "/predict" else "POST", ep, code, lat, 1 if code >= 500 else 0),
                     )
 
         logger.info("Seeded 24h of SLA sample data")

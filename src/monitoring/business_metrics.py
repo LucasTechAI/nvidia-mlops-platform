@@ -180,8 +180,11 @@ class BusinessMetricsTracker:
 
         logger.info(
             "Recorded prediction: date=%s actual=%.2f predicted=%.2f dir=%s pnl=%.2f",
-            date, actual_close, predicted_close,
-            "✅" if direction_correct else "❌", pnl_change,
+            date,
+            actual_close,
+            predicted_close,
+            "✅" if direction_correct else "❌",
+            pnl_change,
         )
 
     def compute_snapshot(self, lookback_days: int = 30) -> BusinessSnapshot:
@@ -216,7 +219,7 @@ class BusinessMetricsTracker:
         # Max drawdown
         cumulative = np.array([r["cumulative_pnl"] for r in reversed(rows)])
         peak = np.maximum.accumulate(cumulative)
-        drawdowns = (cumulative - peak)
+        drawdowns = cumulative - peak
         max_dd = float(np.min(drawdowns)) if len(drawdowns) > 0 else 0.0
 
         return BusinessSnapshot(
@@ -254,6 +257,7 @@ class BusinessMetricsTracker:
     def seed_sample_data(self):
         """Seed realistic sample data for demo."""
         import random
+
         random.seed(42)
 
         with self._cursor() as cur:

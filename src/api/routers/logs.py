@@ -21,12 +21,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 def _db():
     from src.utils.log_database import LogDatabase
+
     return LogDatabase.get_instance()
 
 
 # ════════════════════════════════════════════════════════════════════
 #  Structured (DB) endpoints — used by the new charts frontend
 # ════════════════════════════════════════════════════════════════════
+
 
 @router.get("/stats")
 async def get_log_stats(
@@ -108,6 +110,7 @@ async def cleanup_old_logs(keep_hours: int = Query(72, ge=1)):
 #  Legacy file-based endpoints (kept for backwards compatibility)
 # ════════════════════════════════════════════════════════════════════
 
+
 @router.get("/api")
 async def get_api_logs():
     """Get API server logs from file."""
@@ -153,14 +156,18 @@ async def get_services_logs():
         try:
             result = subprocess.run(
                 ["docker", "ps", "--format", "{{.Names}}"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode == 0:
                 for container in [n for n in result.stdout.strip().split("\n") if n]:
                     try:
                         lr = subprocess.run(
                             ["docker", "logs", "--tail", "500", container],
-                            capture_output=True, text=True, timeout=5,
+                            capture_output=True,
+                            text=True,
+                            timeout=5,
                         )
                         services.append({"name": container, "logs": lr.stdout + lr.stderr})
                     except Exception as e:
