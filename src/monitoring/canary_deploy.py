@@ -14,13 +14,12 @@ import logging
 import random
 import sqlite3
 import threading
-import time
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -193,7 +192,9 @@ class CanaryDeployManager:
         with self._cursor() as cur:
             cur.execute(
                 """INSERT INTO deployments
-                   (deployment_id, model_name, canary_version, baseline_version, state, canary_weight, config_json, started_at, updated_at)
+                   (deployment_id, model_name, canary_version,
+                    baseline_version, state, canary_weight,
+                    config_json, started_at, updated_at)
                    VALUES (?,?,?,?,?,?,?,?,?)""",
                 (deployment_id, model_name, canary_version, baseline_version, DeploymentState.CANARY.value,
                  initial_weight, json.dumps(deploy_config), now, now),
@@ -297,19 +298,36 @@ class CanaryDeployManager:
             # Check rollback conditions
             if canary_reqs >= config["min_requests_per_step"]:
                 if error_rate > config["max_error_rate_pct"]:
-                    return self._do_rollback(deployment_id, deploy, f"Error rate {error_rate:.1f}% > {config['max_error_rate_pct']}%", error_rate, canary_p95)
+                    msg = (
+                        f"Error rate {error_rate:.1f}%"
+                        f" > {config['max_error_rate_pct']}%"
+                    )
+                    return self._do_rollback(
+                        deployment_id, deploy, msg, error_rate, canary_p95,
+                    )
                 if canary_p95 > config["max_latency_p95_ms"]:
-                    return self._do_rollback(deployment_id, deploy, f"p95 latency {canary_p95:.0f}ms > {config['max_latency_p95_ms']}ms", error_rate, canary_p95)
+                    msg = (
+                        f"p95 latency {canary_p95:.0f}ms"
+                        f" > {config['max_latency_p95_ms']}ms"
+                    )
+                    return self._do_rollback(
+                        deployment_id, deploy, msg, error_rate, canary_p95,
+                    )
 
             # Check promotion
             current_weight = deploy["canary_weight"]
             if current_weight >= config["promotion_threshold_pct"]:
                 cur.execute(
-                    "UPDATE deployments SET state = ?, canary_weight = 100, updated_at = ?, completed_at = ? WHERE deployment_id = ?",
+                    """UPDATE deployments SET state = ?, canary_weight = 100,
+                       updated_at = ?, completed_at = ?
+                       WHERE deployment_id = ?""",
                     (DeploymentState.PROMOTED.value, now, now, deployment_id),
                 )
                 cur.execute(
-                    "INSERT INTO deployment_steps (deployment_id, step_number, canary_weight, action, timestamp) VALUES (?,?,?,?,?)",
+                    """INSERT INTO deployment_steps
+                       (deployment_id, step_number, canary_weight,
+                        action, timestamp)
+                       VALUES (?,?,?,?,?)""",
                     (deployment_id, step["step_number"] + 1, 100, "promoted", now),
                 )
                 logger.info("Promoted canary %s — v%d is now production", deployment_id, deploy["canary_version"])
@@ -323,7 +341,11 @@ class CanaryDeployManager:
                     (new_weight, now, deployment_id),
                 )
                 cur.execute(
-                    "INSERT INTO deployment_steps (deployment_id, step_number, canary_weight, canary_requests, canary_errors, canary_p95_ms, action, timestamp) VALUES (?,?,?,0,0,0,?,?)",
+                    """INSERT INTO deployment_steps
+                       (deployment_id, step_number, canary_weight,
+                        canary_requests, canary_errors, canary_p95_ms,
+                        action, timestamp)
+                       VALUES (?,?,?,0,0,0,?,?)""",
                     (deployment_id, step["step_number"] + 1, new_weight, "ramp_up", now),
                 )
                 logger.info("Ramped up %s: %d%% → %d%%", deployment_id, int(current_weight), int(new_weight))
@@ -335,11 +357,17 @@ class CanaryDeployManager:
         now = datetime.utcnow().isoformat()
         with self._cursor() as cur:
             cur.execute(
-                "UPDATE deployments SET state = ?, canary_weight = 0, updated_at = ?, completed_at = ? WHERE deployment_id = ?",
+                """UPDATE deployments SET state = ?, canary_weight = 0,
+                   updated_at = ?, completed_at = ?
+                   WHERE deployment_id = ?""",
                 (DeploymentState.ROLLED_BACK.value, now, now, deployment_id),
             )
             cur.execute(
-                "INSERT INTO rollback_log (deployment_id, reason, canary_version, rolled_back_to, error_rate_pct, p95_latency_ms, timestamp) VALUES (?,?,?,?,?,?,?)",
+                """INSERT INTO rollback_log
+                   (deployment_id, reason, canary_version,
+                    rolled_back_to, error_rate_pct, p95_latency_ms,
+                    timestamp)
+                   VALUES (?,?,?,?,?,?,?)""",
                 (deployment_id, reason, deploy["canary_version"], deploy["baseline_version"], error_rate, p95, now),
             )
         logger.warning("ROLLBACK %s: %s", deployment_id, reason)
@@ -354,7 +382,11 @@ class CanaryDeployManager:
                 return None
 
             cur.execute(
-                "SELECT COUNT(*) as steps, SUM(canary_requests) as reqs, SUM(canary_errors) as errs FROM deployment_steps WHERE deployment_id = ?",
+                """SELECT COUNT(*) as steps,
+                   SUM(canary_requests) as reqs,
+                   SUM(canary_errors) as errs
+                   FROM deployment_steps
+                   WHERE deployment_id = ?""",
                 (deployment_id,),
             )
             agg = cur.fetchone()
@@ -418,16 +450,27 @@ class CanaryDeployManager:
             started = (now - timedelta(days=3)).isoformat()
             completed = (now - timedelta(days=3, hours=-2)).isoformat()
             cur.execute(
-                """INSERT INTO deployments (deployment_id, model_name, canary_version, baseline_version, state, canary_weight, config_json, started_at, updated_at, completed_at)
+                """INSERT INTO deployments
+                   (deployment_id, model_name, canary_version,
+                    baseline_version, state, canary_weight,
+                    config_json, started_at, updated_at, completed_at)
                    VALUES (?,?,?,?,?,?,?,?,?,?)""",
-                (dep1, "nvidia-lstm-forecast", 2, 1, "promoted", 100, json.dumps(DEFAULT_CANARY_CONFIG), started, completed, completed),
+                (dep1, "nvidia-lstm-forecast", 2, 1, "promoted", 100,
+                 json.dumps(DEFAULT_CANARY_CONFIG), started, completed, completed),
             )
             for i, w in enumerate([5, 15, 25, 35, 45, 55, 65, 75, 85, 100], 1):
                 ts = (now - timedelta(days=3) + timedelta(minutes=i * 12)).isoformat()
                 cur.execute(
-                    "INSERT INTO deployment_steps (deployment_id, step_number, canary_weight, canary_requests, canary_errors, canary_p95_ms, baseline_requests, baseline_errors, baseline_p95_ms, health_ok, action, timestamp) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                    (dep1, i, w, random.randint(20, 100), random.randint(0, 1), random.uniform(80, 200),
-                     random.randint(50, 200), random.randint(0, 2), random.uniform(90, 180), 1,
+                    """INSERT INTO deployment_steps
+                       (deployment_id, step_number, canary_weight,
+                        canary_requests, canary_errors, canary_p95_ms,
+                        baseline_requests, baseline_errors,
+                        baseline_p95_ms, health_ok, action, timestamp)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (dep1, i, w, random.randint(20, 100),
+                     random.randint(0, 1), random.uniform(80, 200),
+                     random.randint(50, 200), random.randint(0, 2),
+                     random.uniform(90, 180), 1,
                      "promoted" if w == 100 else "ramp_up", ts),
                 )
 
@@ -437,21 +480,36 @@ class CanaryDeployManager:
             started = (now - timedelta(days=1)).isoformat()
             completed = (now - timedelta(days=1, hours=-0.5)).isoformat()
             cur.execute(
-                """INSERT INTO deployments (deployment_id, model_name, canary_version, baseline_version, state, canary_weight, config_json, started_at, updated_at, completed_at)
+                """INSERT INTO deployments
+                   (deployment_id, model_name, canary_version,
+                    baseline_version, state, canary_weight,
+                    config_json, started_at, updated_at, completed_at)
                    VALUES (?,?,?,?,?,?,?,?,?,?)""",
-                (dep2, "nvidia-lstm-forecast", 3, 2, "rolled_back", 0, json.dumps(DEFAULT_CANARY_CONFIG), started, completed, completed),
+                (dep2, "nvidia-lstm-forecast", 3, 2, "rolled_back", 0,
+                 json.dumps(DEFAULT_CANARY_CONFIG), started, completed, completed),
             )
             for i, w in enumerate([5, 15, 25], 1):
                 ts = (now - timedelta(days=1) + timedelta(minutes=i * 5)).isoformat()
                 errs = random.randint(0, 1) if i < 3 else random.randint(5, 10)
                 cur.execute(
-                    "INSERT INTO deployment_steps (deployment_id, step_number, canary_weight, canary_requests, canary_errors, canary_p95_ms, baseline_requests, baseline_errors, baseline_p95_ms, health_ok, action, timestamp) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                    (dep2, i, w, random.randint(15, 40), errs, random.uniform(100, 800 if i == 3 else 200),
-                     random.randint(50, 100), random.randint(0, 1), random.uniform(90, 160), 0 if i == 3 else 1,
+                    """INSERT INTO deployment_steps
+                       (deployment_id, step_number, canary_weight,
+                        canary_requests, canary_errors, canary_p95_ms,
+                        baseline_requests, baseline_errors,
+                        baseline_p95_ms, health_ok, action, timestamp)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (dep2, i, w, random.randint(15, 40), errs,
+                     random.uniform(100, 800 if i == 3 else 200),
+                     random.randint(50, 100), random.randint(0, 1),
+                     random.uniform(90, 160), 0 if i == 3 else 1,
                      "rolled_back" if i == 3 else "ramp_up", ts),
                 )
             cur.execute(
-                "INSERT INTO rollback_log (deployment_id, reason, canary_version, rolled_back_to, error_rate_pct, p95_latency_ms, timestamp) VALUES (?,?,?,?,?,?,?)",
+                """INSERT INTO rollback_log
+                   (deployment_id, reason, canary_version,
+                    rolled_back_to, error_rate_pct, p95_latency_ms,
+                    timestamp)
+                   VALUES (?,?,?,?,?,?,?)""",
                 (dep2, "Error rate 18.5% > 2.0% threshold", 3, 2, 18.5, 742.3, completed),
             )
 

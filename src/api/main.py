@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 # Install structured log handler (SQLite)
 try:
-    from src.utils.log_database import install_log_handler, seed_sample_logs, LogDatabase
+    from src.utils.log_database import LogDatabase, install_log_handler, seed_sample_logs
 
     install_log_handler(level=logging.INFO)
     # Seed sample data if DB is empty

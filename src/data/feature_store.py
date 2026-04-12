@@ -15,10 +15,10 @@ import logging
 import sqlite3
 import threading
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timedelta
+from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -164,7 +164,9 @@ class FeatureStore:
             now = datetime.utcnow().isoformat()
 
             cur.execute(
-                """INSERT INTO feature_sets (name, version, description, schema_json, created_at, num_rows, num_cols, checksum)
+                """INSERT INTO feature_sets
+                   (name, version, description, schema_json,
+                    created_at, num_rows, num_cols, checksum)
                    VALUES (?,?,?,?,?,?,?,?)""",
                 (name, version, description, json.dumps(schema), now, len(df), len(df.columns), checksum),
             )
@@ -193,7 +195,10 @@ class FeatureStore:
             # Record lineage
             if source_name:
                 cur.execute(
-                    "INSERT INTO feature_lineage (feature_set_id, source_type, source_name, transform_name, transform_params, created_at) VALUES (?,?,?,?,?,?)",
+                    """INSERT INTO feature_lineage
+                       (feature_set_id, source_type, source_name,
+                        transform_name, transform_params, created_at)
+                       VALUES (?,?,?,?,?,?)""",
                     (fs_id, source_type, source_name, transform_name, json.dumps(transform_params or {}), now),
                 )
 
@@ -268,7 +273,7 @@ class FeatureStore:
                 "SELECT * FROM feature_lineage WHERE feature_set_id = ?",
                 (row["id"],),
             )
-            lineage = [dict(l) for l in cur.fetchall()]
+            lineage = [dict(r) for r in cur.fetchall()]
 
         return FeatureSetMeta(
             name=row["name"],

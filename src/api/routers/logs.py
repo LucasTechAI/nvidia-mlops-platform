@@ -185,6 +185,8 @@ async def get_system_logs():
                 with open(lf, "r") as f:
                     lines = f.readlines()
                     parts.append(f"=== {lf.name} ===\n" + "".join(lines[-500:]))
-        return {"content": "\n\n".join(parts) or "No system logs available.", "lines": sum(len(p.split("\n")) for p in parts)}
+        content = "\n\n".join(parts) or "No system logs available."
+        line_count = sum(len(p.split("\n")) for p in parts)
+        return {"content": content, "lines": line_count}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

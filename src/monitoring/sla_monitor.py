@@ -13,7 +13,6 @@ All data stored in SQLite for historical dashboarding.
 import logging
 import sqlite3
 import threading
-import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -151,8 +150,12 @@ class SLAMonitor:
         is_error = 1 if status_code >= 500 else 0
         with self._cursor() as cur:
             cur.execute(
-                "INSERT INTO request_log (timestamp, method, endpoint, status_code, latency_ms, is_error) VALUES (?,?,?,?,?,?)",
-                (datetime.utcnow().isoformat(), method, endpoint, status_code, latency_ms, is_error),
+                """INSERT INTO request_log
+                   (timestamp, method, endpoint, status_code,
+                    latency_ms, is_error)
+                   VALUES (?,?,?,?,?,?)""",
+                (datetime.utcnow().isoformat(), method, endpoint,
+                 status_code, latency_ms, is_error),
             )
 
     # ── Compute SLA ───────────────────────────────────────────
@@ -230,7 +233,10 @@ class SLAMonitor:
 
             with self._cursor() as cur:
                 cur.execute(
-                    "SELECT COUNT(*) as total, SUM(CASE WHEN status='healthy' THEN 1 ELSE 0 END) as ok FROM health_checks WHERE timestamp BETWEEN ? AND ?",
+                    """SELECT COUNT(*) as total,
+                       SUM(CASE WHEN status='healthy' THEN 1 ELSE 0 END) as ok
+                       FROM health_checks
+                       WHERE timestamp BETWEEN ? AND ?""",
                     (day_start, day_end),
                 )
                 row = cur.fetchone()
@@ -239,7 +245,9 @@ class SLAMonitor:
                 uptime = round(ok / total * 100, 1) if total > 0 else 100.0
 
                 cur.execute(
-                    "SELECT COUNT(*) as reqs, AVG(latency_ms) as avg_lat FROM request_log WHERE timestamp BETWEEN ? AND ?",
+                    """SELECT COUNT(*) as reqs, AVG(latency_ms) as avg_lat
+                       FROM request_log
+                       WHERE timestamp BETWEEN ? AND ?""",
                     (day_start, day_end),
                 )
                 req_row = cur.fetchone()
@@ -275,8 +283,13 @@ class SLAMonitor:
             latency = random.gauss(15, 5) if healthy else random.gauss(5000, 1000)
             with self._cursor() as cur:
                 cur.execute(
-                    "INSERT INTO health_checks (timestamp, endpoint, status, latency_ms, status_code) VALUES (?,?,?,?,?)",
-                    (ts, "/health", "healthy" if healthy else "unhealthy", max(1, latency), 200 if healthy else 503),
+                    """INSERT INTO health_checks
+                       (timestamp, endpoint, status,
+                        latency_ms, status_code)
+                       VALUES (?,?,?,?,?)""",
+                    (ts, "/health",
+                     "healthy" if healthy else "unhealthy",
+                     max(1, latency), 200 if healthy else 503),
                 )
 
             # Simulate ~3 requests per minute
@@ -287,8 +300,12 @@ class SLAMonitor:
                 code = random.choices([200, 400, 500], weights=[97, 2, 1])[0]
                 with self._cursor() as cur:
                     cur.execute(
-                        "INSERT INTO request_log (timestamp, method, endpoint, status_code, latency_ms, is_error) VALUES (?,?,?,?,?,?)",
-                        (ts, "GET" if ep != "/predict" else "POST", ep, code, lat, 1 if code >= 500 else 0),
+                        """INSERT INTO request_log
+                           (timestamp, method, endpoint,
+                            status_code, latency_ms, is_error)
+                           VALUES (?,?,?,?,?,?)""",
+                        (ts, "GET" if ep != "/predict" else "POST",
+                         ep, code, lat, 1 if code >= 500 else 0),
                     )
 
         logger.info("Seeded 24h of SLA sample data")

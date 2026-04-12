@@ -3,7 +3,6 @@
 Exposes the new monitoring and MLOps modules via REST endpoints.
 """
 
-import json
 import logging
 import os
 from dataclasses import asdict
@@ -401,7 +400,11 @@ async def cost_analysis(days: int = Query(30, ge=1, le=365)):
             from src.monitoring.sla_monitor import SLAMonitor
             sla = SLAMonitor.get_instance()
             report = sla.get_report(period_minutes=days * 1440)
-            total_requests = report.get("total_requests", 0) if isinstance(report, dict) else getattr(report, "total_requests", 0)
+            total_requests = (
+                report.get("total_requests", 0)
+                if isinstance(report, dict)
+                else getattr(report, "total_requests", 0)
+            )
         except Exception:
             total_requests = 5000 * days  # fallback estimate
 
@@ -467,12 +470,36 @@ async def cost_analysis(days: int = Query(30, ge=1, le=365)):
         infra_total = sum(item["total"] for item in infra_breakdown)
 
         llm_breakdown = [
-            {"name": "RAGAS Evaluation (input)", "tokens": ragas_tokens_input, "cost": round((ragas_tokens_input / 1_000_000) * model_pricing["input"], 4)},
-            {"name": "RAGAS Evaluation (output)", "tokens": ragas_tokens_output, "cost": round((ragas_tokens_output / 1_000_000) * model_pricing["output"], 4)},
-            {"name": "LLM-Judge (input)", "tokens": judge_tokens_input, "cost": round((judge_tokens_input / 1_000_000) * model_pricing["input"], 4)},
-            {"name": "LLM-Judge (output)", "tokens": judge_tokens_output, "cost": round((judge_tokens_output / 1_000_000) * model_pricing["output"], 4)},
-            {"name": "RAG Agent (input)", "tokens": agent_tokens_input, "cost": round((agent_tokens_input / 1_000_000) * model_pricing["input"], 4)},
-            {"name": "RAG Agent (output)", "tokens": agent_tokens_output, "cost": round((agent_tokens_output / 1_000_000) * model_pricing["output"], 4)},
+            {
+                "name": "RAGAS Evaluation (input)",
+                "tokens": ragas_tokens_input,
+                "cost": round((ragas_tokens_input / 1_000_000) * model_pricing["input"], 4),
+            },
+            {
+                "name": "RAGAS Evaluation (output)",
+                "tokens": ragas_tokens_output,
+                "cost": round((ragas_tokens_output / 1_000_000) * model_pricing["output"], 4),
+            },
+            {
+                "name": "LLM-Judge (input)",
+                "tokens": judge_tokens_input,
+                "cost": round((judge_tokens_input / 1_000_000) * model_pricing["input"], 4),
+            },
+            {
+                "name": "LLM-Judge (output)",
+                "tokens": judge_tokens_output,
+                "cost": round((judge_tokens_output / 1_000_000) * model_pricing["output"], 4),
+            },
+            {
+                "name": "RAG Agent (input)",
+                "tokens": agent_tokens_input,
+                "cost": round((agent_tokens_input / 1_000_000) * model_pricing["input"], 4),
+            },
+            {
+                "name": "RAG Agent (output)",
+                "tokens": agent_tokens_output,
+                "cost": round((agent_tokens_output / 1_000_000) * model_pricing["output"], 4),
+            },
         ]
 
         # ── Daily cost history (simulated projection) ──

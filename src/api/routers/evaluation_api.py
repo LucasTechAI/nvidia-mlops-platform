@@ -68,7 +68,6 @@ async def get_evaluation_results():
 
 def _enrich_metrics_from_model(champion: dict, challenger: dict):
     """Recompute full metrics for champion using the current loaded model + test data."""
-    import math
 
     import numpy as np
     import torch
@@ -82,6 +81,7 @@ def _enrich_metrics_from_model(champion: dict, challenger: dict):
         return None
 
     import sqlite3
+
     import pandas as pd
 
     conn = sqlite3.connect(DATABASE_PATH)
@@ -160,7 +160,11 @@ def _enrich_metrics_from_model(champion: dict, challenger: dict):
             "mae": round(mae * ratio, 6),
             "mape": round(mape * ratio, 4),
             "r2": round(min(1.0, r2 + (1 - r2) * (1 - ratio)), 6) if ratio < 1 else round(max(0, r2 * ratio), 6),
-            "directional_accuracy": round(min(100, dir_acc + (100 - dir_acc) * (1 - ratio) * 0.5), 2) if ratio < 1 else round(dir_acc * (2 - ratio), 2),
+            "directional_accuracy": (
+                round(min(100, dir_acc + (100 - dir_acc) * (1 - ratio) * 0.5), 2)
+                if ratio < 1
+                else round(dir_acc * (2 - ratio), 2)
+            ),
         }
     else:
         enriched_challenger = challenger
@@ -173,7 +177,10 @@ async def get_explainability_cached():
     """Return cached permutation importance results from disk (fast)."""
     cache_path = PROJECT_ROOT / "outputs" / "explainability" / "permutation_importance.json"
     if not cache_path.exists():
-        raise HTTPException(status_code=404, detail="No cached explainability results. Click 'Compute Importance' to generate.")
+        raise HTTPException(
+            status_code=404,
+            detail="No cached explainability results. Click 'Compute Importance' to generate.",
+        )
     try:
         with open(cache_path) as f:
             results = json.load(f)
@@ -369,8 +376,8 @@ async def run_llm_evaluation():
     import sys
     sys.path.insert(0, str(PROJECT_ROOT))
     try:
-        from evaluation.ragas_eval import run_ragas_evaluation
         from evaluation.llm_judge import run_llm_judge_evaluation
+        from evaluation.ragas_eval import run_ragas_evaluation
     except ImportError as e:
         raise HTTPException(status_code=501, detail=f"Evaluation module not available: {e}")
 

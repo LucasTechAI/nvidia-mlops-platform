@@ -205,9 +205,18 @@ def _heuristic_judge(question: str, answer: str, ground_truth: str, contexts: li
 
     return {
         "scores": {
-            "relevance": {"score": relevance_score, "justification": "Heuristic: question keyword coverage in answer"},
-            "factual_accuracy": {"score": accuracy_score, "justification": "Heuristic: Jaccard overlap with ground truth"},
-            "business_usefulness": {"score": usefulness_score, "justification": "Heuristic: financial/ML domain term presence"},
+            "relevance": {
+                "score": relevance_score,
+                "justification": "Heuristic: question keyword coverage in answer",
+            },
+            "factual_accuracy": {
+                "score": accuracy_score,
+                "justification": "Heuristic: Jaccard overlap with ground truth",
+            },
+            "business_usefulness": {
+                "score": usefulness_score,
+                "justification": "Heuristic: financial/ML domain term presence",
+            },
         },
         "overall_score": overall,
         "summary": "Heuristic evaluation (LLM not available)",

@@ -12,13 +12,11 @@ model predictions vs actuals:
 All metrics are stored in SQLite for historical tracking.
 """
 
-import json
 import logging
 import sqlite3
 import threading
-import time
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -264,7 +262,6 @@ class BusinessMetricsTracker:
                 return
 
         base_price = 170.0
-        cum_pnl = 0.0
         prev_close = base_price
 
         for i in range(60):

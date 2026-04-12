@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +151,9 @@ class ModelRegistry:
                 logger.info("Model '%s' already registered", name)
                 return name
             cur.execute(
-                "INSERT INTO registered_models (name, description, created_at, updated_at, tags_json) VALUES (?,?,?,?,?)",
+                """INSERT INTO registered_models
+                   (name, description, created_at, updated_at, tags_json)
+                   VALUES (?,?,?,?,?)""",
                 (name, description, now, now, json.dumps(tags or {})),
             )
         logger.info("Registered model: %s", name)
@@ -192,7 +194,10 @@ class ModelRegistry:
 
             # Record transition
             cur.execute(
-                "INSERT INTO stage_transitions (model_name, version, from_stage, to_stage, reason, timestamp) VALUES (?,?,?,?,?,?)",
+                """INSERT INTO stage_transitions
+                   (model_name, version, from_stage, to_stage,
+                    reason, timestamp)
+                   VALUES (?,?,?,?,?,?)""",
                 (model_name, version, "", "None", "Initial registration", now),
             )
 
@@ -247,12 +252,18 @@ class ModelRegistry:
                 if prod:
                     old_v = prod["version"]
                     cur.execute(
-                        "UPDATE model_versions SET stage = 'Archived', updated_at = ? WHERE model_name = ? AND version = ?",
+                        """UPDATE model_versions
+                           SET stage = 'Archived', updated_at = ?
+                           WHERE model_name = ? AND version = ?""",
                         (now, model_name, old_v),
                     )
                     cur.execute(
-                        "INSERT INTO stage_transitions (model_name, version, from_stage, to_stage, transitioned_by, reason, timestamp) VALUES (?,?,?,?,?,?,?)",
-                        (model_name, old_v, "Production", "Archived", transitioned_by, f"Replaced by v{version}", now),
+                        """INSERT INTO stage_transitions
+                           (model_name, version, from_stage, to_stage,
+                            transitioned_by, reason, timestamp)
+                           VALUES (?,?,?,?,?,?,?)""",
+                        (model_name, old_v, "Production", "Archived",
+                         transitioned_by, f"Replaced by v{version}", now),
                     )
                     logger.info("Archived %s v%d (replaced by v%d)", model_name, old_v, version)
 
@@ -262,8 +273,12 @@ class ModelRegistry:
                 (target_stage, now, model_name, version),
             )
             cur.execute(
-                "INSERT INTO stage_transitions (model_name, version, from_stage, to_stage, transitioned_by, reason, timestamp) VALUES (?,?,?,?,?,?,?)",
-                (model_name, version, from_stage, target_stage, transitioned_by, reason, now),
+                """INSERT INTO stage_transitions
+                   (model_name, version, from_stage, to_stage,
+                    transitioned_by, reason, timestamp)
+                   VALUES (?,?,?,?,?,?,?)""",
+                (model_name, version, from_stage, target_stage,
+                 transitioned_by, reason, now),
             )
 
         logger.info("Transitioned %s v%d: %s → %s", model_name, version, from_stage, target_stage)
@@ -324,7 +339,11 @@ class ModelRegistry:
                         "detail": f"Improvement: {improvement:.2%} (min: {min_rmse_improvement:.2%})",
                     })
                 else:
-                    checks.append({"check": "rmse_improvement", "passed": True, "detail": "No current production model"})
+                    checks.append({
+                        "check": "rmse_improvement",
+                        "passed": True,
+                        "detail": "No current production model",
+                    })
 
         all_passed = all(c["passed"] for c in checks)
         return PromotionGateResult(
@@ -390,7 +409,11 @@ class ModelRegistry:
     def list_versions(self, model_name: str) -> list[dict]:
         with self._cursor() as cur:
             cur.execute(
-                "SELECT model_name, version, stage, created_at, updated_at, metrics_json FROM model_versions WHERE model_name = ? ORDER BY version DESC",
+                """SELECT model_name, version, stage, created_at,
+                   updated_at, metrics_json
+                   FROM model_versions
+                   WHERE model_name = ?
+                   ORDER BY version DESC""",
                 (model_name,),
             )
             return [
@@ -452,7 +475,10 @@ class ModelRegistry:
             params={"hidden_size": 128, "num_layers": 2, "dropout": 0.15, "lr": 0.0008, "epochs": 150},
         )
         self.transition_stage("nvidia-lstm-forecast", 2, "Staging", reason="Passed champion-challenger evaluation")
-        self.transition_stage("nvidia-lstm-forecast", 2, "Production", reason="Promoted after validation — RMSE improved 17.9%")
+        self.transition_stage(
+            "nvidia-lstm-forecast", 2, "Production",
+            reason="Promoted after validation \u2014 RMSE improved 17.9%",
+        )
 
         # v3: latest challenger (staging)
         self.create_version(

@@ -99,6 +99,7 @@ def run_ragas_evaluation(
 
     try:
         import os
+
         from datasets import Dataset
         from ragas import evaluate
         from ragas.metrics import (
@@ -118,9 +119,9 @@ def run_ragas_evaluation(
         ragas_embeddings = None
 
         if provider == "openrouter" and openrouter_key:
-            from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-            from ragas.llms import LangchainLLMWrapper
+            from langchain_openai import ChatOpenAI
             from ragas.embeddings import LangchainEmbeddingsWrapper
+            from ragas.llms import LangchainLLMWrapper
 
             lc_llm = ChatOpenAI(
                 model=llm_model,
@@ -248,7 +249,10 @@ def _jaccard(a: set, b: set) -> float:
     return len(a & b) / len(union) if union else 0.0
 
 
-def _fallback_evaluation(dataset: dict, note: str = "Fallback heuristic evaluation (RAGAS library not available)") -> dict:
+def _fallback_evaluation(
+    dataset: dict,
+    note: str = "Fallback heuristic evaluation (RAGAS library not available)",
+) -> dict:
     """Heuristic fallback when RAGAS library is not available.
 
     Uses keyword-based overlap rather than raw string similarity so that
