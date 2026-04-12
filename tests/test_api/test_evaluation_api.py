@@ -118,23 +118,39 @@ class TestGetEvaluationResults:
 class TestRunExplainability:
     """Tests for POST /evaluation/explainability."""
 
+    @patch("src.api.dependencies.model_state")
     @patch("src.explainability.feature_importance.compute_permutation_importance")
-    def test_returns_200_with_list_results(self, mock_compute, client):
+    @patch("numpy.load")
+    @patch("pathlib.Path.exists", return_value=True)
+    def test_returns_200_with_list_results(self, mock_exists, mock_np_load, mock_compute, mock_ms, client):
         """Test explainability returns 200 with list format results."""
-        mock_compute.return_value = [
-            {"feature": "close", "importance": 0.45},
-            {"feature": "volume", "importance": 0.32},
-            {"feature": "high", "importance": 0.15},
-        ]
+        import numpy as np
+
+        mock_ms.model = MagicMock()
+        mock_np_load.return_value = np.zeros((10, 5, 1))
+        mock_compute.return_value = {
+            "feature_names": ["close", "volume", "high"],
+            "importances_mean": [0.45, 0.32, 0.15],
+            "importances_std": [0.01, 0.02, 0.01],
+        }
         response = client.post("/evaluation/explainability")
         assert response.status_code == 200
 
+    @patch("src.api.dependencies.model_state")
     @patch("src.explainability.feature_importance.compute_permutation_importance")
-    def test_returns_features_list(self, mock_compute, client):
+    @patch("numpy.load")
+    @patch("pathlib.Path.exists", return_value=True)
+    def test_returns_features_list(self, mock_exists, mock_np_load, mock_compute, mock_ms, client):
         """Test response contains features list."""
-        mock_compute.return_value = [
-            {"feature": "close", "importance": 0.45},
-        ]
+        import numpy as np
+
+        mock_ms.model = MagicMock()
+        mock_np_load.return_value = np.zeros((10, 5, 1))
+        mock_compute.return_value = {
+            "feature_names": ["close"],
+            "importances_mean": [0.45],
+            "importances_std": [0.01],
+        }
         response = client.post("/evaluation/explainability")
         data = response.json()
 
@@ -142,12 +158,20 @@ class TestRunExplainability:
         assert len(data["features"]) == 1
         assert data["features"][0]["feature"] == "close"
 
+    @patch("src.api.dependencies.model_state")
     @patch("src.explainability.feature_importance.compute_permutation_importance")
-    def test_handles_dict_results(self, mock_compute, client):
+    @patch("numpy.load")
+    @patch("pathlib.Path.exists", return_value=True)
+    def test_handles_dict_results(self, mock_exists, mock_np_load, mock_compute, mock_ms, client):
         """Test handles dict format results."""
+        import numpy as np
+
+        mock_ms.model = MagicMock()
+        mock_np_load.return_value = np.zeros((10, 5, 1))
         mock_compute.return_value = {
-            "close": 0.45,
-            "volume": 0.32,
+            "feature_names": ["close", "volume"],
+            "importances_mean": [0.45, 0.32],
+            "importances_std": [0.01, 0.02],
         }
         response = client.post("/evaluation/explainability")
         assert response.status_code == 200
@@ -155,33 +179,60 @@ class TestRunExplainability:
         data = response.json()
         assert len(data["features"]) == 2
 
+    @patch("src.api.dependencies.model_state")
     @patch("src.explainability.feature_importance.compute_permutation_importance")
-    def test_returns_404_no_results(self, mock_compute, client):
+    @patch("numpy.load")
+    @patch("pathlib.Path.exists", return_value=True)
+    def test_returns_404_no_results(self, mock_exists, mock_np_load, mock_compute, mock_ms, client):
         """Test 404 when no results."""
+        import numpy as np
+
+        mock_ms.model = MagicMock()
+        mock_np_load.return_value = np.zeros((10, 5, 1))
         mock_compute.return_value = None
         response = client.post("/evaluation/explainability")
         assert response.status_code == 404
 
+    @patch("src.api.dependencies.model_state")
     @patch(
         "src.explainability.feature_importance.compute_permutation_importance",
         side_effect=Exception("Computation failed"),
     )
-    def test_returns_500_on_error(self, mock_compute, client):
+    @patch("numpy.load")
+    @patch("pathlib.Path.exists", return_value=True)
+    def test_returns_500_on_error(self, mock_exists, mock_np_load, mock_compute, mock_ms, client):
         """Test 500 on computation failure."""
+        import numpy as np
+
+        mock_ms.model = MagicMock()
+        mock_np_load.return_value = np.zeros((10, 5, 1))
         response = client.post("/evaluation/explainability")
         assert response.status_code == 500
 
+    @patch("src.api.dependencies.model_state")
     @patch("src.explainability.feature_importance.compute_permutation_importance")
-    def test_serializes_numpy_values(self, mock_compute, client):
+    @patch("numpy.load")
+    @patch("pathlib.Path.exists", return_value=True)
+    def test_serializes_numpy_values(self, mock_exists, mock_np_load, mock_compute, mock_ms, client):
         """Test numpy values are properly serialized."""
         import numpy as np
 
+        mock_ms.model = MagicMock()
+        mock_np_load.return_value = np.zeros((10, 5, 1))
         mock_compute.return_value = {
-            "close": np.float64(0.45),
-            "volume": np.float64(0.32),
+            "feature_names": ["close", "volume"],
+            "importances_mean": [np.float64(0.45), np.float64(0.32)],
+            "importances_std": [np.float64(0.01), np.float64(0.02)],
         }
         response = client.post("/evaluation/explainability")
         assert response.status_code == 200
+
+    def test_returns_503_no_model(self, client):
+        """Test 503 when model is not loaded."""
+        with patch("src.api.dependencies.model_state") as mock_ms:
+            mock_ms.model = None
+            response = client.post("/evaluation/explainability")
+            assert response.status_code == 503
 
 
 class TestGetLLMResults:
@@ -208,7 +259,8 @@ class TestGetLLMResults:
             data = response.json()
 
             assert "golden_set" in data
-            assert "evaluation_results" in data
+            assert "ragas" in data
+            assert "llm_judge" in data
             assert len(data["golden_set"]) == 2
 
     def test_returns_404_no_golden_set(self, client):

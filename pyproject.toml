@@ -52,6 +52,18 @@ markers = [
     "slow: marks tests as slow running",
 ]
 
+[tool.coverage.run]
+omit = [
+    "src/dashboard/*",
+    "src/view/*",
+]
+
+[tool.coverage.report]
+omit = [
+    "src/dashboard/*",
+    "src/view/*",
+]
+
 [tool.ruff]
 target-version = "py312"
 line-length = 120
