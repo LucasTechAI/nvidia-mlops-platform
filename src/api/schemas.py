@@ -17,6 +17,8 @@ class HealthResponse(BaseModel):
     model_loaded: bool = Field(..., description="Whether model is loaded")
     database_connected: bool = Field(..., description="Whether database is connected")
     gpu_available: bool = Field(..., description="Whether GPU is available")
+    llm_provider: str = Field(default="", description="Active LLM provider")
+    llm_model: str = Field(default="", description="Active LLM model ID")
     timestamp: datetime = Field(default_factory=datetime.now)
 
 

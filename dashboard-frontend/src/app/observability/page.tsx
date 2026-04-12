@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ExternalLink, RefreshCw, CheckCircle, XCircle, AlertTriangle, Info, TrendingDown, Clock, BarChart3, Shield, Activity, History } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ExternalLink, RefreshCw, CheckCircle, XCircle, AlertTriangle, Info, TrendingDown, Clock, BarChart3, Shield, Activity, History, SkipForward, Github, FileText } from "lucide-react";
 import TabGroup from "@/components/tab-group";
 import LoadingSpinner from "@/components/loading-spinner";
 import { api } from "@/lib/api";
@@ -138,7 +138,7 @@ function DriftTab() {
   const psiBg = (v: number) =>
     v > 0.2 ? "bg-red-500" : v > 0.1 ? "bg-amber-400" : "bg-green-500";
   const psiIcon = (v: number) =>
-    v > 0.2 ? "🔴" : v > 0.1 ? "⚠️" : "✅";
+    v > 0.2 ? <XCircle className="inline h-4 w-4 text-red-400" /> : v > 0.1 ? <AlertTriangle className="inline h-4 w-4 text-amber-400" /> : <CheckCircle className="inline h-4 w-4 text-green-400" />;
 
   return (
     <div className="space-y-6">
@@ -268,7 +268,7 @@ function DriftTab() {
                     {t.name}
                   </p>
                   <p className="text-[9px] text-white/30">
-                    {!t.tested ? t.desc : t.fired ? "🔴 TRIGGERED" : "✅ Passed"}
+                    {!t.tested ? t.desc : t.fired ? <><XCircle className="mr-0.5 inline h-3 w-3 text-red-400" /> TRIGGERED</> : <><CheckCircle className="mr-0.5 inline h-3 w-3 text-green-400" /> Passed</>}
                   </p>
                 </div>
               </div>
@@ -281,7 +281,7 @@ function DriftTab() {
           )}
           {allTriggersResults && (
             <p className={`mt-2 text-center text-[10px] font-semibold ${combinedRetrain ? "text-red-400" : "text-green-400"}`}>
-              {combinedRetrain ? "⚠️ " : "✅ "}{combinedSummary}
+              {combinedRetrain ? <><AlertTriangle className="mr-1 inline h-3.5 w-3.5" /> </> : <><CheckCircle className="mr-1 inline h-3.5 w-3.5" /> </>}{combinedSummary}
             </p>
           )}
         </div>
@@ -348,17 +348,17 @@ function DriftTab() {
               <div className="mt-2 flex items-center gap-2">
                 {overallStatus === "retrain_recommended" ? (
                   <>
-                    <span className="text-lg">🔴</span>
+                    <XCircle className="h-5 w-5 text-red-400" />
                     <span className="text-lg font-bold text-red-400">Retrain</span>
                   </>
                 ) : driftDetected ? (
                   <>
-                    <span className="text-lg">⚠️</span>
+                    <AlertTriangle className="h-5 w-5 text-amber-400" />
                     <span className="text-lg font-bold text-amber-400">Warning</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-lg">✅</span>
+                    <CheckCircle className="h-5 w-5 text-green-400" />
                     <span className="text-lg font-bold text-green-400">Stable</span>
                   </>
                 )}
@@ -543,7 +543,7 @@ function DriftTab() {
                 <div className={`rounded-lg px-3 py-1.5 text-xs font-bold ${
                   staleness.stale ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400"
                 }`}>
-                  {staleness.stale ? "🔴 STALE" : "✅ FRESH"}
+                  {staleness.stale ? <><XCircle className="mr-1 inline h-3.5 w-3.5" /> STALE</> : <><CheckCircle className="mr-1 inline h-3.5 w-3.5" /> FRESH</>}
                 </div>
               </div>
 
@@ -641,7 +641,7 @@ function DriftTab() {
                       ? "bg-red-500/20 text-red-400"
                       : "bg-green-500/20 text-green-400"
                 }`}>
-                  {ciBreach.status === "skipped" ? "⏭️ SKIPPED" : ciBreach.breach_detected ? "🔴 BREACH" : "✅ WITHIN CI"}
+                  {ciBreach.status === "skipped" ? <><SkipForward className="mr-1 inline h-3.5 w-3.5" /> SKIPPED</> : ciBreach.breach_detected ? <><XCircle className="mr-1 inline h-3.5 w-3.5 text-red-400" /> BREACH</> : <><CheckCircle className="mr-1 inline h-3.5 w-3.5 text-green-400" /> WITHIN CI</>}
                 </div>
               </div>
 
@@ -734,7 +734,7 @@ function DriftTab() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4">
                 <div className="mb-2 flex items-center gap-2">
-                  <span>✅</span>
+                  <CheckCircle className="h-4 w-4 text-green-400" />
                   <p className="text-xs font-bold text-green-400">All Features Stable</p>
                 </div>
                 <p className="text-[11px] text-white/40">
@@ -745,7 +745,7 @@ function DriftTab() {
               </div>
               <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 p-4">
                 <div className="mb-2 flex items-center gap-2">
-                  <span>⚠️</span>
+                  <AlertTriangle className="h-4 w-4 text-amber-400" />
                   <p className="text-xs font-bold text-amber-400">Warning (PSI 0.1–0.2)</p>
                 </div>
                 <p className="text-[11px] text-white/40">
@@ -757,7 +757,7 @@ function DriftTab() {
               </div>
               <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4">
                 <div className="mb-2 flex items-center gap-2">
-                  <span>🔴</span>
+                  <XCircle className="h-4 w-4 text-red-400" />
                   <p className="text-xs font-bold text-red-400">Retrain (PSI ≥ 0.2)</p>
                 </div>
                 <p className="text-[11px] text-white/40">
@@ -1096,6 +1096,12 @@ function HistoryTab() {
     }
   };
 
+  // Auto-load on mount
+  useEffect(() => {
+    loadHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSort = (key: string) => {
     if (sortKey === key) {
       setSortAsc(!sortAsc);
@@ -1314,125 +1320,389 @@ function HistoryTab() {
 }
 
 /* ──────────── Telemetry Tab ──────────── */
-function TelemetryTab() {
-  const [health, setHealth] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  const checkHealth = async () => {
-    setLoading(true);
-    try {
-      const res = await api.health.check();
-      setHealth(res);
-    } catch {
-      setHealth({ status: "unhealthy", error: "Cannot connect to API" });
-    } finally {
-      setLoading(false);
+interface ServiceLink {
+  label: string;
+  href: string;
+  icon: "doc" | "github" | "external";
+}
+
+interface ServiceStatus {
+  name: string;
+  url: string;
+  healthUrl: string;
+  desc: string;
+  details: string;
+  icon: string;
+  port: number;
+  links?: ServiceLink[];
+  status: "checking" | "online" | "offline" | "idle";
+  latencyMs: number | null;
+}
+
+const SERVICE_DEFS: Omit<ServiceStatus, "status" | "latencyMs">[] = [
+  {
+    name: "FastAPI",
+    url: "http://localhost:8000",
+    healthUrl: "http://localhost:8000/health",
+    desc: "REST API — predictions, evaluation, monitoring",
+    details: "The core backend. Exposes all endpoints: stock price predictions (LSTM model), RAGAS & LLM-Judge evaluation, Champion-Challenger pipeline, drift detection, LIME/Permutation explainability, and the RAG agent. Swagger docs at /docs.",
+    icon: "⚡",
+    port: 8000,
+    links: [
+      { label: "Swagger", href: "http://localhost:8000/docs", icon: "doc" },
+      { label: "ReDoc", href: "http://localhost:8000/redoc", icon: "doc" },
+      { label: "GitHub", href: "https://github.com/LucasTechAI/nvidia-mlops-platform", icon: "github" },
+    ],
+  },
+  {
+    name: "Next.js",
+    url: "http://localhost:3001",
+    healthUrl: "http://localhost:3001",
+    desc: "Dashboard frontend (this app)",
+    details: "The React/Next.js frontend you're looking at right now. Server-side rendered with App Router. Consumes all FastAPI endpoints and renders interactive charts, tables, and evaluation results.",
+    icon: "🖥️",
+    port: 3001,
+    links: [
+      { label: "GitHub", href: "https://github.com/LucasTechAI/nvidia-mlops-platform", icon: "github" },
+    ],
+  },
+  {
+    name: "MLflow",
+    url: "http://localhost:5000",
+    healthUrl: "http://localhost:5000",
+    desc: "Experiment tracking & model registry",
+    details: "Tracks every training run: hyperparameters, metrics (RMSE, MAE, R²), model artifacts, and governance tags (git SHA, author). The Champion-Challenger pipeline logs Optuna HPO trials and promotion decisions here.",
+    icon: "🔬",
+    port: 5000,
+    links: [
+      { label: "Docs", href: "https://mlflow.org/docs/latest/index.html", icon: "doc" },
+      { label: "GitHub", href: "https://github.com/LucasTechAI/nvidia-mlops-platform", icon: "github" },
+    ],
+  },
+  {
+    name: "Prometheus",
+    url: "http://localhost:9090",
+    healthUrl: "http://localhost:9090/-/ready",
+    desc: "Metrics collection & alerting rules",
+    details: "Scrapes /metrics from FastAPI every 15s. Collects request latency (p50/p95/p99), throughput, error rates, prediction counts, and drift scores. Powers Grafana dashboards and can trigger alerts on SLA breaches.",
+    icon: "🔥",
+    port: 9090,
+    links: [
+      { label: "Targets", href: "http://localhost:9090/targets", icon: "external" },
+      { label: "GitHub", href: "https://github.com/LucasTechAI/nvidia-mlops-platform", icon: "github" },
+    ],
+  },
+  {
+    name: "Grafana",
+    url: "http://localhost:3000",
+    healthUrl: "http://localhost:3000/api/health",
+    desc: "Dashboards & visualization (admin/admin)",
+    details: "Pre-configured with provisioned dashboards for API latency, throughput, error rate, and model drift over time. Connects to Prometheus as data source. Login: admin/admin. Ideal for real-time production monitoring.",
+    icon: "📊",
+    port: 3000,
+    links: [
+      { label: "Dashboards", href: "http://localhost:3000/dashboards", icon: "external" },
+      { label: "GitHub", href: "https://github.com/LucasTechAI/nvidia-mlops-platform", icon: "github" },
+    ],
+  },
+  {
+    name: "Optuna Dashboard",
+    url: "http://localhost:8080",
+    healthUrl: "http://localhost:8080",
+    desc: "Hyperparameter optimization studies",
+    details: "Visualizes all Optuna HPO studies from Champion-Challenger runs. Shows trial history, parameter importance, optimization convergence (contour/parallel coordinate plots), and best hyperparameter combinations.",
+    icon: "🎯",
+    port: 8080,
+    links: [
+      { label: "GitHub", href: "https://github.com/LucasTechAI/nvidia-mlops-platform", icon: "github" },
+    ],
+  },
+];
+
+function TelemetryTab() {
+  const [services, setServices] = useState<ServiceStatus[]>(
+    SERVICE_DEFS.map((s) => ({ ...s, status: "idle", latencyMs: null }))
+  );
+  const [checking, setChecking] = useState(false);
+  const [lastCheck, setLastCheck] = useState<string | null>(null);
+  const [expandedInfo, setExpandedInfo] = useState<string | null>(null);
+
+  // FastAPI detailed health
+  const [apiHealth, setApiHealth] = useState<Record<string, unknown> | null>(null);
+
+  // Auto-check on mount
+  useEffect(() => {
+    checkAllServices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const checkAllServices = async () => {
+    setChecking(true);
+
+    // Mark all as "checking"
+    setServices((prev) => prev.map((s) => ({ ...s, status: "checking", latencyMs: null })));
+
+    const results: ServiceStatus[] = [];
+
+    for (const def of SERVICE_DEFS) {
+      const start = performance.now();
+      let status: ServiceStatus["status"] = "offline";
+      let latencyMs: number | null = null;
+
+      try {
+        if (def.name === "FastAPI") {
+          // Use our API client for FastAPI (avoids CORS)
+          const res = await api.health.check();
+          latencyMs = Math.round(performance.now() - start);
+          status = res?.status === "healthy" || res?.status === "degraded" ? "online" : "offline";
+          setApiHealth(res);
+        } else if (def.name === "Next.js") {
+          // We're already on Next.js, so it's online
+          latencyMs = 0;
+          status = "online";
+        } else {
+          // External services — fetch with timeout
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 5000);
+          try {
+            const r = await fetch(def.healthUrl, {
+              mode: "no-cors",
+              signal: controller.signal,
+            });
+            clearTimeout(timeout);
+            latencyMs = Math.round(performance.now() - start);
+            // no-cors returns opaque response (status 0), but if it didn't throw → service is reachable
+            status = r.status === 0 || (r.status >= 200 && r.status < 500) ? "online" : "offline";
+          } catch {
+            clearTimeout(timeout);
+            latencyMs = null;
+            status = "offline";
+          }
+        }
+      } catch {
+        status = "offline";
+        latencyMs = null;
+      }
+
+      results.push({ ...def, status, latencyMs });
     }
+
+    setServices(results);
+    setLastCheck(new Date().toLocaleTimeString());
+    setChecking(false);
   };
 
-  const services = [
-    {
-      name: "Grafana",
-      url: process.env.NEXT_PUBLIC_GRAFANA_URL || "http://localhost:3000",
-      desc: "Metrics dashboards and alerting",
-      icon: "📊",
-    },
-    {
-      name: "MLflow",
-      url: process.env.NEXT_PUBLIC_MLFLOW_URL || "http://localhost:5000",
-      desc: "Experiment tracking and model registry",
-      icon: "🔬",
-    },
-    {
-      name: "Prometheus",
-      url: process.env.NEXT_PUBLIC_PROMETHEUS_URL || "http://localhost:9090",
-      desc: "Metrics collection and querying",
-      icon: "🔥",
-    },
-    {
-      name: "Optuna",
-      url: process.env.NEXT_PUBLIC_OPTUNA_URL || "http://localhost:8080",
-      desc: "Hyperparameter optimization dashboard",
-      icon: "🎯",
-    },
-  ];
+  const onlineCount = services.filter((s) => s.status === "online").length;
+  const totalCount = services.length;
+  const allOnline = onlineCount === totalCount && services[0].status !== "idle";
+  const anyOffline = services.some((s) => s.status === "offline");
 
   return (
     <div className="space-y-6">
-      {/* Service Links */}
-      <div>
-        <h3 className="mb-3 text-lg font-semibold">🔗 External Services</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {services.map((svc) => (
-            <a
-              key={svc.name}
-              href={svc.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-start gap-3 rounded-xl border border-surface-border bg-surface-card p-5 transition-all hover:border-nvidia/30"
-            >
-              <span className="text-2xl">{svc.icon}</span>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-white group-hover:text-nvidia">
-                    {svc.name}
-                  </span>
-                  <ExternalLink className="h-3.5 w-3.5 text-white/30 group-hover:text-nvidia" />
-                </div>
-                <p className="mt-0.5 text-xs text-white/40">{svc.desc}</p>
-              </div>
-            </a>
-          ))}
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold">📡 Service Health Monitor</h3>
+          <p className="text-xs text-white/40">
+            Check if all {totalCount} platform services are running correctly
+          </p>
         </div>
-      </div>
-
-      {/* API Health Check */}
-      <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">🏥 API Health Check</h3>
+        <div className="flex items-center gap-3">
+          {lastCheck && (
+            <span className="text-xs text-white/30">
+              Last check: {lastCheck}
+            </span>
+          )}
           <button
-            onClick={checkHealth}
-            disabled={loading}
+            onClick={checkAllServices}
+            disabled={checking}
             className="flex items-center gap-2 rounded-lg bg-nvidia px-4 py-2 text-sm font-semibold text-black hover:bg-nvidia-dark disabled:opacity-50"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Check Health
+            <RefreshCw className={`h-4 w-4 ${checking ? "animate-spin" : ""}`} />
+            {checking ? "Checking…" : "Check All Services"}
           </button>
         </div>
-
-        {health && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              {health.status === "healthy" ? (
-                <CheckCircle className="h-5 w-5 text-green-400" />
-              ) : health.status === "degraded" ? (
-                <AlertTriangle className="h-5 w-5 text-amber-400" />
-              ) : (
-                <XCircle className="h-5 w-5 text-red-400" />
-              )}
-              <span
-                className={`text-lg font-bold ${
-                  health.status === "healthy"
-                    ? "text-green-400"
-                    : health.status === "degraded"
-                      ? "text-amber-400"
-                      : "text-red-400"
-                }`}
-              >
-                {String(health.status).toUpperCase()}
-              </span>
-            </div>
-            {Object.entries(health)
-              .filter(([k]) => k !== "status")
-              .map(([k, v]) => (
-                <div key={k} className="flex justify-between text-sm">
-                  <span className="text-white/50">{k}</span>
-                  <span className="font-medium">{String(v)}</span>
-                </div>
-              ))}
-          </div>
-        )}
       </div>
+
+      {/* Summary bar */}
+      {services[0].status !== "idle" && (
+        <div className={`flex items-center gap-3 rounded-lg border px-5 py-3 ${
+          allOnline
+            ? "border-green-500/30 bg-green-500/5"
+            : anyOffline
+              ? "border-red-500/30 bg-red-500/5"
+              : "border-amber-500/30 bg-amber-500/5"
+        }`}>
+          {allOnline ? (
+            <CheckCircle className="h-5 w-5 text-green-400" />
+          ) : anyOffline ? (
+            <XCircle className="h-5 w-5 text-red-400" />
+          ) : (
+            <AlertTriangle className="h-5 w-5 text-amber-400" />
+          )}
+          <span className={`text-sm font-semibold ${
+            allOnline ? "text-green-400" : anyOffline ? "text-red-400" : "text-amber-400"
+          }`}>
+            {allOnline
+              ? `All ${totalCount} services online ✅`
+              : `${onlineCount}/${totalCount} services online`}
+          </span>
+        </div>
+      )}
+
+      {/* Service cards grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {services.map((svc) => {
+          const statusColor =
+            svc.status === "online"
+              ? "border-green-500/30"
+              : svc.status === "offline"
+                ? "border-red-500/30"
+                : svc.status === "checking"
+                  ? "border-amber-500/30"
+                  : "border-surface-border";
+
+          const statusDot =
+            svc.status === "online"
+              ? "bg-green-400"
+              : svc.status === "offline"
+                ? "bg-red-400"
+                : svc.status === "checking"
+                  ? "bg-amber-400 animate-pulse"
+                  : "bg-white/20";
+
+          const statusLabel =
+            svc.status === "online"
+              ? "Online"
+              : svc.status === "offline"
+                ? "Offline"
+                : svc.status === "checking"
+                  ? "Checking…"
+                  : "Not checked";
+
+          return (
+            <div
+              key={svc.name}
+              className={`rounded-xl border bg-surface-card p-5 transition-all ${statusColor}`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{svc.icon}</span>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="font-semibold text-white">{svc.name}</h4>
+                      <button
+                        onClick={() => setExpandedInfo(expandedInfo === svc.name ? null : svc.name)}
+                        className={`rounded-full p-0.5 transition-colors ${
+                          expandedInfo === svc.name
+                            ? "text-nvidia"
+                            : "text-white/25 hover:text-white/60"
+                        }`}
+                        title={`About ${svc.name}`}
+                      >
+                        <Info className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-white/40">{svc.desc}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className={`h-2.5 w-2.5 rounded-full ${statusDot}`} />
+                  <span className={`text-xs font-medium ${
+                    svc.status === "online"
+                      ? "text-green-400"
+                      : svc.status === "offline"
+                        ? "text-red-400"
+                        : "text-white/40"
+                  }`}>
+                    {statusLabel}
+                  </span>
+                </div>
+              </div>
+
+              {/* Expandable info panel */}
+              {expandedInfo === svc.name && (
+                <div className="mt-3 rounded-lg border border-nvidia/20 bg-nvidia/5 px-4 py-3">
+                  <p className="text-xs leading-relaxed text-white/60">{svc.details}</p>
+                </div>
+              )}
+
+              <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-3">
+                <div className="flex items-center gap-4 text-xs text-white/40">
+                  <span>Port <span className="font-mono text-white/60">{svc.port}</span></span>
+                  {svc.latencyMs !== null && (
+                    <span>
+                      Latency{" "}
+                      <span className={`font-mono ${
+                        svc.latencyMs < 100
+                          ? "text-green-400"
+                          : svc.latencyMs < 500
+                            ? "text-amber-400"
+                            : "text-red-400"
+                      }`}>
+                        {svc.latencyMs}ms
+                      </span>
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {(svc.links ?? []).map((lnk) => (
+                    <a
+                      key={lnk.label}
+                      href={lnk.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 rounded-md border border-white/5 bg-white/[0.03] px-2 py-1 text-[11px] text-white/40 hover:border-nvidia/30 hover:text-nvidia transition-colors"
+                    >
+                      {lnk.icon === "github" ? <Github className="h-3 w-3" /> : lnk.icon === "doc" ? <FileText className="h-3 w-3" /> : <ExternalLink className="h-3 w-3" />}
+                      {lnk.label}
+                    </a>
+                  ))}
+                  <a
+                    href={svc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs text-white/30 hover:text-nvidia"
+                  >
+                    Open <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* FastAPI detailed health */}
+      {apiHealth && (
+        <div className="rounded-xl border border-surface-border bg-surface-card p-6">
+          <h3 className="mb-4 text-lg font-semibold">🏥 FastAPI Detailed Health</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Object.entries(apiHealth)
+              .filter(([k]) => k !== "status")
+              .map(([k, v]) => {
+                const isBoolean = typeof v === "boolean" || v === "true" || v === "false";
+                const boolVal = String(v) === "true";
+                return (
+                  <div
+                    key={k}
+                    className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] px-4 py-2.5"
+                  >
+                    <span className="text-sm text-white/50">{k.replace(/_/g, " ")}</span>
+                    {isBoolean ? (
+                      <span className={`text-sm font-semibold ${boolVal ? "text-green-400" : "text-red-400"}`}>
+                        {boolVal ? "✅ Yes" : "❌ No"}
+                      </span>
+                    ) : (
+                      <span className="text-sm font-mono text-white/70">{String(v)}</span>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,8 @@ Métricas:
     - context_recall
 """
 
+import asyncio
+import concurrent.futures
 import json
 import logging
 from pathlib import Path
@@ -96,6 +98,8 @@ def run_ragas_evaluation(
     results = {"metrics": {}, "per_sample": [], "n_samples": len(dataset["question"])}
 
     try:
+        import os
+
         from datasets import Dataset
         from ragas import evaluate
         from ragas.metrics import (
@@ -105,17 +109,84 @@ def run_ragas_evaluation(
             faithfulness,
         )
 
+        # Configure LLM backend — supports OpenRouter (OpenAI-compatible)
+        provider = os.getenv("LLM_PROVIDER", "openai")
+        openrouter_key = os.getenv("OPENROUTER_API_KEY")
+        openrouter_base = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+        llm_model = os.getenv("LLM_MODEL", "openai/gpt-4o-mini")
+
+        ragas_llm = None
+        ragas_embeddings = None
+
+        if provider == "openrouter" and openrouter_key:
+            from langchain_openai import ChatOpenAI
+            from ragas.embeddings import LangchainEmbeddingsWrapper
+            from ragas.llms import LangchainLLMWrapper
+
+            lc_llm = ChatOpenAI(
+                model=llm_model,
+                api_key=openrouter_key,
+                base_url=openrouter_base,
+                default_headers={
+                    "HTTP-Referer": "https://nvidia-mlops-platform",
+                    "X-Title": "NVIDIA MLOps RAGAS Eval",
+                },
+            )
+            ragas_llm = LangchainLLMWrapper(lc_llm)
+
+            # Embeddings: OpenRouter doesn't serve embeddings — fall back to
+            # a lightweight local model via sentence-transformers if available,
+            # otherwise use OpenAI embeddings with the same key/base.
+            try:
+                try:
+                    from langchain_huggingface import HuggingFaceEmbeddings
+                except ImportError:
+                    from langchain_community.embeddings import HuggingFaceEmbeddings  # type: ignore
+                lc_emb = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+                ragas_embeddings = LangchainEmbeddingsWrapper(lc_emb)
+                logger.info("Using HuggingFace embeddings (all-MiniLM-L6-v2) for RAGAS")
+            except Exception:
+                logger.warning("HuggingFace embeddings unavailable; answer_relevancy may be skipped")
+
+            logger.info("RAGAS configured with OpenRouter (%s)", llm_model)
+
         ragas_dataset = Dataset.from_dict(dataset)
 
         metrics = [faithfulness, answer_relevancy, context_precision, context_recall]
 
-        eval_result = evaluate(dataset=ragas_dataset, metrics=metrics)
+        eval_kwargs: dict = {}
+        if ragas_llm:
+            eval_kwargs["llm"] = ragas_llm
+        if ragas_embeddings:
+            eval_kwargs["embeddings"] = ragas_embeddings
+
+        # Run evaluate() in a dedicated thread with its own event loop.
+        # FastAPI uses uvloop which does not support nested asyncio.run() calls;
+        # a worker thread is isolated from the outer loop entirely.
+        def _ragas_worker():
+            worker_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(worker_loop)
+            try:
+                return evaluate(dataset=ragas_dataset, metrics=metrics, **eval_kwargs)
+            finally:
+                worker_loop.close()
+                asyncio.set_event_loop(None)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _pool:
+            eval_result = _pool.submit(_ragas_worker).result()
+
+        def _to_float(v) -> float:
+            """Handle both scalar and list results from different RAGAS versions."""
+            if isinstance(v, list):
+                valid = [x for x in v if x is not None]
+                return float(sum(valid) / len(valid)) if valid else 0.0
+            return float(v) if v is not None else 0.0
 
         results["metrics"] = {
-            "faithfulness": float(eval_result["faithfulness"]),
-            "answer_relevancy": float(eval_result["answer_relevancy"]),
-            "context_precision": float(eval_result["context_precision"]),
-            "context_recall": float(eval_result["context_recall"]),
+            "faithfulness": _to_float(eval_result["faithfulness"]),
+            "answer_relevancy": _to_float(eval_result["answer_relevancy"]),
+            "context_precision": _to_float(eval_result["context_precision"]),
+            "context_recall": _to_float(eval_result["context_recall"]),
         }
 
         # Per-sample scores if available
@@ -136,11 +207,16 @@ def run_ragas_evaluation(
 
     except ImportError:
         logger.warning("RAGAS not installed. Running fallback heuristic evaluation.")
-        results = _fallback_evaluation(dataset)
+        results = _fallback_evaluation(dataset, note="Fallback heuristic evaluation (ragas library not installed)")
 
     except Exception as e:
-        logger.error("RAGAS evaluation failed: %s", str(e))
-        results = _fallback_evaluation(dataset)
+        error_str = str(e)
+        if "api_key" in error_str.lower() or "openai" in error_str.lower() or "openrouter" in error_str.lower():
+            note = "Fallback heuristic evaluation (LLM API key error — check OPENROUTER_API_KEY in .env)"
+        else:
+            note = f"Fallback heuristic evaluation (RAGAS error: {error_str[:120]})"
+        logger.error("RAGAS evaluation failed: %s", error_str)
+        results = _fallback_evaluation(dataset, note=note)
 
     if save_results:
         output_path = RESULTS_DIR / "ragas_results.json"
@@ -151,14 +227,81 @@ def run_ragas_evaluation(
     return results
 
 
-def _fallback_evaluation(dataset: dict) -> dict:
+# Common stopwords to ignore when computing keyword overlap
+_STOPWORDS = {
+    "a",
+    "an",
+    "the",
+    "is",
+    "it",
+    "in",
+    "on",
+    "of",
+    "to",
+    "and",
+    "or",
+    "for",
+    "be",
+    "are",
+    "was",
+    "were",
+    "by",
+    "at",
+    "as",
+    "do",
+    "can",
+    "its",
+    "this",
+    "that",
+    "with",
+    "from",
+    "which",
+    "how",
+    "what",
+    "why",
+    "when",
+    "does",
+    "has",
+    "have",
+    "not",
+    "but",
+    "if",
+    "so",
+    "will",
+    "their",
+    "they",
+}
+
+
+def _keywords(text: str) -> set:
+    """Return meaningful (non-stopword) lowercase tokens from text."""
+    return {w for w in text.lower().split() if len(w) > 2 and w not in _STOPWORDS}
+
+
+def _jaccard(a: set, b: set) -> float:
+    """Jaccard similarity between two sets, returns 0.0 if both empty."""
+    if not a and not b:
+        return 0.0
+    union = a | b
+    return len(a & b) / len(union) if union else 0.0
+
+
+def _fallback_evaluation(
+    dataset: dict,
+    note: str = "Fallback heuristic evaluation (RAGAS library not available)",
+) -> dict:
     """Heuristic fallback when RAGAS library is not available.
 
-    Computes approximate metrics using string matching and overlap.
-    """
-    from difflib import SequenceMatcher
+    Uses keyword-based overlap rather than raw string similarity so that
+    scores are proportional to actual semantic content overlap.
 
-    metrics = {
+    Metrics (all in [0, 1]):
+        faithfulness     — how much of the answer is supported by the contexts
+        answer_relevancy — how many question keywords appear in the answer
+        context_precision — how much of the context is relevant to ground truth
+        context_recall   — how much of the ground truth is covered by contexts
+    """
+    metrics: dict = {
         "faithfulness": [],
         "answer_relevancy": [],
         "context_precision": [],
@@ -169,48 +312,41 @@ def _fallback_evaluation(dataset: dict) -> dict:
     n = len(dataset["question"])
 
     for i in range(n):
-        question = dataset["question"][i].lower()
-        answer = dataset["answer"][i].lower()
-        ground_truth = dataset["ground_truth"][i].lower()
-        contexts = [c.lower() for c in dataset["contexts"][i]]
+        q_kw = _keywords(dataset["question"][i])
+        a_kw = _keywords(dataset["answer"][i])
+        gt_kw = _keywords(dataset["ground_truth"][i])
+        ctx_kw = _keywords(" ".join(c for c in dataset["contexts"][i]))
 
-        # Faithfulness: overlap between answer and contexts
-        context_text = " ".join(contexts)
-        answer_words = set(answer.split())
-        context_words = set(context_text.split())
-        if answer_words:
-            faithfulness = len(answer_words & context_words) / len(answer_words)
-        else:
-            faithfulness = 0.0
+        # Faithfulness: fraction of answer keywords that appear in contexts
+        faithfulness = len(a_kw & ctx_kw) / len(a_kw) if a_kw else 0.0
 
-        # Answer relevancy: similarity between answer and question
-        relevancy = SequenceMatcher(None, question, answer).ratio()
+        # Answer relevancy: fraction of question keywords present in the answer
+        answer_relevancy = len(q_kw & a_kw) / len(q_kw) if q_kw else 0.0
 
-        # Context precision: overlap between context and ground truth
-        gt_words = set(ground_truth.split())
-        if context_words:
-            precision = len(context_words & gt_words) / len(context_words)
-        else:
-            precision = 0.0
+        # Context precision: Jaccard between context keywords and ground-truth keywords
+        precision = _jaccard(ctx_kw, gt_kw)
 
-        # Context recall: coverage of ground truth by context
-        if gt_words:
-            recall = len(context_words & gt_words) / len(gt_words)
-        else:
-            recall = 0.0
+        # Context recall: fraction of ground-truth keywords covered by contexts
+        context_recall = len(ctx_kw & gt_kw) / len(gt_kw) if gt_kw else 0.0
+
+        # Clamp all to [0, 1]
+        faithfulness = min(1.0, faithfulness)
+        answer_relevancy = min(1.0, answer_relevancy)
+        precision = min(1.0, precision)
+        context_recall = min(1.0, context_recall)
 
         metrics["faithfulness"].append(faithfulness)
-        metrics["answer_relevancy"].append(relevancy)
+        metrics["answer_relevancy"].append(answer_relevancy)
         metrics["context_precision"].append(precision)
-        metrics["context_recall"].append(recall)
+        metrics["context_recall"].append(context_recall)
 
         per_sample.append(
             {
                 "question": dataset["question"][i],
                 "faithfulness": round(faithfulness, 4),
-                "answer_relevancy": round(relevancy, 4),
+                "answer_relevancy": round(answer_relevancy, 4),
                 "context_precision": round(precision, 4),
-                "context_recall": round(recall, 4),
+                "context_recall": round(context_recall, 4),
             }
         )
 
@@ -220,7 +356,7 @@ def _fallback_evaluation(dataset: dict) -> dict:
         "metrics": avg_metrics,
         "per_sample": per_sample,
         "n_samples": n,
-        "note": "Fallback heuristic evaluation (RAGAS library not available)",
+        "note": note,
     }
 
 

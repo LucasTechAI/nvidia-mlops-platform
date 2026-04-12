@@ -109,6 +109,17 @@ def _call_llm_judge(prompt: str) -> dict:
             from groq import Groq
 
             client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        elif provider == "openrouter":
+            from openai import OpenAI
+
+            client = OpenAI(
+                api_key=os.getenv("OPENROUTER_API_KEY"),
+                base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+                default_headers={
+                    "HTTP-Referer": "https://nvidia-mlops-platform",
+                    "X-Title": "NVIDIA MLOps LLM Judge",
+                },
+            )
         else:
             from openai import OpenAI
 
@@ -141,43 +152,124 @@ def _call_llm_judge(prompt: str) -> dict:
         return None
 
 
+# Stopwords to skip when computing keyword overlap
+_JUDGE_STOPWORDS = {
+    "a",
+    "an",
+    "the",
+    "is",
+    "it",
+    "in",
+    "on",
+    "of",
+    "to",
+    "and",
+    "or",
+    "for",
+    "be",
+    "are",
+    "was",
+    "were",
+    "by",
+    "at",
+    "as",
+    "do",
+    "can",
+    "its",
+    "this",
+    "that",
+    "with",
+    "from",
+    "which",
+    "how",
+    "what",
+    "why",
+    "when",
+    "does",
+    "has",
+    "have",
+    "not",
+    "but",
+    "if",
+    "so",
+    "will",
+    "their",
+    "they",
+}
+
+# Financial / ML domain terms that signal a useful answer
+_USEFUL_TERMS = [
+    "risk",
+    "investment",
+    "disclaimer",
+    "prediction",
+    "forecast",
+    "data",
+    "model",
+    "warning",
+    "accuracy",
+    "nvidia",
+    "lstm",
+    "metric",
+    "rmse",
+    "confidence",
+    "uncertainty",
+    "price",
+    "stock",
+    "historical",
+    "evaluate",
+]
+
+
+def _kw(text: str) -> set:
+    """Return meaningful lowercase tokens from text."""
+    return {w for w in text.lower().split() if len(w) > 2 and w not in _JUDGE_STOPWORDS}
+
+
 def _heuristic_judge(question: str, answer: str, ground_truth: str, contexts: list[str]) -> dict:
-    """Heuristic fallback judge using string similarity.
+    """Heuristic fallback judge using keyword overlap.
 
-    Used when LLM is not available.
+    Used when no LLM is available.  Scores are in [1, 5].
     """
-    from difflib import SequenceMatcher
-
-    q_lower = question.lower()
+    q_kw = _kw(question)
+    a_kw = _kw(answer)
+    gt_kw = _kw(ground_truth)
     a_lower = answer.lower()
-    gt_lower = ground_truth.lower()
     ctx_text = " ".join(c.lower() for c in contexts)
 
-    # Relevance: similarity between answer and question
-    relevance_sim = SequenceMatcher(None, q_lower, a_lower).ratio()
-    relevance_score = max(1, min(5, round(relevance_sim * 5)))
+    # Relevance (1-5): fraction of question keywords present in the answer
+    q_in_a = len(q_kw & a_kw) / len(q_kw) if q_kw else 0.5
+    relevance_score = max(1, min(5, round(1 + q_in_a * 4)))
 
-    # Factual accuracy: overlap with ground truth
-    gt_words = set(gt_lower.split())
-    a_words = set(a_lower.split())
-    if gt_words:
-        accuracy_overlap = len(gt_words & a_words) / len(gt_words)
-    else:
-        accuracy_overlap = 0.5
-    accuracy_score = max(1, min(5, round(accuracy_overlap * 5)))
+    # Factual accuracy (1-5): Jaccard overlap between answer and ground truth keywords
+    # Use Jaccard so a perfect match (answer == ground_truth) doesn't trivially score 5
+    union = a_kw | gt_kw
+    jaccard = len(a_kw & gt_kw) / len(union) if union else 0.0
+    # Apply a discount when answer == ground_truth (no real agent, self-evaluation)
+    if answer.strip().lower() == ground_truth.strip().lower():
+        jaccard = min(jaccard, 0.70)  # cap at 3.8/5 to avoid misleading perfect score
+    accuracy_score = max(1, min(5, round(1 + jaccard * 4)))
 
-    # Business usefulness: check for key financial terms and disclaimers
-    useful_terms = ["risco", "investimento", "disclaimer", "previsão", "dados", "modelo", "risk", "prediction"]
-    term_count = sum(1 for t in useful_terms if t in a_lower or t in ctx_text)
-    usefulness_score = max(1, min(5, 1 + term_count))
+    # Business usefulness (1-5): presence of domain-relevant terms
+    term_hits = sum(1 for t in _USEFUL_TERMS if t in a_lower or t in ctx_text)
+    usefulness_score = max(1, min(5, 1 + round(term_hits / len(_USEFUL_TERMS) * 4)))
 
     overall = round((relevance_score + accuracy_score + usefulness_score) / 3, 2)
 
     return {
         "scores": {
-            "relevance": {"score": relevance_score, "justification": "Heuristic: string similarity"},
-            "factual_accuracy": {"score": accuracy_score, "justification": "Heuristic: word overlap with ground truth"},
-            "business_usefulness": {"score": usefulness_score, "justification": "Heuristic: financial term presence"},
+            "relevance": {
+                "score": relevance_score,
+                "justification": "Heuristic: question keyword coverage in answer",
+            },
+            "factual_accuracy": {
+                "score": accuracy_score,
+                "justification": "Heuristic: Jaccard overlap with ground truth",
+            },
+            "business_usefulness": {
+                "score": usefulness_score,
+                "justification": "Heuristic: financial/ML domain term presence",
+            },
         },
         "overall_score": overall,
         "summary": "Heuristic evaluation (LLM not available)",

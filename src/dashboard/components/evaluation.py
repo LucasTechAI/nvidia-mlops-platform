@@ -112,12 +112,36 @@ def _render_explainability():
     if st.button("🔬 Compute Feature Importance", key="btn_explain"):
         with st.spinner("Computing permutation importance (this may take a moment)..."):
             try:
+                import numpy as np
+                import torch
+
+                from src.dashboard.components.predictions import load_model_and_scaler
                 from src.explainability.feature_importance import compute_permutation_importance
 
-                results = compute_permutation_importance()
+                # Load model
+                model, scaler, model_config = load_model_and_scaler()
+                if model is None:
+                    st.error("Model not found. Please train a model first.")
+                    return
+
+                # Load test data
+                test_data_path = ROOT_DIR / "data" / "processed" / "X_test.npy"
+                test_target_path = ROOT_DIR / "data" / "processed" / "y_test.npy"
+
+                if not test_data_path.exists() or not test_target_path.exists():
+                    st.error("Test data not found. Please run training first.")
+                    return
+
+                X_test = np.load(test_data_path)
+                y_test = np.load(test_target_path)
+
+                # Compute importance
+                device = torch.device("cpu")
+                results = compute_permutation_importance(model, X_test, y_test, n_repeats=5, device=device)
                 st.session_state["explainability_results"] = results
             except Exception as e:
                 st.error(f"Explainability computation failed: {e}")
+                logger.exception("Explainability error")
                 return
 
     results = st.session_state.get("explainability_results")

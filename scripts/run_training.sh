@@ -19,6 +19,18 @@ elif [ -d "$PROJECT_ROOT/venv" ]; then
     source "$PROJECT_ROOT/venv/bin/activate"
 fi
 
+# ── Step 0: Refresh stock database with latest market data ──
+echo "Refreshing NVDA stock database..."
+python3 -c "
+import sys, os
+sys.path.insert(0, '${PROJECT_ROOT}')
+os.chdir('${PROJECT_ROOT}')
+from src.etl import refresh_stock_data
+refresh_stock_data()
+"
+echo "Database refresh complete."
+echo ""
+
 # Run training script
 python3 -c "
 import logging
@@ -89,6 +101,14 @@ X_train, y_train, X_val, y_val, X_test, y_test = train_val_test_split(
     test_ratio=settings.test_split
 )
 
+# Save test data for explainability
+import numpy as np
+processed_dir = Path(settings.model_dir).parent / 'processed'
+processed_dir.mkdir(parents=True, exist_ok=True)
+np.save(processed_dir / 'X_test.npy', X_test)
+np.save(processed_dir / 'y_test.npy', y_test)
+logger.info(f'Saved test data to {processed_dir}')
+
 # Create model
 input_size = X.shape[2]
 output_size = y.shape[1]
@@ -132,14 +152,15 @@ with mlflow.start_run(run_name='lstm_training'):
         'optimizer': settings.optimizer
     })
     
-    # Train model
+    # Train model (with per-epoch test evaluation for dashboard curves)
     trained_model, history = train_model(
         model=model,
         train_data=(X_train, y_train),
         val_data=(X_val, y_val),
         config=config,
         device=device,
-        mlflow_tracking=True
+        mlflow_tracking=True,
+        test_data=(X_test, y_test),
     )
     
     # =====================================================================

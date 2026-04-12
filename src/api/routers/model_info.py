@@ -178,66 +178,73 @@ async def get_training_history():
         if hasattr(values, "tolist"):
             result[key] = values.tolist()
         elif isinstance(values, list):
+            # Skip empty lists (e.g. test_* when test_data was not provided during training)
+            if len(values) == 0:
+                continue
             result[key] = [float(v) for v in values]
         else:
             result[key] = values
 
-    # ── Compute test metrics in *normalized* space ──
-    # Train/val curves use normalized data so test must too for comparison.
-    try:
-        import sqlite3
+    # If per-epoch test metrics already exist in history, skip re-computation
+    has_per_epoch_test = isinstance(result.get("test_loss"), list) and len(result.get("test_loss", [])) > 1
 
-        import numpy as np
-        import torch
+    if not has_per_epoch_test:
+        # ── Compute test metrics in *normalized* space (single-value fallback) ──
+        # Train/val curves use normalized data so test must too for comparison.
+        try:
+            import sqlite3
 
-        from src.api.dependencies import ModelState
-        from src.config import DATABASE_PATH
-        from src.data.preprocessing import create_sequences
+            import numpy as np
+            import torch
 
-        state = ModelState()
-        if state.is_ready and state.model is not None and state.scaler is not None:
-            conn = sqlite3.connect(DATABASE_PATH)
-            df = __import__("pandas").read_sql(
-                "SELECT * FROM nvidia_stock ORDER BY date",
-                conn,
-            )
-            conn.close()
-            df.columns = [c.capitalize() for c in df.columns]
+            from src.api.dependencies import ModelState
+            from src.config import DATABASE_PATH
+            from src.data.preprocessing import create_sequences
 
-            feature_cols = ["Open", "High", "Low", "Close", "Volume"]
-            available = [c for c in feature_cols if c in df.columns]
-            raw = df[available].values
-            normalized = state.scaler.transform(raw)
+            state = ModelState()
+            if state.is_ready and state.model is not None and state.scaler is not None:
+                conn = sqlite3.connect(DATABASE_PATH)
+                df = __import__("pandas").read_sql(
+                    "SELECT * FROM nvidia_stock ORDER BY date",
+                    conn,
+                )
+                conn.close()
+                df.columns = [c.capitalize() for c in df.columns]
 
-            seq_len = state.model_config.get("sequence_length", 60)
-            X, y = create_sequences(normalized, seq_len)
+                feature_cols = ["Open", "High", "Low", "Close", "Volume"]
+                available = [c for c in feature_cols if c in df.columns]
+                raw = df[available].values
+                normalized = state.scaler.transform(raw)
 
-            # Test split = last 15 %
-            n = len(X)
-            test_start = int(n * 0.85)
-            X_test = torch.FloatTensor(X[test_start:]).to(state.device)
-            y_test = torch.FloatTensor(y[test_start:]).to(state.device)
+                seq_len = state.model_config.get("sequence_length", 60)
+                X, y = create_sequences(normalized, seq_len)
 
-            state.model.eval()
-            with torch.no_grad():
-                preds = state.model(X_test)
-            preds_np = preds.cpu().numpy().flatten()
-            y_np = y_test.cpu().numpy().flatten()
+                # Test split = last 15 %
+                n = len(X)
+                test_start = int(n * 0.85)
+                X_test = torch.FloatTensor(X[test_start:]).to(state.device)
+                y_test = torch.FloatTensor(y[test_start:]).to(state.device)
 
-            test_mse = float(np.mean((preds_np - y_np) ** 2))
-            test_rmse = float(np.sqrt(test_mse))
-            test_mae = float(np.mean(np.abs(preds_np - y_np)))
-            ss_res = float(np.sum((y_np - preds_np) ** 2))
-            ss_tot = float(np.sum((y_np - np.mean(y_np)) ** 2))
-            test_r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
+                state.model.eval()
+                with torch.no_grad():
+                    preds = state.model(X_test)
+                preds_np = preds.cpu().numpy().flatten()
+                y_np = y_test.cpu().numpy().flatten()
 
-            result["test_loss"] = test_mse
-            result["test_rmse"] = test_rmse
-            result["test_mae"] = test_mae
-            result["test_r2"] = float(test_r2)
-            result["test_n_samples"] = len(y_np)
-    except Exception as e:
-        logger.warning("Could not compute normalized test metrics: %s", e)
+                test_mse = float(np.mean((preds_np - y_np) ** 2))
+                test_rmse = float(np.sqrt(test_mse))
+                test_mae = float(np.mean(np.abs(preds_np - y_np)))
+                ss_res = float(np.sum((y_np - preds_np) ** 2))
+                ss_tot = float(np.sum((y_np - np.mean(y_np)) ** 2))
+                test_r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
+
+                result["test_loss"] = test_mse
+                result["test_rmse"] = test_rmse
+                result["test_mae"] = test_mae
+                result["test_r2"] = float(test_r2)
+                result["test_n_samples"] = len(y_np)
+        except Exception as e:
+            logger.warning("Could not compute normalized test metrics: %s", e)
 
     return result
 

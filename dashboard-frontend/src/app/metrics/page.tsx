@@ -8,6 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceLine,
   ResponsiveContainer,
   RadarChart,
   Radar,
@@ -18,10 +19,9 @@ import {
   ComposedChart,
   Bar,
   Area,
-  ReferenceLine,
   Cell,
 } from "recharts";
-import { Award, Zap, Target, BarChart3, TrendingDown, GitCompareArrows, Info } from "lucide-react";
+import { Award, Zap, Target, BarChart3, TrendingDown, GitCompareArrows, Info, LineChart as LineChartIcon } from "lucide-react";
 import StatCard from "@/components/stat-card";
 import LoadingSpinner from "@/components/loading-spinner";
 import { api } from "@/lib/api";
@@ -147,11 +147,18 @@ export default function MetricsPage() {
   const trainingInfo = (modelInfo?.training_info ?? {}) as Record<string, unknown>;
 
   // Build training curves data
-  // Test metrics (single values — shown as flat lines across all epochs)
-  const testLoss = history ? Number(history.test_loss ?? NaN) : NaN;
-  const testRmse = history ? Number(history.test_rmse ?? NaN) : NaN;
-  const testMae = history ? Number(history.test_mae ?? NaN) : NaN;
-  const testR2 = history ? Number(history.test_r2 ?? NaN) : NaN;
+  // Test metrics — prefer per-epoch arrays; fall back to scalar for legacy checkpoints
+  const testLossArr = history ? (Array.isArray(history.test_loss) ? history.test_loss : null) : null;
+  const testRmseArr = history ? (Array.isArray(history.test_rmse) ? history.test_rmse : null) : null;
+  const testMaeArr = history ? (Array.isArray(history.test_mae) ? history.test_mae : null) : null;
+  const testR2Arr = history ? (Array.isArray(history.test_r2) ? history.test_r2 : null) : null;
+  const hasPerEpochTest = testLossArr !== null && testLossArr.length > 1;
+
+  // Scalar fallback (shown as flat ReferenceLine when per-epoch data is unavailable)
+  const testLoss = hasPerEpochTest ? NaN : (history ? Number(history.test_loss ?? NaN) : NaN);
+  const testRmse = hasPerEpochTest ? NaN : (history ? Number(history.test_rmse ?? NaN) : NaN);
+  const testMae = hasPerEpochTest ? NaN : (history ? Number(history.test_mae ?? NaN) : NaN);
+  const testR2 = hasPerEpochTest ? NaN : (history ? Number(history.test_r2 ?? NaN) : NaN);
   const testN = history ? Number(history.test_n_samples ?? 0) : 0;
 
   const curveData = history
@@ -159,16 +166,16 @@ export default function MetricsPage() {
         epoch: i + 1,
         train_loss: history.train_loss?.[i],
         val_loss: history.val_loss?.[i],
-        test_loss: isNaN(testLoss) ? undefined : testLoss,
         train_rmse: history.train_rmse?.[i],
         val_rmse: history.val_rmse?.[i],
-        test_rmse: isNaN(testRmse) ? undefined : testRmse,
         train_mae: history.train_mae?.[i],
         val_mae: history.val_mae?.[i],
-        test_mae: isNaN(testMae) ? undefined : testMae,
         train_r2: history.train_r2?.[i],
         val_r2: history.val_r2?.[i],
-        test_r2: isNaN(testR2) ? undefined : testR2,
+        ...(testLossArr ? { test_loss: testLossArr[i] } : {}),
+        ...(testRmseArr ? { test_rmse: testRmseArr[i] } : {}),
+        ...(testMaeArr ? { test_mae: testMaeArr[i] } : {}),
+        ...(testR2Arr ? { test_r2: testR2Arr[i] } : {}),
       }))
     : [];
 
@@ -186,7 +193,7 @@ export default function MetricsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-semibold">📈 Model Metrics</h2>
+        <h2 className="flex items-center gap-2 text-2xl font-semibold"><LineChartIcon className="h-6 w-6 text-nvidia" /> Model Metrics</h2>
         <p className="mt-1 text-sm text-white/50">
           Training performance, test metrics, and hyperparameter optimization results
         </p>
@@ -202,7 +209,7 @@ export default function MetricsPage() {
             label="Best Epoch"
             value={String(modelInfo?.best_epoch ?? modelInfo?.epoch ?? "—")}
             icon={<Award className="h-5 w-5 text-nvidia" />}
-            tooltip="Época em que o modelo obteve o menor erro de validação. O treinamento pode ter continuado após essa época, mas este foi o melhor ponto."
+            tooltip="Epoch where the model achieved the lowest validation error. Training may have continued past this point, but this was the best checkpoint."
           />
           <StatCard
             label="Best Val Loss"
@@ -213,14 +220,14 @@ export default function MetricsPage() {
             }
             icon={<TrendingDown className="h-5 w-5 text-sky-400" />}
             accentColor="#38bdf8"
-            tooltip="Menor valor de perda (loss) alcançado no conjunto de validação. Quanto menor, melhor o modelo generaliza para dados não vistos."
+            tooltip="Lowest loss value achieved on the validation set. The lower this value, the better the model generalizes to unseen data."
           />
           <StatCard
             label="Total Epochs"
             value={String(modelInfo?.epoch ?? "—")}
             icon={<Zap className="h-5 w-5 text-amber-400" />}
             accentColor="#fbbf24"
-            tooltip="Número total de épocas executadas durante o treinamento. Uma época = uma passagem completa por todos os dados de treino."
+            tooltip="Total number of epochs executed during training. One epoch = one complete pass through all training data."
           />
           <StatCard
             label="Early Stopping"
@@ -233,7 +240,7 @@ export default function MetricsPage() {
             }
             icon={<Target className="h-5 w-5 text-purple-400" />}
             accentColor="#a78bfa"
-            tooltip="Técnica que interrompe o treinamento quando o erro de validação para de melhorar, evitando overfitting. 'Triggered' = parou antes do máximo de épocas."
+            tooltip="Technique that stops training when validation error stops improving, preventing overfitting. 'Triggered' = stopped before reaching the maximum number of epochs."
           />
         </div>
       </div>
@@ -247,14 +254,14 @@ export default function MetricsPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {Object.entries(testMetrics).map(([key, val]) => {
               const tooltips: Record<string, string> = {
-                rmse: "Raiz do Erro Quadrático Médio — penaliza erros grandes mais severamente. Quanto menor, melhor. Está em dólares ($).",
-                mae: "Erro Absoluto Médio — média da magnitude dos erros. Mais robusto a outliers que o RMSE. Está em dólares ($).",
-                mape: "Erro Percentual Absoluto Médio — métrica independente de escala. Valores < 10% indicam excelente precisão.",
-                r2_score: "Coeficiente de Determinação (R²) — proporção da variância explicada pelo modelo. 1.0 = perfeito, 0 = sem poder preditivo.",
-                correlation: "Correlação de Pearson entre valores reais e preditos. Quanto mais próximo de 1.0, mais alinhadas estão as previsões.",
-                directional_accuracy: "Acurácia Direcional — percentual de vezes que o modelo acertou a direção (subiu/desceu). Acima de 50% = melhor que o acaso.",
-                sharpe_ratio: "Índice de Sharpe — retorno ajustado ao risco. Valores > 1.0 indicam boa relação retorno/risco nas previsões.",
-                max_drawdown: "Drawdown Máximo — maior queda percentual do pico ao vale. Quanto menor, mais estável é a estratégia baseada no modelo.",
+                rmse: "Root Mean Squared Error — penalizes large errors more severely. Lower is better. Measured in dollars ($).",
+                mae: "Mean Absolute Error — average magnitude of errors. More robust to outliers than RMSE. Measured in dollars ($).",
+                mape: "Mean Absolute Percentage Error — scale-independent metric. Values below 10% indicate excellent accuracy.",
+                r2_score: "Coefficient of Determination (R²) — proportion of variance explained by the model. 1.0 = perfect, 0 = no predictive power.",
+                correlation: "Pearson correlation between actual and predicted values. The closer to 1.0, the more aligned the predictions.",
+                directional_accuracy: "Directional Accuracy — percentage of times the model correctly predicted the direction (up/down). Above 50% = better than random chance.",
+                sharpe_ratio: "Sharpe Ratio — risk-adjusted return. Values above 1.0 indicate a good return/risk ratio in the predictions.",
+                max_drawdown: "Maximum Drawdown — largest percentage drop from peak to trough. The lower, the more stable the model-based strategy.",
               };
               return (
                 <MetricCard
@@ -278,7 +285,7 @@ export default function MetricsPage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Loss */}
             <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-              <ChartHeader title="Loss Curve" tooltip="Curva de perda (MSE) por época. Mostra o quão bem o modelo está aprendendo. As linhas de treino e validação devem convergir — se a validação subir enquanto o treino cai, há overfitting." />
+              <ChartHeader title="Loss Curve" tooltip="Loss (MSE) curve per epoch. Shows how well the model is learning. Train and validation lines should converge — if validation rises while train drops, overfitting is occurring." />
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={curveData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -294,8 +301,9 @@ export default function MetricsPage() {
                   <Legend />
                   <Line type="monotone" dataKey="train_loss" stroke="#76B900" strokeWidth={2} dot={false} name="Train" />
                   <Line type="monotone" dataKey="val_loss" stroke="#4ECDC4" strokeWidth={2} dot={false} name="Validation" />
-                  {!isNaN(testLoss) && (
-                    <Line type="monotone" dataKey="test_loss" stroke="#f97316" strokeWidth={1.5} strokeDasharray="6 3" dot={false} name="Test" />
+                  {hasPerEpochTest && <Line type="monotone" dataKey="test_loss" stroke="#f97316" strokeWidth={2} dot={false} name="Test" />}
+                  {!hasPerEpochTest && !isNaN(testLoss) && (
+                    <ReferenceLine y={testLoss} stroke="#f97316" strokeDasharray="6 3" strokeWidth={1.5} label={{ value: `Test ${testLoss.toFixed(4)}`, fill: "#f97316", fontSize: 10, position: "right" }} />
                   )}
                 </LineChart>
               </ResponsiveContainer>
@@ -304,7 +312,7 @@ export default function MetricsPage() {
             {/* RMSE */}
             {(history?.train_rmse || history?.val_rmse) && (
             <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-              <ChartHeader title="RMSE Curve" tooltip="Raiz do Erro Quadrático Médio por época. Mede o desvio médio das previsões em relação aos valores reais (mesma unidade dos dados). Quanto menor, mais preciso o modelo." />
+              <ChartHeader title="RMSE Curve" tooltip="Root Mean Squared Error per epoch. Measures average deviation of predictions from actual values (in the same unit as the data). Lower means more accurate predictions." />
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={curveData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -320,8 +328,9 @@ export default function MetricsPage() {
                   <Legend />
                   {history?.train_rmse && <Line type="monotone" dataKey="train_rmse" stroke="#76B900" strokeWidth={2} dot={false} name="Train" />}
                   {history?.val_rmse && <Line type="monotone" dataKey="val_rmse" stroke="#4ECDC4" strokeWidth={2} dot={false} name="Validation" />}
-                  {!isNaN(testRmse) && (
-                    <Line type="monotone" dataKey="test_rmse" stroke="#f97316" strokeWidth={1.5} strokeDasharray="6 3" dot={false} name="Test" />
+                  {hasPerEpochTest && <Line type="monotone" dataKey="test_rmse" stroke="#f97316" strokeWidth={2} dot={false} name="Test" />}
+                  {!hasPerEpochTest && !isNaN(testRmse) && (
+                    <ReferenceLine y={testRmse} stroke="#f97316" strokeDasharray="6 3" strokeWidth={1.5} label={{ value: `Test ${testRmse.toFixed(4)}`, fill: "#f97316", fontSize: 10, position: "right" }} />
                   )}
                 </LineChart>
               </ResponsiveContainer>
@@ -331,7 +340,7 @@ export default function MetricsPage() {
             {/* MAE */}
             {(history?.train_mae || history?.val_mae) && (
             <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-              <ChartHeader title="MAE Curve" tooltip="Erro Absoluto Médio por época. Indica a magnitude média dos erros sem considerar a direção. Menos sensível a outliers que o RMSE. Quanto menor, melhor." />
+              <ChartHeader title="MAE Curve" tooltip="Mean Absolute Error per epoch. Indicates the average magnitude of errors regardless of direction. Less sensitive to outliers than RMSE. Lower is better." />
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={curveData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -347,8 +356,9 @@ export default function MetricsPage() {
                   <Legend />
                   {history?.train_mae && <Line type="monotone" dataKey="train_mae" stroke="#76B900" strokeWidth={2} dot={false} name="Train" />}
                   {history?.val_mae && <Line type="monotone" dataKey="val_mae" stroke="#4ECDC4" strokeWidth={2} dot={false} name="Validation" />}
-                  {!isNaN(testMae) && (
-                    <Line type="monotone" dataKey="test_mae" stroke="#f97316" strokeWidth={1.5} strokeDasharray="6 3" dot={false} name="Test" />
+                  {hasPerEpochTest && <Line type="monotone" dataKey="test_mae" stroke="#f97316" strokeWidth={2} dot={false} name="Test" />}
+                  {!hasPerEpochTest && !isNaN(testMae) && (
+                    <ReferenceLine y={testMae} stroke="#f97316" strokeDasharray="6 3" strokeWidth={1.5} label={{ value: `Test ${testMae.toFixed(4)}`, fill: "#f97316", fontSize: 10, position: "right" }} />
                   )}
                 </LineChart>
               </ResponsiveContainer>
@@ -358,7 +368,7 @@ export default function MetricsPage() {
             {/* R² */}
             {(history?.train_r2 || history?.val_r2) && (
             <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-              <ChartHeader title="R² Score Curve" tooltip="Coeficiente de determinação por época. Varia de 0 a 1 — valores próximos de 1 indicam que o modelo explica bem a variância dos dados. Ideal: ambas as curvas subindo e convergindo." />
+              <ChartHeader title="R² Score Curve" tooltip="Coefficient of determination per epoch. Ranges from 0 to 1 — values close to 1 indicate the model explains the data variance well. Ideal: both curves rising and converging." />
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={curveData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -374,8 +384,9 @@ export default function MetricsPage() {
                   <Legend />
                   {history?.train_r2 && <Line type="monotone" dataKey="train_r2" stroke="#76B900" strokeWidth={2} dot={false} name="Train" />}
                   {history?.val_r2 && <Line type="monotone" dataKey="val_r2" stroke="#4ECDC4" strokeWidth={2} dot={false} name="Validation" />}
-                  {!isNaN(testR2) && (
-                    <Line type="monotone" dataKey="test_r2" stroke="#f97316" strokeWidth={1.5} strokeDasharray="6 3" dot={false} name="Test" />
+                  {hasPerEpochTest && <Line type="monotone" dataKey="test_r2" stroke="#f97316" strokeWidth={2} dot={false} name="Test" />}
+                  {!hasPerEpochTest && !isNaN(testR2) && (
+                    <ReferenceLine y={testR2} stroke="#f97316" strokeDasharray="6 3" strokeWidth={1.5} label={{ value: `Test ${testR2.toFixed(4)}`, fill: "#f97316", fontSize: 10, position: "right" }} />
                   )}
                 </LineChart>
               </ResponsiveContainer>
@@ -384,7 +395,24 @@ export default function MetricsPage() {
           </div>
 
           {/* Test baseline legend */}
-          {!isNaN(testLoss) && (
+          {hasPerEpochTest && (
+            <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 px-5 py-3">
+              <div className="flex flex-wrap items-center gap-5">
+                <div className="flex items-center gap-2">
+                  <div className="h-0.5 w-6 bg-orange-500" />
+                  <span className="text-xs font-semibold text-orange-400">Test Set (per-epoch)</span>
+                  <span className="text-[10px] text-white/30">(last 15% of data, evaluated each epoch)</span>
+                </div>
+                <div className="flex flex-wrap gap-4 text-xs text-white/50">
+                  <span>Final Loss: <strong className="text-orange-400">{testLossArr![testLossArr!.length - 1]?.toFixed(6)}</strong></span>
+                  {testRmseArr && <span>Final RMSE: <strong className="text-orange-400">{testRmseArr[testRmseArr.length - 1]?.toFixed(6)}</strong></span>}
+                  {testMaeArr && <span>Final MAE: <strong className="text-orange-400">{testMaeArr[testMaeArr.length - 1]?.toFixed(6)}</strong></span>}
+                  {testR2Arr && <span>Final R²: <strong className="text-orange-400">{testR2Arr[testR2Arr.length - 1]?.toFixed(4)}</strong></span>}
+                </div>
+              </div>
+            </div>
+          )}
+          {!hasPerEpochTest && !isNaN(testLoss) && (
             <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 px-5 py-3">
               <div className="flex flex-wrap items-center gap-5">
                 <div className="flex items-center gap-2">
@@ -407,8 +435,8 @@ export default function MetricsPage() {
       {/* HPO Radar Chart */}
       {radarData.length > 0 && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-          <h3 className="mb-4 text-lg font-semibold">
-            🎯 Hyperparameter Optimization
+          <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <Target className="h-5 w-5 text-nvidia" /> Hyperparameter Optimization
           </h3>
           <ResponsiveContainer width="100%" height={350}>
             <RadarChart data={radarData}>
@@ -428,7 +456,7 @@ export default function MetricsPage() {
           <div>
             <h3 className="text-lg font-semibold">Actual vs Predicted (Backtest)</h3>
             <p className="text-xs text-white/40">
-              Previsões do modelo sobre todo o período histórico conhecido — comparação direta entre preço real e previsto
+              Model predictions over the entire known historical period — direct comparison between actual and predicted prices
             </p>
           </div>
         </div>
@@ -494,7 +522,7 @@ export default function MetricsPage() {
 
             {/* Residual (Error) Chart */}
             <div className="mt-6">
-              <ChartHeader title="Erro Residual (Actual − Predicted)" tooltip="Diferença entre o valor real e o previsto por dia. Barras verdes indicam que o modelo subestimou (real > previsto), vermelhas indicam superestimação. Idealmente os resíduos ficam próximos de zero." />
+              <ChartHeader title="Residual Error (Actual − Predicted)" tooltip="Difference between the actual and predicted value per day. Green bars indicate the model underestimated (actual > predicted), red bars indicate overestimation. Ideally residuals stay close to zero." />
               <ResponsiveContainer width="100%" height={250}>
                 <ComposedChart data={backtestData.map((d) => ({ ...d, error: +(d.actual - d.predicted).toFixed(2) }))}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -518,12 +546,12 @@ export default function MetricsPage() {
                       borderRadius: 8,
                       color: "#fff",
                     }}
-                    formatter={(value: number) => [`$${value?.toFixed(2)}`, "Erro"]}
+                    formatter={(value: number) => [`$${value?.toFixed(2)}`, "Error"]}
                   />
                   <ReferenceLine y={0} stroke="rgba(255,255,255,0.3)" strokeDasharray="4 4" />
                   <Bar
                     dataKey="error"
-                    name="Erro"
+                    name="Error"
                     radius={[2, 2, 0, 0]}
                   >
                     {backtestData.map((d, idx) => (

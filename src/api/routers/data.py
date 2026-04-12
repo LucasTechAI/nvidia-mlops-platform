@@ -193,7 +193,7 @@ async def get_live_data() -> dict:
 
         # Last date already in the database
         df_db = load_data_from_db(start_year=2017)
-        df_db["date"] = pd.to_datetime(df_db["Date"])
+        df_db["date"] = pd.to_datetime(df_db["Date"]).dt.tz_localize(None)
         last_db_date = df_db["date"].max()
 
         # Fetch recent data from Yahoo Finance (last 3 months to be safe)

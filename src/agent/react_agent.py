@@ -310,12 +310,12 @@ class ReActAgent:
             from src.security.guardrails import InputGuardrail, OutputGuardrail
 
             input_guard = InputGuardrail()
-            is_valid, reason = input_guard.validate(user_input)
+            validation_result = input_guard.validate(user_input)
 
-            if not is_valid:
+            if not validation_result.passed:
                 return {
-                    "answer": reason,
-                    "reasoning_trace": [{"step": "input_blocked", "reason": reason}],
+                    "answer": validation_result.message,
+                    "reasoning_trace": [{"step": "input_blocked", "reason": validation_result.message}],
                     "tools_used": [],
                     "iterations": 0,
                     "input_valid": False,
@@ -325,7 +325,9 @@ class ReActAgent:
             result = self.query(user_input)
 
             output_guard = OutputGuardrail()
-            result["answer"] = output_guard.sanitize(result["answer"])
+            output_validation = output_guard.validate(result["answer"], query=user_input)
+            if output_validation.sanitized_text:
+                result["answer"] = output_validation.sanitized_text
             result["input_valid"] = True
             result["output_sanitized"] = True
 
@@ -344,6 +346,7 @@ def create_agent(
     model_name: Optional[str] = None,
     temperature: float = 0.1,
     llm_provider: Optional[str] = None,
+    max_iterations: int = 8,
 ) -> ReActAgent:
     """Create a configured ReAct agent instance.
 
@@ -351,6 +354,7 @@ def create_agent(
         model_name: LLM model name.
         temperature: Sampling temperature.
         llm_provider: LLM provider name.
+        max_iterations: Maximum reasoning-action loops.
 
     Returns:
         Configured ReActAgent.
@@ -359,4 +363,5 @@ def create_agent(
         model_name=model_name,
         temperature=temperature,
         llm_provider=llm_provider,
+        max_iterations=max_iterations,
     )

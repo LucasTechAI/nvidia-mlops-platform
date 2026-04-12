@@ -5,16 +5,20 @@ import {
   Database,
   BarChart3,
   Cpu,
-  GitBranch,
   Shield,
   Github,
   Mail,
-  Layers,
   ArrowRight,
   Zap,
   LineChart,
   Bot,
   Search,
+  Target,
+  User,
+  Code2,
+  Settings,
+  Wrench,
+  Rocket,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -33,41 +37,41 @@ const PIPELINE_STEPS = [
   {
     icon: Database,
     title: "ETL Pipeline",
-    desc: "Extração de dados via Yahoo Finance com carregamento em SQLite. Dados desde 2017 com 6700+ registros.",
+    desc: "Data extraction via Yahoo Finance with loading into SQLite. Data since 2017 with 6,700+ records.",
   },
   {
     icon: Cpu,
-    title: "Treinamento LSTM",
-    desc: "Modelo LSTM de 2 camadas com 128 unidades ocultas, dropout 0.2, early stopping e gradient clipping.",
+    title: "LSTM Training",
+    desc: "2-layer LSTM model with 128 hidden units, dropout 0.2, early stopping, and gradient clipping.",
   },
   {
     icon: Zap,
-    title: "Otimização HPO",
-    desc: "Busca Bayesiana de hiperparâmetros com Optuna (50+ trials) para encontrar a melhor configuração.",
+    title: "HPO Optimization",
+    desc: "Bayesian hyperparameter search with Optuna (50+ trials) to find the best configuration.",
   },
   {
     icon: BarChart3,
-    title: "Predição",
-    desc: "Forecast iterativo de 30 dias com Monte Carlo Dropout para intervalos de confiança.",
+    title: "Prediction",
+    desc: "Iterative 30-day forecast with Monte Carlo Dropout for confidence intervals.",
   },
   {
     icon: LineChart,
-    title: "Monitoramento",
-    desc: "Tracking completo com MLflow, métricas em tempo real e versionamento de modelos.",
+    title: "Monitoring",
+    desc: "Full tracking with MLflow, real-time metrics, and model versioning.",
   },
   {
     icon: Shield,
-    title: "Segurança & Deploy",
-    desc: "Pipeline CI/CD com GitHub Actions, Docker Compose e boas práticas de segurança OWASP.",
+    title: "Security & Deploy",
+    desc: "CI/CD pipeline with GitHub Actions, Docker Compose, and OWASP security best practices.",
   },
 ];
 
 const QUICK_LINKS = [
-  { href: "/predictions", label: "Stock Predictions", icon: BarChart3, emoji: "📊", desc: "Veja previsões do modelo LSTM" },
-  { href: "/metrics", label: "Model Metrics", icon: LineChart, emoji: "📈", desc: "Métricas e performance do modelo" },
-  { href: "/model-schema", label: "Model Architecture", icon: Brain, emoji: "🧠", desc: "Arquitetura da rede neural" },
-  { href: "/evaluation", label: "Evaluation", icon: Search, emoji: "📋", desc: "Avaliação e benchmarks" },
-  { href: "/agent", label: "AI Agent", icon: Bot, emoji: "🤖", desc: "Assistente IA para análises" },
+  { href: "/predictions", label: "Stock Predictions", icon: BarChart3, desc: "View LSTM model forecasts" },
+  { href: "/metrics", label: "Model Metrics", icon: LineChart, desc: "Model performance and metrics" },
+  { href: "/model-schema", label: "Model Architecture", icon: Brain, desc: "Neural network architecture" },
+  { href: "/evaluation", label: "Evaluation", icon: Search, desc: "Evaluation and benchmarks" },
+  { href: "/agent", label: "AI Agent", icon: Bot, desc: "AI assistant for analysis" },
 ];
 
 export default function HomePage() {
@@ -87,11 +91,11 @@ export default function HomePage() {
             <span className="text-nvidia">NVIDIA</span> MLOps Platform
           </h1>
           <p className="max-w-2xl text-lg text-white/60">
-            Plataforma end-to-end de MLOps para predição do preço das ações da NVIDIA (NVDA) 
-            utilizando <span className="text-nvidia font-medium">LSTM</span> com tracking de experimentos via{" "}
-            <span className="font-medium text-sky-400">MLflow</span>, otimização de hiperparâmetros com{" "}
-            <span className="font-medium text-red-400">Optuna</span>, API REST com{" "}
-            <span className="font-medium text-teal-400">FastAPI</span> e dashboard interativo com{" "}
+            End-to-end MLOps platform for NVIDIA (NVDA) stock price prediction 
+            using <span className="text-nvidia font-medium">LSTM</span> with experiment tracking via{" "}
+            <span className="font-medium text-sky-400">MLflow</span>, hyperparameter optimization with{" "}
+            <span className="font-medium text-red-400">Optuna</span>, REST API with{" "}
+            <span className="font-medium text-teal-400">FastAPI</span>, and interactive dashboard with{" "}
             <span className="font-medium text-white">Next.js</span>.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -100,7 +104,7 @@ export default function HomePage() {
               className="flex items-center gap-2 rounded-lg bg-nvidia px-5 py-2.5 text-sm font-semibold text-black transition-all hover:bg-nvidia-dark"
             >
               <BarChart3 className="h-4 w-4" />
-              Ver Previsões
+              View Predictions
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a
@@ -119,8 +123,8 @@ export default function HomePage() {
       {/* Model Purpose */}
       <div className="rounded-xl border border-nvidia/20 bg-gradient-to-br from-nvidia/5 via-surface-card to-surface-card p-6">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-nvidia/10 text-2xl">
-            🎯
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-nvidia/10">
+            <Target className="h-6 w-6 text-nvidia" />
           </div>
           <div>
             <h2 className="mb-2 text-lg font-semibold">Model Purpose</h2>
@@ -153,10 +157,10 @@ export default function HomePage() {
 
       {/* About Author */}
       <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-        <h2 className="mb-4 text-xl font-semibold">👤 Sobre o Autor</h2>
+        <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold"><User className="h-5 w-5 text-nvidia" /> About the Author</h2>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-          <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-nvidia/30 to-nvidia/10 text-4xl">
-            👨‍💻
+          <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-nvidia/30 to-nvidia/10">
+            <Code2 className="h-10 w-10 text-nvidia" />
           </div>
           <div className="space-y-3">
             <div>
@@ -164,10 +168,10 @@ export default function HomePage() {
               <p className="text-sm text-white/40">LucasTechAI</p>
             </div>
             <p className="text-sm leading-relaxed text-white/60">
-              Desenvolvedor e entusiasta de Machine Learning, cursando a Pós-Graduação em{" "}
-              <span className="font-medium text-white/80">Machine Learning Engineering (MLET)</span> na{" "}
-              <span className="font-medium text-red-400">FIAP</span>. Este projeto é o Tech Challenge das Fases 4 e 5, 
-              demonstrando competências em Deep Learning, MLOps e engenharia de software aplicada a dados financeiros.
+              Developer and Machine Learning enthusiast, pursuing a Post-Graduate degree in{" "}
+              <span className="font-medium text-white/80">Machine Learning Engineering (MLET)</span> at{" "}
+              <span className="font-medium text-red-400">FIAP</span>. This project is the Tech Challenge for Phases 4 and 5, 
+              demonstrating skills in Deep Learning, MLOps, and software engineering applied to financial data.
             </p>
             <div className="flex flex-wrap gap-3">
               <a
@@ -193,7 +197,7 @@ export default function HomePage() {
 
       {/* Pipeline Steps */}
       <div>
-        <h2 className="mb-4 text-xl font-semibold">⚙️ Pipeline MLOps</h2>
+        <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold"><Settings className="h-5 w-5 text-nvidia" /> Pipeline MLOps</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {PIPELINE_STEPS.map((step, i) => {
             const Icon = step.icon;
@@ -220,7 +224,7 @@ export default function HomePage() {
 
       {/* Tech Stack */}
       <div>
-        <h2 className="mb-4 text-xl font-semibold">🛠️ Tech Stack</h2>
+        <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold"><Wrench className="h-5 w-5 text-nvidia" /> Tech Stack</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {TECH_STACK.map((tech) => (
             <div
@@ -240,7 +244,7 @@ export default function HomePage() {
 
       {/* Quick Links */}
       <div>
-        <h2 className="mb-4 text-xl font-semibold">🚀 Navegação Rápida</h2>
+        <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold"><Rocket className="h-5 w-5 text-nvidia" /> Quick Navigation</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {QUICK_LINKS.map((link) => {
             const Icon = link.icon;
@@ -250,8 +254,8 @@ export default function HomePage() {
                 href={link.href}
                 className="group flex items-center gap-4 rounded-xl border border-surface-border bg-surface-card p-4 transition-all hover:border-nvidia/30 hover:bg-surface-hover"
               >
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-nvidia/10 text-lg">
-                  {link.emoji}
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-nvidia/10">
+                  <Icon className="h-5 w-5 text-nvidia" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold group-hover:text-nvidia">
@@ -263,45 +267,6 @@ export default function HomePage() {
               </Link>
             );
           })}
-        </div>
-      </div>
-
-      {/* Architecture Diagram */}
-      <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-        <h2 className="mb-4 text-xl font-semibold">🏗️ Arquitetura</h2>
-        <div className="overflow-x-auto">
-          <pre className="text-xs leading-relaxed text-white/50">
-{`┌─────────────────────────────────────────────────────────────────────┐
-│                        NVIDIA MLOps Platform                        │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  ┌──────────┐    ┌──────────────┐    ┌──────────────┐              │
-│  │ Yahoo    │───▶│ ETL Pipeline │───▶│ SQLite DB    │              │
-│  │ Finance  │    │ (yfinance)   │    │ (6700+ rows) │              │
-│  └──────────┘    └──────────────┘    └──────┬───────┘              │
-│                                             │                       │
-│                  ┌──────────────────────────┼───────────┐           │
-│                  │       Data Pipeline      │           │           │
-│                  │                          ▼           │           │
-│                  │  ┌──────────────┐  ┌──────────┐     │           │
-│                  │  │ Preprocessing│  │ Sequence │     │           │
-│                  │  │ MinMaxScaler │─▶│ Generator│     │           │
-│                  │  └──────────────┘  └────┬─────┘     │           │
-│                  └──────────────────────────────────────┘           │
-│                                             │                       │
-│   ┌─────────────┐  ┌─────────────┐  ┌──────┴───────┐              │
-│   │  FastAPI    │  │  Next.js    │  │  LSTM Model  │              │
-│   │  REST API   │  │  Dashboard  │  │  PyTorch     │              │
-│   │  :8000      │  │  :3001      │  │  2 Layers    │              │
-│   └─────────────┘  └─────────────┘  └──────────────┘              │
-│                                                                     │
-│   ┌─────────────┐  ┌─────────────┐  ┌──────────────┐              │
-│   │  MLflow     │  │  Optuna     │  │  Docker      │              │
-│   │  Tracking   │  │  HPO        │  │  Compose     │              │
-│   │  :5000      │  │  50+ trials │  │  Multi-svc   │              │
-│   └─────────────┘  └─────────────┘  └──────────────┘              │
-└─────────────────────────────────────────────────────────────────────┘`}
-          </pre>
         </div>
       </div>
 
