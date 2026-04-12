@@ -1,12 +1,12 @@
 "use client";
 
 import { clsx } from "clsx";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 interface Tab {
   id: string;
   label: string;
-  icon?: string;
+  icon?: ReactNode;
 }
 
 interface TabGroupProps {

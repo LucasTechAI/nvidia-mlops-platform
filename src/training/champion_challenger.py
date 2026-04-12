@@ -36,6 +36,10 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 RESULTS_DIR = ROOT_DIR / "outputs" / "champion_challenger"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
+# Optuna persisted storage for dashboard visibility
+OPTUNA_DB_PATH = ROOT_DIR / "outputs" / "optuna_studies.db"
+OPTUNA_STORAGE_URL = f"sqlite:///{OPTUNA_DB_PATH}"
+
 # Promotion threshold: challenger must improve RMSE by at least this fraction
 IMPROVEMENT_THRESHOLD = 0.005  # 0.5%
 
@@ -116,9 +120,13 @@ def evaluate_model(
             X_batch = X_batch.to(device)
             preds = model(X_batch)
 
-            # Extract the target feature prediction
+            # For multi-output models, extract only the target column
             if preds.dim() == 2 and preds.shape[1] > 1:
                 preds = preds[:, target_idx : target_idx + 1]
+
+            # Align targets to the same column as predictions
+            if y_batch.dim() == 2 and y_batch.shape[1] > 1:
+                y_batch = y_batch[:, target_idx : target_idx + 1]
 
             all_preds.append(preds.cpu().numpy())
             all_targets.append(y_batch.numpy())
@@ -309,7 +317,7 @@ def _train_challenger(
                 bidirectional=BIDIRECTIONAL,
                 output_size=output_size,
             )
-            ckpt = torch.load(str(champion_path_resolved), map_location=device)
+            ckpt = torch.load(str(champion_path_resolved), map_location=device, weights_only=False)
             state = ckpt.get("model_state_dict", ckpt)
             champ_model.load_state_dict(state, strict=False)
             champ_model.to(device).eval()
@@ -378,6 +386,8 @@ def _train_challenger(
         direction="minimize",
         sampler=optuna.samplers.TPESampler(seed=42),
         pruner=optuna.pruners.MedianPruner(n_startup_trials=5),
+        storage=OPTUNA_STORAGE_URL,
+        load_if_exists=False,
     )
     study.optimize(_optuna_objective, n_trials=n_trials)
 
@@ -431,6 +441,29 @@ def _train_challenger(
     challenger_loss = min(history["val_loss"])
     logger.info("Challenger final val loss: %.6f (HPO trial best: %.6f)", challenger_loss, best_hpo_loss)
 
+    # Build champion model reference for full evaluation
+    champ_model_ref = None
+    if champion_path_resolved.exists():
+        try:
+            champ_model_ref = create_model(
+                input_size=input_size,
+                hidden_size=HIDDEN_SIZE,
+                num_layers=NUM_LAYERS,
+                dropout=DROPOUT,
+                bidirectional=BIDIRECTIONAL,
+                output_size=output_size,
+            )
+            ckpt = torch.load(str(champion_path_resolved), map_location=device, weights_only=False)
+            state = ckpt.get("model_state_dict", ckpt)
+            champ_model_ref.load_state_dict(state, strict=False)
+            champ_model_ref.to(device).eval()
+        except Exception as exc:
+            logger.warning("Could not reload champion for full eval: %s", exc)
+            champ_model_ref = None
+
+    # Determine target_idx (Close column)
+    close_idx = feature_columns.index("Close") if "Close" in feature_columns else 3
+
     return {
         "run_id": run_id,
         "best_val_loss": challenger_loss,
@@ -438,6 +471,12 @@ def _train_challenger(
         "optuna_best_params": best_params,
         "optuna_n_trials": n_trials,
         "optuna_best_trial_loss": best_hpo_loss,
+        "_challenger_model": _trained,
+        "_champion_model": champ_model_ref,
+        "_test_data": (_X_test, _y_test),
+        "_scaler": scaler,
+        "_target_idx": close_idx,
+        "_device": str(device),
     }
 
 
@@ -473,6 +512,16 @@ def run_champion_challenger(
         "promoted": False,
         "active_triggers": [],
     }
+
+    # Step 0: Refresh stock database with latest market data
+    logger.info("=" * 60)
+    logger.info("Step 0: Refreshing Stock Database (ETL)")
+    logger.info("=" * 60)
+    try:
+        from src.etl import refresh_stock_data
+        refresh_stock_data()
+    except Exception as e:
+        logger.warning("ETL refresh failed (continuing with existing data): %s", e)
 
     # Step 1: Multi-trigger detection
     logger.info("=" * 60)
@@ -524,14 +573,99 @@ def run_champion_challenger(
     logger.info("Step 3: Champion-Challenger Comparison")
     logger.info("=" * 60)
 
-    champion_loss = training_result.get("champion_val_loss", float("inf"))
-    challenger_loss = training_result.get("best_val_loss", float("inf"))
+    # ── Full evaluation on test set with all metrics ──────────────────
+    from torch.utils.data import DataLoader, TensorDataset
 
-    champion_m = ModelMetrics(rmse=champion_loss)
-    challenger_m = ModelMetrics(rmse=challenger_loss)
+    _challenger_model = training_result.get("_challenger_model")
+    _champion_model = training_result.get("_champion_model")
+    _test_data = training_result.get("_test_data")
+    _scaler = training_result.get("_scaler")
+    _target_idx = training_result.get("_target_idx", 3)
+    _device = training_result.get("_device", "cpu")
+
+    if _challenger_model is not None and _test_data is not None and _scaler is not None:
+        X_test, y_test = _test_data
+        test_dataset = TensorDataset(
+            torch.FloatTensor(X_test), torch.FloatTensor(y_test)
+        )
+        test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+        challenger_m = evaluate_model(
+            _challenger_model, test_loader, _scaler, device=_device, target_idx=_target_idx
+        )
+        logger.info("Challenger full metrics: %s", challenger_m.to_dict())
+
+        if _champion_model is not None:
+            champion_m = evaluate_model(
+                _champion_model, test_loader, _scaler, device=_device, target_idx=_target_idx
+            )
+            logger.info("Champion full metrics: %s", champion_m.to_dict())
+        else:
+            champion_loss = training_result.get("champion_val_loss", float("inf"))
+            champion_m = ModelMetrics(rmse=champion_loss)
+    else:
+        # Fallback: only RMSE from val_loss (legacy behavior)
+        champion_loss = training_result.get("champion_val_loss", float("inf"))
+        challenger_loss = training_result.get("best_val_loss", float("inf"))
+        champion_m = ModelMetrics(rmse=champion_loss)
+        challenger_m = ModelMetrics(rmse=challenger_loss)
+
     comparison = compare_models(champion_m, challenger_m)
     result["comparison"] = comparison.to_dict()
     result["promoted"] = comparison.promote
+
+    # Step 4b: If promoted, save challenger as new best_model.pth
+    if comparison.promote:
+        logger.info("🏆 Promoting challenger → saving to models/best_model.pth")
+        try:
+            import pickle as _pickle
+
+            import torch as _torch
+
+            _challenger_model = training_result.get("_challenger_model")
+            _scaler = training_result.get("_scaler")
+            _best_params = training_result.get("optuna_best_params") or {}
+
+            if _challenger_model is not None:
+                model_path = ROOT_DIR / "models" / "best_model.pth"
+                scaler_path = ROOT_DIR / "models" / "scaler.pkl"
+                model_path.parent.mkdir(parents=True, exist_ok=True)
+
+                # Build model_config so API can reconstruct the architecture
+                model_config = {
+                    "input_size": 5,
+                    "hidden_size": _best_params.get("hidden_size", 128),
+                    "num_layers": _best_params.get("num_layers", 2),
+                    "output_size": 5,
+                    "dropout": _best_params.get("dropout", 0.2),
+                    "bidirectional": False,
+                }
+
+                _torch.save(
+                    {
+                        "model_state_dict": _challenger_model.state_dict(),
+                        "model_config": model_config,
+                        "promoted_from": "champion_challenger",
+                        "promoted_at": datetime.now().isoformat(),
+                        "optuna_best_params": _best_params,
+                        "run_id": training_result.get("run_id"),
+                        "challenger_rmse": challenger_m.rmse,
+                        "champion_rmse": champion_m.rmse,
+                        "rmse_improvement_pct": abs(comparison.rmse_delta_pct) * 100,
+                    },
+                    str(model_path),
+                )
+                logger.info("✅ New champion saved to %s", model_path)
+
+                # Save updated scaler so API predictions are consistent
+                if _scaler is not None:
+                    with open(scaler_path, "wb") as f:
+                        _pickle.dump(_scaler, f)
+                    logger.info("✅ Updated scaler saved to %s", scaler_path)
+            else:
+                logger.warning("Challenger model object not available — skipping save")
+        except Exception as e:
+            logger.error("Failed to save promoted model: %s", e)
 
     # Step 5: Log to MLflow
     try:

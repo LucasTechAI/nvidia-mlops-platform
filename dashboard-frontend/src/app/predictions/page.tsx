@@ -16,7 +16,7 @@ import {
   Legend,
   ReferenceLine,
 } from "recharts";
-import { Download, TrendingUp, TrendingDown, DollarSign, Target } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, DollarSign, Target, BarChart3, Rocket } from "lucide-react";
 import StatCard from "@/components/stat-card";
 import LoadingSpinner from "@/components/loading-spinner";
 import { api } from "@/lib/api";
@@ -53,6 +53,10 @@ export default function PredictionsPage() {
         const res = await api.data.live();
         setLiveData(res.data || []);
         setDbLastDate(res.db_last_date || null);
+        // Update current price to the most recent live close if available
+        if (res.data && res.data.length > 0) {
+          setCurrentPrice(res.data[res.data.length - 1].close);
+        }
       } catch (err) {
         console.error("Failed to load live data:", err);
       }
@@ -68,7 +72,7 @@ export default function PredictionsPage() {
         const res = await api.data.recent(contextDays);
         const data = (res as { data?: HistoricalPoint[] }).data || [];
         setHistoricalData(data);
-        if (data.length > 0) {
+        if (data.length > 0 && liveData.length === 0) {
           setCurrentPrice(data[data.length - 1].close);
         }
       } catch (err) {
@@ -94,7 +98,7 @@ export default function PredictionsPage() {
         last_known_price?: number;
       };
       setPredictions(forecastRes.predictions || []);
-      if (forecastRes.last_known_price) {
+      if (forecastRes.last_known_price && liveData.length === 0) {
         setCurrentPrice(forecastRes.last_known_price);
       }
     } catch (err) {
@@ -120,9 +124,13 @@ export default function PredictionsPage() {
   const histByDate = new Set(historicalData.map((h) => normalizeDate(h.date)));
 
   const chartData = [
-    ...historicalData.map((d) => ({
+    ...historicalData.map((d, i) => ({
       date: normalizeDate(d.date),
       historical: d.close,
+      // Bridge: last historical point also gets "predicted" so the line connects
+      ...(i === historicalData.length - 1 && predictions.length > 0
+        ? { predicted: d.close }
+        : {}),
     })),
     ...predictions.map((p) => {
       const dateKey = normalizeDate(p.date);
@@ -154,8 +162,10 @@ export default function PredictionsPage() {
   const dailyChanges = predictions.map((p, i) => {
     const prev = i === 0 ? currentPrice : predictions[i - 1].predicted_price;
     const change = p.predicted_price - prev;
+    const d = new Date(p.date);
+    const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     return {
-      date: p.date,
+      date: label,
       change: Number(change.toFixed(2)),
       fill: change >= 0 ? "#76B900" : "#ef4444",
     };
@@ -196,7 +206,7 @@ export default function PredictionsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-semibold">📊 Stock Predictions</h2>
+        <h2 className="flex items-center gap-2 text-2xl font-semibold"><BarChart3 className="h-6 w-6 text-nvidia" /> Stock Predictions</h2>
         <p className="mt-1 text-sm text-white/50">
           LSTM-based forecasts with Monte Carlo Dropout uncertainty estimation
         </p>
@@ -255,7 +265,7 @@ export default function PredictionsPage() {
           disabled={loading}
           className="ml-auto rounded-lg bg-nvidia px-6 py-2.5 text-sm font-semibold text-black transition-all hover:bg-nvidia-dark disabled:opacity-50"
         >
-          {loading ? "Generating..." : "🚀 Generate Forecast"}
+          {loading ? "Generating..." : <><Rocket className="inline h-4 w-4" /> Generate Forecast</>}
         </button>
       </div>
 

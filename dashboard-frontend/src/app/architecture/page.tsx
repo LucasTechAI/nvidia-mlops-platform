@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Info } from "lucide-react";
+import { Info, GitBranch } from "lucide-react";
 
 /* ─── tiny tooltip helper ──────────────────────────────────────────── */
 function Tip({ text }: { text: string }) {
@@ -150,16 +150,16 @@ function Check({ label, detail, done = true }: { label: string; detail: string; 
 
 /* ─── tab definitions ──────────────────────────────────────────── */
 const TABS = [
-  { id: "general",       label: "General",             icon: "🏗️" },
-  { id: "webapp",        label: "Web Application",     icon: "🌐" },
-  { id: "agent",         label: "LLM Agent & RAG",     icon: "🤖" },
-  { id: "evaluation",    label: "Evaluation",          icon: "📊" },
-  { id: "monitoring",    label: "Monitoring & Drift",   icon: "📡" },
-  { id: "security",      label: "Security & Gov.",      icon: "🔒" },
-  { id: "champion",      label: "Champion-Challenger",  icon: "🏆" },
-  { id: "testing",       label: "Testing & CI/CD",      icon: "🧪" },
-  { id: "explainability", label: "Explainability",      icon: "🔬" },
-  { id: "checklist",     label: "Requirements",         icon: "📋" },
+  { id: "general",       label: "🏗️ General" },
+  { id: "webapp",        label: "🌐 Web Application" },
+  { id: "agent",         label: "🤖 LLM Agent & RAG" },
+  { id: "evaluation",    label: "📊 Evaluation" },
+  { id: "monitoring",    label: "📡 Monitoring & Drift" },
+  { id: "security",      label: "🔒 Security & Gov." },
+  { id: "champion",      label: "🏆 Champion-Challenger" },
+  { id: "testing",       label: "🧪 Testing & CI/CD" },
+  { id: "explainability", label: "🔬 Explainability" },
+  { id: "checklist",     label: "📋 Requirements" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -172,7 +172,7 @@ export default function ArchitecturePage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-semibold">🏗️ Project Architecture</h2>
+        <h2 className="flex items-center gap-2 text-2xl font-semibold"><GitBranch className="h-6 w-6 text-nvidia" /> Project Architecture</h2>
         <p className="mt-1 text-sm text-white/50">
           End-to-end view of the MLOps platform — from raw data to final prediction.
         </p>
@@ -191,7 +191,6 @@ export default function ArchitecturePage() {
                   : "text-white/40 hover:bg-white/5 hover:text-white/70"
               }`}
             >
-              <span className="mr-1.5">{tab.icon}</span>
               {tab.label}
             </button>
           ))}

@@ -1,8 +1,19 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { Send, Trash2, Sparkles } from "lucide-react";
+import { Send, Trash2, Sparkles, Bot, Brain, XCircle, Cpu, Zap } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { api } from "@/lib/api";
+
+/* ── LLM Model Info (read from env via API or hardcoded fallback) ── */
+const MODEL_INFO: Record<string, { name: string; provider: string; strengths: string; speed: string; context: string }> = {
+  "google/gemini-2.0-flash-001": { name: "Gemini 2.0 Flash", provider: "Google (via OpenRouter)", strengths: "Fast, cost-effective, great for structured Q&A", speed: "~0.3s/req", context: "1M tokens" },
+  "google/gemini-2.5-pro-preview": { name: "Gemini 2.5 Pro", provider: "Google (via OpenRouter)", strengths: "Top-tier reasoning, deep analysis", speed: "~1.5s/req", context: "1M tokens" },
+  "openai/gpt-4o": { name: "GPT-4o", provider: "OpenAI (via OpenRouter)", strengths: "Multimodal, strong general reasoning", speed: "~0.8s/req", context: "128K tokens" },
+  "openai/gpt-4o-mini": { name: "GPT-4o Mini", provider: "OpenAI (via OpenRouter)", strengths: "Balanced cost/performance", speed: "~0.3s/req", context: "128K tokens" },
+  "anthropic/claude-sonnet-4": { name: "Claude Sonnet 4", provider: "Anthropic (via OpenRouter)", strengths: "Excellent at analysis and long-form", speed: "~1.0s/req", context: "200K tokens" },
+  "meta-llama/llama-4-maverick": { name: "Llama 4 Maverick", provider: "Meta (via OpenRouter)", strengths: "Open-source, fast inference", speed: "~0.2s/req", context: "128K tokens" },
+};
 
 interface Message {
   role: "user" | "assistant";
@@ -24,11 +35,22 @@ export default function AgentPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [modelId, setModelId] = useState<string>("google/gemini-2.0-flash-001");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Fetch actual model from config
+  useEffect(() => {
+    api.health.check().then((res) => {
+      const cfg = res as Record<string, unknown>;
+      if (cfg.llm_model) setModelId(String(cfg.llm_model));
+    }).catch(() => {});
+  }, []);
+
+  const modelInfo = MODEL_INFO[modelId] ?? { name: modelId.split("/").pop() ?? modelId, provider: "OpenRouter", strengths: "LLM-powered agent", speed: "—", context: "—" };
 
   const sendMessage = async (query?: string) => {
     const text = query || input.trim();
@@ -72,7 +94,7 @@ export default function AgentPage() {
     } catch (err) {
       const errorMsg: Message = {
         role: "assistant",
-        content: `❌ Error: ${err instanceof Error ? err.message : "Failed to get response"}`,
+        content: `Error: ${err instanceof Error ? err.message : "Failed to get response"}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -88,7 +110,7 @@ export default function AgentPage() {
       {/* Header */}
       <div className="flex items-center justify-between pb-4">
         <div>
-          <h2 className="text-2xl font-semibold">🤖 AI Agent</h2>
+          <h2 className="flex items-center gap-2 text-2xl font-semibold"><Bot className="h-6 w-6 text-nvidia" /> AI Agent</h2>
           <p className="mt-1 text-sm text-white/50">
             ReAct agent with RAG for financial analysis and Q&amp;A
           </p>
@@ -101,6 +123,27 @@ export default function AgentPage() {
             <Trash2 className="h-3.5 w-3.5" /> Clear Chat
           </button>
         )}
+      </div>
+
+      {/* Active Model Card */}
+      <div className="mb-4 rounded-xl border border-nvidia/20 bg-nvidia/5 p-3">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Cpu className="h-4 w-4 text-nvidia" />
+            <span className="text-xs font-semibold text-white/60">Active Model</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-nvidia/20 px-2.5 py-0.5 text-xs font-bold text-nvidia">{modelInfo.name}</span>
+            <span className="text-[11px] text-white/30">{modelInfo.provider}</span>
+          </div>
+          <div className="hidden items-center gap-3 text-[11px] text-white/40 sm:flex">
+            <span className="flex items-center gap-1"><Zap className="h-3 w-3 text-amber-400" />{modelInfo.speed}</span>
+            <span>Context: {modelInfo.context}</span>
+            <span className="text-white/25">|</span>
+            <span>{modelInfo.strengths}</span>
+          </div>
+          <span className="ml-auto font-mono text-[10px] text-white/20">{modelId}</span>
+        </div>
       </div>
 
       {/* Chat Area */}
@@ -141,7 +184,7 @@ export default function AgentPage() {
                   }`}
                 >
                   <div className="flex items-center gap-2 text-xs text-white/30">
-                    <span>{msg.role === "user" ? "You" : "🤖 Agent"}</span>
+                    <span className="flex items-center gap-1">{msg.role === "user" ? "You" : <><Bot className="inline h-3 w-3" /> Agent</>}</span>
                     <span>
                       {msg.timestamp.toLocaleTimeString([], {
                         hour: "2-digit",
@@ -149,14 +192,20 @@ export default function AgentPage() {
                       })}
                     </span>
                   </div>
-                  <div className="mt-1 whitespace-pre-wrap text-sm">
-                    {msg.content}
-                  </div>
+                  {msg.role === "assistant" ? (
+                    <div className="mt-1 text-sm prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:text-white prose-strong:text-nvidia prose-a:text-nvidia">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="mt-1 whitespace-pre-wrap text-sm">
+                      {msg.content}
+                    </div>
+                  )}
 
                   {/* Reasoning info */}
                   {msg.reasoningCount !== undefined && msg.reasoningCount > 0 && (
                     <div className="mt-2 flex items-center gap-3 text-[10px] text-white/30">
-                      <span>🧠 {msg.reasoningCount} reasoning steps</span>
+                      <span className="flex items-center gap-1"><Brain className="inline h-3 w-3" /> {msg.reasoningCount} reasoning steps</span>
                       {msg.elapsedTime !== undefined && (
                         <span>⏱ {msg.elapsedTime.toFixed(2)}s</span>
                       )}

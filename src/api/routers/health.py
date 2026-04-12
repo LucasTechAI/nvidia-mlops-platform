@@ -3,6 +3,7 @@ Health check endpoint.
 """
 
 from datetime import datetime
+import os
 from pathlib import Path
 
 import torch
@@ -48,6 +49,8 @@ async def health_check(state: ModelState = Depends(get_model_state)) -> HealthRe
         model_loaded=model_loaded,
         database_connected=db_connected,
         gpu_available=gpu_available,
+        llm_provider=os.getenv("LLM_PROVIDER", ""),
+        llm_model=os.getenv("LLM_MODEL", ""),
         timestamp=datetime.now(),
     )
 

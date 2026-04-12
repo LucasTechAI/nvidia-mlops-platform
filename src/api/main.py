@@ -16,6 +16,8 @@ from src.api.routers import (
     data_router,
     evaluation_router,
     health_router,
+    logs_router,
+    mlops_router,
     model_router,
     monitoring_router,
     predict_router,
@@ -27,6 +29,50 @@ from src.monitoring.metrics import ACTIVE_REQUESTS, get_metrics, track_request
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+# Install structured log handler (SQLite)
+try:
+    from src.utils.log_database import install_log_handler, seed_sample_logs, LogDatabase
+
+    install_log_handler(level=logging.INFO)
+    # Seed sample data if DB is empty
+    db = LogDatabase.get_instance()
+    stats = db.get_stats(since_minutes=999_999)
+    if stats.total == 0:
+        seed_sample_logs()
+except Exception as _exc:
+    logger.warning("Could not install SQLite log handler: %s", _exc)
+
+# Seed MLOps demo data (business metrics, SLA, feature store, registry, canary)
+try:
+    from src.monitoring.business_metrics import BusinessMetricsTracker
+    BusinessMetricsTracker.get_instance().seed_sample_data()
+except Exception as _exc:
+    logger.warning("Could not seed business metrics: %s", _exc)
+
+try:
+    from src.monitoring.sla_monitor import SLAMonitor
+    SLAMonitor.get_instance().seed_sample_data()
+except Exception as _exc:
+    logger.warning("Could not seed SLA data: %s", _exc)
+
+try:
+    from src.data.feature_store import FeatureStore
+    FeatureStore.get_instance().seed_sample_data()
+except Exception as _exc:
+    logger.warning("Could not seed feature store: %s", _exc)
+
+try:
+    from src.training.model_registry import ModelRegistry
+    ModelRegistry.get_instance().seed_sample_data()
+except Exception as _exc:
+    logger.warning("Could not seed model registry: %s", _exc)
+
+try:
+    from src.monitoring.canary_deploy import CanaryDeployManager
+    CanaryDeployManager.get_instance().seed_sample_data()
+except Exception as _exc:
+    logger.warning("Could not seed canary deploy: %s", _exc)
 
 
 @asynccontextmanager
@@ -101,12 +147,14 @@ app.include_router(agent_router)
 app.include_router(model_router)
 app.include_router(monitoring_router)
 app.include_router(evaluation_router)
+app.include_router(logs_router)
+app.include_router(mlops_router)
 
 
 # Prometheus metrics middleware
 @app.middleware("http")
 async def prometheus_middleware(request: Request, call_next):
-    """Track request metrics for Prometheus."""
+    """Track request metrics for Prometheus and SLA monitoring."""
     import time
 
     method = request.method
@@ -118,6 +166,14 @@ async def prometheus_middleware(request: Request, call_next):
         response = await call_next(request)
         duration = time.time() - start_time
         track_request(method, endpoint, response.status_code, duration)
+
+        # Record in SLA monitor
+        try:
+            from src.monitoring.sla_monitor import SLAMonitor
+            SLAMonitor.get_instance().record_request(method, endpoint, response.status_code, duration * 1000)
+        except Exception:
+            pass
+
         return response
     except Exception:
         duration = time.time() - start_time

@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { Cpu, Layers, Hash, Box, Info, Trophy, SlidersHorizontal } from "lucide-react";
+import { Cpu, Layers, Hash, Box, Info, Trophy, SlidersHorizontal, Brain, Target, ClipboardList, Settings, Zap, Diamond, BarChart3, Package, RefreshCw, Award, ArrowDown, ArrowUp, Link2, Droplets } from "lucide-react";
 import StatCard from "@/components/stat-card";
 import LoadingSpinner from "@/components/loading-spinner";
 import { api } from "@/lib/api";
@@ -71,7 +71,7 @@ export default function ModelSchemaPage() {
   if (error || !modelInfo)
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <span className="text-6xl">🤖</span>
+        <Brain className="h-16 w-16 text-nvidia/40" />
         <h3 className="mt-4 text-xl font-semibold text-amber-400">No Model Found</h3>
         <p className="mt-2 text-sm text-white/50">
           {error || "Please train the model first to view architecture details."}
@@ -130,7 +130,7 @@ export default function ModelSchemaPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-semibold">🧠 Model Architecture</h2>
+        <h2 className="flex items-center gap-2 text-2xl font-semibold"><Brain className="h-6 w-6 text-nvidia" /> Model Architecture</h2>
         <p className="mt-1 text-sm text-white/50">
           Explore the LSTM neural network architecture, layer configuration, and parameter distribution.
         </p>
@@ -139,8 +139,8 @@ export default function ModelSchemaPage() {
       {/* Model Purpose */}
       <div className="rounded-xl border border-nvidia/20 bg-gradient-to-br from-nvidia/5 via-surface-card to-surface-card p-6">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-nvidia/10 text-2xl">
-            🎯
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-nvidia/10">
+            <Target className="h-6 w-6 text-nvidia" />
           </div>
           <div>
             <h3 className="mb-2 text-lg font-semibold">Model Purpose</h3>
@@ -177,13 +177,13 @@ export default function ModelSchemaPage() {
 
       {/* Model Overview */}
       <div>
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-          📋 Model Overview
+        <p className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/30">
+          <ClipboardList className="h-3.5 w-3.5" /> Model Overview
         </p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="gradient-card rounded-xl border border-nvidia/20 p-5">
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-semibold text-nvidia">🔷 Architecture Type</h4>
+              <h4 className="text-sm font-semibold text-nvidia"><Diamond className="mr-1 inline h-3.5 w-3.5" /> Architecture Type</h4>
               <div className="group relative">
                 <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
                 <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
@@ -199,7 +199,7 @@ export default function ModelSchemaPage() {
           </div>
           <div className="gradient-card rounded-xl border border-blue-400/20 p-5">
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-semibold text-blue-400">⚡ Key Characteristics</h4>
+              <h4 className="text-sm font-semibold text-blue-400"><Zap className="mr-1 inline h-3.5 w-3.5" /> Key Characteristics</h4>
               <div className="group relative">
                 <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
                 <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
@@ -227,8 +227,8 @@ export default function ModelSchemaPage() {
 
       {/* Architecture Configuration */}
       <div>
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-          ⚙️ Architecture Configuration
+        <p className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/30">
+          <Settings className="h-3.5 w-3.5" /> Architecture Configuration
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard label="Input Size" value={inputSize} subtitle="Number of input features" icon={<Box className="h-5 w-5 text-nvidia" />} tooltip="Número de features de entrada (Open, High, Low, Close, Volume). Cada timestep tem essas 5 dimensões." />
@@ -261,7 +261,7 @@ export default function ModelSchemaPage() {
                 </div>
               </div>
             </div>
-            <p className="text-xl font-bold">{bidirectional ? "Yes ✅" : "No ❌"}</p>
+            <p className="text-xl font-bold">{bidirectional ? "Yes" : "No"}</p>
           </div>
           <div className="rounded-lg border border-surface-border bg-surface-card p-4">
             <div className="flex items-center gap-1.5">
@@ -305,11 +305,11 @@ export default function ModelSchemaPage() {
           </div>
         </div>
         <div className="gradient-card rounded-xl border border-nvidia/30 p-6 font-mono text-sm">
-          <div className="font-semibold text-nvidia">📦 NvidiaLSTM</div>
+          <div className="flex items-center gap-1.5 font-semibold text-nvidia"><Package className="h-4 w-4" /> NvidiaLSTM</div>
           <div className="ml-5 mt-2 border-l-2 border-nvidia/30 pl-5 space-y-3">
             {/* Input */}
             <div className="flex items-center gap-2">
-              <span className="text-[#4ECDC4]">📥</span>
+              <span className="text-[#4ECDC4]"><ArrowDown className="inline h-4 w-4" /></span>
               <span className="font-semibold text-[#4ECDC4]">Input Layer</span>
               <span className="rounded bg-[#4ECDC4]/20 px-2 py-0.5 text-xs text-[#4ECDC4]">
                 shape: (batch, {seqLength}, {inputSize})
@@ -319,7 +319,7 @@ export default function ModelSchemaPage() {
             {/* LSTM */}
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-nvidia">🧠</span>
+                <span className="text-nvidia"><Brain className="inline h-4 w-4" /></span>
                 <span className="font-semibold text-nvidia">LSTM</span>
                 <span className="rounded bg-nvidia/20 px-2 py-0.5 text-xs text-nvidia">
                   {lstmParams.toLocaleString()} params
@@ -350,7 +350,7 @@ export default function ModelSchemaPage() {
 
             {/* Dropout */}
             <div className="flex items-center gap-2">
-              <span className="text-[#45B7D1]">💧</span>
+              <span className="text-[#45B7D1]"><Droplets className="inline h-4 w-4" /></span>
               <span className="font-semibold text-[#45B7D1]">Dropout</span>
               <span className="rounded bg-[#45B7D1]/20 px-2 py-0.5 text-xs text-[#45B7D1]">
                 p={dropout}
@@ -360,7 +360,7 @@ export default function ModelSchemaPage() {
             {/* FC */}
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[#FF6B35]">🔗</span>
+                <span className="text-[#FF6B35]"><Link2 className="inline h-4 w-4" /></span>
                 <span className="font-semibold text-[#FF6B35]">Linear (FC)</span>
                 <span className="rounded bg-[#FF6B35]/20 px-2 py-0.5 text-xs text-[#FF6B35]">
                   {fcParams.toLocaleString()} params
@@ -375,7 +375,7 @@ export default function ModelSchemaPage() {
             {/* Close Extraction */}
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[#F59E0B]">🎯</span>
+                <span className="text-[#F59E0B]"><Target className="inline h-4 w-4" /></span>
                 <span className="font-semibold text-[#F59E0B]">Close Extraction</span>
                 <span className="rounded bg-[#F59E0B]/20 px-2 py-0.5 text-xs text-[#F59E0B]">
                   index [3]
@@ -388,7 +388,7 @@ export default function ModelSchemaPage() {
 
             {/* Output */}
             <div className="flex items-center gap-2">
-              <span className="text-[#96CEB4]">📤</span>
+              <span className="text-[#96CEB4]"><ArrowUp className="inline h-4 w-4" /></span>
               <span className="font-semibold text-[#96CEB4]">Output</span>
               <span className="rounded bg-[#96CEB4]/20 px-2 py-0.5 text-xs text-[#96CEB4]">
                 shape: (batch, 1) — Close Price
@@ -412,7 +412,7 @@ export default function ModelSchemaPage() {
       {/* Parameter Analysis */}
       <div>
         <div className="mb-3 flex items-center gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">📊 Parameter Analysis</p>
+          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/30"><BarChart3 className="h-3.5 w-3.5" /> Parameter Analysis</p>
           <div className="group relative">
             <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
             <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
@@ -480,7 +480,7 @@ export default function ModelSchemaPage() {
       {/* Layer Detail Table */}
       {params?.layers && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-          <SectionHeader title="📋 Detailed Layer Information" tooltip="Tabela com cada camada do modelo, sua forma (shape), número de parâmetros e tipo de dado. Permite entender onde estão concentrados os pesos do modelo." />
+          <SectionHeader title="Detailed Layer Information" tooltip="Tabela com cada camada do modelo, sua forma (shape), número de parâmetros e tipo de dado. Permite entender onde estão concentrados os pesos do modelo." />
           <div className="overflow-auto">
             <table className="w-full text-sm">
               <thead>
@@ -508,7 +508,7 @@ export default function ModelSchemaPage() {
 
       {/* Data Flow */}
       <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-          <SectionHeader title="🔄 Data Flow" tooltip="Fluxo completo dos dados desde a entrada até a previsão final. Mostra como os dados são transformados em cada etapa do modelo." />
+          <SectionHeader title="Data Flow" tooltip="Fluxo completo dos dados desde a entrada até a previsão final. Mostra como os dados são transformados em cada etapa do modelo." />
         <div className="space-y-4">
           {[
             { step: "1. Input Preparation", desc: `Historical prices are normalized and shaped into sequences of ${seqLength} time steps.`, shape: `(batch, ${seqLength}, ${inputSize})` },
@@ -535,7 +535,7 @@ export default function ModelSchemaPage() {
       {/* Training Configuration */}
       {Object.keys(trainingInfo).length > 0 && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-          <SectionHeader title="🎯 Training Configuration" tooltip="Hiperparâmetros usados no treinamento do modelo. Estes valores controlam a velocidade de aprendizado, regularização e critérios de parada." />
+          <SectionHeader title="Training Configuration" tooltip="Hiperparâmetros usados no treinamento do modelo. Estes valores controlam a velocidade de aprendizado, regularização e critérios de parada." />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <h4 className="mb-2 text-sm font-semibold text-white/60">Optimizer &amp; Learning</h4>
@@ -595,22 +595,22 @@ export default function ModelSchemaPage() {
             };
 
         const labelMap: Record<string, { label: string; icon: string; format: (v: number) => string }> = {
-          hidden_size: { label: "Hidden Size", icon: "🧠", format: (v) => String(v) },
-          num_layers: { label: "Num Layers", icon: "📚", format: (v) => String(v) },
-          learning_rate: { label: "Learning Rate", icon: "📈", format: (v) => v < 0.01 ? v.toExponential(2) : String(v) },
-          dropout: { label: "Dropout", icon: "💧", format: (v) => `${(v * 100).toFixed(0)}%` },
-          batch_size: { label: "Batch Size", icon: "📦", format: (v) => String(v) },
-          weight_decay: { label: "Weight Decay", icon: "⚖️", format: (v) => v < 0.01 ? v.toExponential(2) : String(v) },
-          sequence_length: { label: "Sequence Length", icon: "📏", format: (v) => String(v) },
-          epochs: { label: "Epochs", icon: "🔄", format: (v) => String(v) },
-          best_epoch: { label: "Best Epoch", icon: "🏅", format: (v) => String(v) },
-          total_epochs: { label: "Total Epochs", icon: "🔄", format: (v) => String(v) },
+          hidden_size: { label: "Hidden Size", icon: "▸", format: (v) => String(v) },
+          num_layers: { label: "Num Layers", icon: "▸", format: (v) => String(v) },
+          learning_rate: { label: "Learning Rate", icon: "▸", format: (v) => v < 0.01 ? v.toExponential(2) : String(v) },
+          dropout: { label: "Dropout", icon: "▸", format: (v) => `${(v * 100).toFixed(0)}%` },
+          batch_size: { label: "Batch Size", icon: "▸", format: (v) => String(v) },
+          weight_decay: { label: "Weight Decay", icon: "▸", format: (v) => v < 0.01 ? v.toExponential(2) : String(v) },
+          sequence_length: { label: "Sequence Length", icon: "▸", format: (v) => String(v) },
+          epochs: { label: "Epochs", icon: "▸", format: (v) => String(v) },
+          best_epoch: { label: "Best Epoch", icon: "▸", format: (v) => String(v) },
+          total_epochs: { label: "Total Epochs", icon: "▸", format: (v) => String(v) },
         };
 
         return (
           <div className="rounded-xl border border-amber-400/30 bg-gradient-to-br from-amber-400/5 to-transparent p-6">
             <SectionHeader
-              title="🏆 Best Parameters"
+              title="Best Parameters"
               tooltip={hasHpo
                 ? "Best hyperparameters found by automatic optimization (HPO — Hyperparameter Optimization). Selected via Bayesian search to maximize performance."
                 : "Parameters used to train the current model. This configuration produced the best result (lowest validation loss)."
@@ -628,7 +628,7 @@ export default function ModelSchemaPage() {
               {Object.entries(bestParams)
                 .filter(([, val]) => val !== "-" && val !== 0 && !isNaN(Number(val)))
                 .map(([key, val]) => {
-                  const meta = labelMap[key] ?? { label: key.replace(/_/g, " "), icon: "⚙️", format: (v: number) => String(v) };
+                  const meta = labelMap[key] ?? { label: key.replace(/_/g, " "), icon: "▸", format: (v: number) => String(v) };
                   return (
                     <div
                       key={key}

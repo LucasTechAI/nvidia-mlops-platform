@@ -31,11 +31,13 @@ PIDFILE="$PROJECT_ROOT/.services.pid"
 LOGDIR="$PROJECT_ROOT/logs/services"
 mkdir -p "$LOGDIR"
 
-# ─── Detect Python ───────────────────────────────────────────────────────────
+# ─── Activate & Detect Python ────────────────────────────────────────────────
 if [ -d "$PROJECT_ROOT/.venv" ]; then
+    source "$PROJECT_ROOT/.venv/bin/activate"
     PYTHON="$PROJECT_ROOT/.venv/bin/python"
     PIP="$PROJECT_ROOT/.venv/bin/pip"
 elif [ -d "$PROJECT_ROOT/venv" ]; then
+    source "$PROJECT_ROOT/venv/bin/activate"
     PYTHON="$PROJECT_ROOT/venv/bin/python"
     PIP="$PROJECT_ROOT/venv/bin/pip"
 else
@@ -68,15 +70,27 @@ stop_services() {
     fi
 
     # Kill any leftover processes on our ports
-    for port in 8000 3001 5000; do
-        pid=$(lsof -ti :"$port" 2>/dev/null || true)
-        if [ -n "$pid" ]; then
-            kill "$pid" 2>/dev/null || true
+    for port in 5000 8000 3001 8080; do
+        pids=$(lsof -ti :"$port" 2>/dev/null || true)
+        if [ -n "$pids" ]; then
+            for p in $pids; do
+                kill -9 "$p" 2>/dev/null || true
+            done
         fi
     done
 
-    # Stop Prometheus & Grafana containers if running (both old and new names)
+    # Stop Prometheus & Grafana Docker containers
     docker rm -f nvidia-prometheus nvidia-grafana prometheus grafana 2>/dev/null || true
+
+    # Kill anything still on Docker-mapped ports (9090, 3000)
+    for port in 9090 3000; do
+        pids=$(lsof -ti :"$port" 2>/dev/null || true)
+        if [ -n "$pids" ]; then
+            for p in $pids; do
+                kill -9 "$p" 2>/dev/null || true
+            done
+        fi
+    done
 
     echo -e "  ${GREEN}✅ All services stopped${NC}"
     echo ""
@@ -93,14 +107,15 @@ trap stop_services INT TERM
 
 # ─── Kill any process already using our ports ────────────────────────────────
 MYPID=$$
-for port in 5000 8000 3001 9090 3000; do
+for port in 5000 8000 3001 9090 3000 8080; do
     pids=$(lsof -ti :"$port" 2>/dev/null || true)
     if [ -n "$pids" ]; then
         echo -e "  ${YELLOW}⚠ Port $port in use — killing...${NC}"
-        for p in $pids; do
-            [ "$p" != "$MYPID" ] && kill -9 "$p" 2>/dev/null || true
-        done
+        fuser -k "$port"/tcp 2>/dev/null || true
         sleep 0.5
+        # Retry if still occupied (child processes may respawn)
+        fuser -k "$port"/tcp 2>/dev/null || true
+        sleep 0.3
     fi
 done
 
@@ -122,7 +137,7 @@ echo -e "${NC}"
 
 # ─── Helper ──────────────────────────────────────────────────────────────────
 wait_for() {
-    local url=$1 name=$2 max=${3:-20} i=0
+    local url=$1 name=$2 max=${3:-40} i=0
     printf "  Waiting for %-12s " "$name"
     while [ $i -lt $max ]; do
         if curl -sf "$url" > /dev/null 2>&1; then
@@ -140,7 +155,7 @@ wait_for() {
 # ═════════════════════════════════════════════════════════════════════════════
 # 1. MLflow UI  (:5000)
 # ═════════════════════════════════════════════════════════════════════════════
-echo -e "${CYAN}  [1/5] Starting MLflow UI...${NC}"
+echo -e "${CYAN}  [1/6] Starting MLflow UI...${NC}"
 $PYTHON -m mlflow ui \
     --backend-store-uri "$MLFLOW_TRACKING_URI" \
     --host 0.0.0.0 \
@@ -152,7 +167,7 @@ wait_for "http://localhost:5000" "MLflow"
 # ═════════════════════════════════════════════════════════════════════════════
 # 2. FastAPI  (:8000)
 # ═════════════════════════════════════════════════════════════════════════════
-echo -e "${CYAN}  [2/5] Starting FastAPI API...${NC}"
+echo -e "${CYAN}  [2/6] Starting FastAPI API...${NC}"
 cd "$PROJECT_ROOT"
 PYTHONPATH="$PROJECT_ROOT" $PYTHON -m uvicorn src.api.main:app \
     --host 0.0.0.0 \
@@ -165,15 +180,21 @@ wait_for "http://localhost:8000/health" "FastAPI"
 # ═════════════════════════════════════════════════════════════════════════════
 # 3. Next.js Dashboard  (:3001)
 # ═════════════════════════════════════════════════════════════════════════════
-echo -e "${CYAN}  [3/5] Starting Next.js Dashboard...${NC}"
+echo -e "${CYAN}  [3/6] Starting Next.js Dashboard...${NC}"
 cd "$PROJECT_ROOT/dashboard-frontend"
 if [ ! -d "node_modules" ]; then
     echo -e "  ${YELLOW}Installing frontend dependencies...${NC}"
     npm install > "$LOGDIR/npm-install.log" 2>&1
 fi
-# Build if .next doesn't exist
+# Rebuild if .next is missing or source files are newer than the build
+NEEDS_BUILD=false
 if [ ! -d ".next" ]; then
-    echo -e "  ${YELLOW}Building frontend (first time)...${NC}"
+    NEEDS_BUILD=true
+elif [ -n "$(find src/ -newer .next/BUILD_ID -print -quit 2>/dev/null)" ]; then
+    NEEDS_BUILD=true
+fi
+if [ "$NEEDS_BUILD" = true ]; then
+    echo -e "  ${YELLOW}Building frontend...${NC}"
     npx next build > "$LOGDIR/nextjs-build.log" 2>&1
 fi
 npm run start > "$LOGDIR/nextjs.log" 2>&1 &
@@ -184,7 +205,7 @@ wait_for "http://localhost:3001" "Next.js" 30
 # ═════════════════════════════════════════════════════════════════════════════
 # 4. Prometheus  (:9090)  — via Docker
 # ═════════════════════════════════════════════════════════════════════════════
-echo -e "${CYAN}  [4/5] Starting Prometheus...${NC}"
+echo -e "${CYAN}  [4/6] Starting Prometheus...${NC}"
 if command -v docker &> /dev/null && docker info &> /dev/null 2>&1; then
     docker rm -f nvidia-prometheus prometheus 2>/dev/null || true
     # Kill anything on port 9090
@@ -210,7 +231,7 @@ fi
 # ═════════════════════════════════════════════════════════════════════════════
 # 5. Grafana  (:3000)  — via Docker
 # ═════════════════════════════════════════════════════════════════════════════
-echo -e "${CYAN}  [5/5] Starting Grafana...${NC}"
+echo -e "${CYAN}  [5/6] Starting Grafana...${NC}"
 if command -v docker &> /dev/null && docker info &> /dev/null 2>&1; then
     docker rm -f nvidia-grafana grafana 2>/dev/null || true
     # Kill anything on port 3000
@@ -234,6 +255,23 @@ else
 fi
 
 # ═════════════════════════════════════════════════════════════════════════════
+# 6. Optuna Dashboard  (:8080)
+# ═════════════════════════════════════════════════════════════════════════════
+echo -e "${CYAN}  [6/6] Starting Optuna Dashboard...${NC}"
+# Kill anything already on port 8080
+for p in $(lsof -ti :8080 2>/dev/null); do [ "$p" != "$$" ] && kill -9 "$p" 2>/dev/null || true; done
+sleep 0.3
+OPTUNA_DB="$PROJECT_ROOT/outputs/optuna_studies.db"
+# Initialize the DB with Optuna schema if it doesn't exist or is empty
+if [ ! -s "$OPTUNA_DB" ]; then
+    $PYTHON -c "import optuna; optuna.storages.RDBStorage('sqlite:///$OPTUNA_DB')" 2>/dev/null || true
+fi
+optuna-dashboard "sqlite:///$OPTUNA_DB" --port 8080 --host 0.0.0.0 --quiet \
+    > "$LOGDIR/optuna-dashboard.log" 2>&1 &
+echo "optuna_dashboard=$!" >> "$PIDFILE"
+wait_for "http://localhost:8080" "Optuna" 15
+
+# ═════════════════════════════════════════════════════════════════════════════
 # Summary
 # ═════════════════════════════════════════════════════════════════════════════
 echo ""
@@ -245,6 +283,7 @@ echo -e "  ${CYAN}Next.js${NC}      http://localhost:3001"
 echo -e "  ${CYAN}MLflow${NC}       http://localhost:5000"
 echo -e "  ${CYAN}Prometheus${NC}   http://localhost:9090"
 echo -e "  ${CYAN}Grafana${NC}      http://localhost:3000  (admin/admin)"
+echo -e "  ${CYAN}Optuna${NC}       http://localhost:8080"
 echo ""
 echo -e "  Logs: ${YELLOW}logs/services/*.log${NC}"
 echo -e "  Stop: ${YELLOW}bash scripts/run_services.sh --stop${NC} or Ctrl+C"

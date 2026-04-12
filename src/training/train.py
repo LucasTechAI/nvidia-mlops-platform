@@ -304,6 +304,7 @@ def train_model(
     config: Dict,
     device: torch.device,
     mlflow_tracking: bool = True,
+    test_data: Optional[Tuple[np.ndarray, np.ndarray]] = None,
 ) -> Tuple[nn.Module, Dict]:
     """
     Complete training pipeline with MLflow tracking.
@@ -315,6 +316,7 @@ def train_model(
         config: Configuration dictionary with training parameters
         device: Device to train on
         mlflow_tracking: Whether to use MLflow tracking
+        test_data: Optional tuple of (X_test, y_test) for per-epoch test tracking
 
     Returns:
         Tuple of (trained_model, training_history)
@@ -334,6 +336,14 @@ def train_model(
 
     train_loader = DataLoader(train_dataset, batch_size=config.get("batch_size", 32), shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=config.get("batch_size", 32), shuffle=False)
+
+    # Create test loader if test_data is provided
+    test_loader = None
+    if test_data is not None:
+        X_test_t = torch.FloatTensor(test_data[0])
+        y_test_t = torch.FloatTensor(test_data[1])
+        test_dataset = TensorDataset(X_test_t, y_test_t)
+        test_loader = DataLoader(test_dataset, batch_size=config.get("batch_size", 32), shuffle=False)
 
     # Setup training
     criterion = nn.MSELoss()
@@ -361,6 +371,10 @@ def train_model(
         "val_mape": [],
         "train_r2": [],
         "val_r2": [],
+        "test_loss": [],
+        "test_rmse": [],
+        "test_mae": [],
+        "test_r2": [],
     }
 
     # Early stopping
@@ -391,6 +405,14 @@ def train_model(
         history["train_r2"].append(train_metrics["r2"])
         history["val_r2"].append(val_metrics["r2"])
 
+        # Evaluate on test set if available
+        if test_loader is not None:
+            test_loss, test_metrics = validate_epoch(model, test_loader, criterion, device)
+            history["test_loss"].append(test_loss)
+            history["test_rmse"].append(test_metrics["rmse"])
+            history["test_mae"].append(test_metrics["mae"])
+            history["test_r2"].append(test_metrics["r2"])
+
         # Log to MLflow
         if mlflow_tracking:
             mlflow.log_metric("train_loss", train_loss, step=epoch)
@@ -402,6 +424,11 @@ def train_model(
             mlflow.log_metric("val_mape", val_metrics["mape"], step=epoch)
             mlflow.log_metric("train_r2", train_metrics["r2"], step=epoch)
             mlflow.log_metric("val_r2", val_metrics["r2"], step=epoch)
+            if test_loader is not None:
+                mlflow.log_metric("test_loss", history["test_loss"][-1], step=epoch)
+                mlflow.log_metric("test_rmse", history["test_rmse"][-1], step=epoch)
+                mlflow.log_metric("test_mae", history["test_mae"][-1], step=epoch)
+                mlflow.log_metric("test_r2", history["test_r2"][-1], step=epoch)
 
         # Log progress
         if (epoch + 1) % 10 == 0 or epoch == 0:
