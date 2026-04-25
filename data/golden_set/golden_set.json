@@ -1,227 +1,227 @@
 [
   {
     "id": 1,
-    "query": "What was NVIDIA's closing price yesterday?",
-    "expected_answer": "The most recent closing price of NVIDIA (NVDA) can be consulted in the historical data available in the database. Use the data query tool to get the updated value.",
+    "query": "Qual foi o preço de fechamento da NVIDIA ontem?",
+    "expected_answer": "O preço de fechamento mais recente da NVIDIA (NVDA) pode ser consultado nos dados históricos disponíveis no banco de dados. Utilize a ferramenta de consulta de dados para obter o valor atualizado.",
     "contexts": [
-      "NVIDIA Corporation (NVDA) is a leading semiconductor company listed on NASDAQ.",
-      "Historical price data includes Open, High, Low, Close, and Volume."
+      "NVIDIA Corporation (NVDA) é uma empresa líder em semicondutores listada na NASDAQ.",
+      "Os dados históricos de preço incluem Open, High, Low, Close e Volume."
     ]
   },
   {
     "id": 2,
-    "query": "What is the NVIDIA price forecast for the next 5 days?",
-    "expected_answer": "Based on the trained LSTM model, forecasts for the next 5 days are generated with confidence intervals. Forecasts should be interpreted as estimates and not as investment recommendations.",
+    "query": "Qual é a previsão de preço da NVIDIA para os próximos 5 dias?",
+    "expected_answer": "Com base no modelo LSTM treinado, as previsões para os próximos 5 dias são geradas com intervalos de confiança. As previsões devem ser interpretadas como estimativas e não como recomendações de investimento.",
     "contexts": [
-      "The LSTM model is trained with historical Open, High, Low, Close, and Volume data from NVIDIA.",
-      "Forecasts include confidence intervals calculated via Monte Carlo Dropout."
+      "O modelo LSTM é treinado com dados históricos de Open, High, Low, Close e Volume da NVIDIA.",
+      "As previsões incluem intervalos de confiança calculados via Monte Carlo Dropout."
     ]
   },
   {
     "id": 3,
-    "query": "How accurate is the prediction model?",
-    "expected_answer": "The LSTM model's accuracy can be evaluated through metrics such as RMSE, MAE, and R² score on the test set. Typical stock prediction models achieve reasonable accuracy for short-term forecasts but accuracy decreases for longer horizons.",
+    "query": "Qual é a acurácia do modelo de previsão?",
+    "expected_answer": "A acurácia do modelo LSTM pode ser avaliada por métricas como RMSE, MAE e R² no conjunto de teste. Modelos típicos de previsão de ações atingem acurácia razoável para previsões de curto prazo, mas a precisão diminui para horizontes mais longos.",
     "contexts": [
-      "Model evaluation metrics include RMSE, MAE, MAPE, and R² score.",
-      "The model uses 70/15/15 train/validation/test split."
+      "As métricas de avaliação do modelo incluem RMSE, MAE, MAPE e R².",
+      "O modelo utiliza divisão 70/15/15 para treino, validação e teste."
     ]
   },
   {
     "id": 4,
-    "query": "What is NVIDIA's price trend over the last month?",
-    "expected_answer": "NVIDIA's price trend over the last month can be analyzed through historical closing data. It is possible to identify whether there was an uptrend, downtrend, or sideways movement by comparing prices over the period.",
+    "query": "Qual é a tendência de preço da NVIDIA no último mês?",
+    "expected_answer": "A tendência de preço da NVIDIA no último mês pode ser analisada pelos dados históricos de fechamento. É possível identificar se houve tendência de alta, baixa ou movimento lateral comparando os preços ao longo do período.",
     "contexts": [
-      "Trend analysis uses closing price data over time.",
-      "Trends can be classified as bullish (uptrend), bearish (downtrend), or sideways."
+      "A análise de tendência utiliza dados de preço de fechamento ao longo do tempo.",
+      "As tendências podem ser classificadas como bullish (alta), bearish (baixa) ou lateral."
     ]
   },
   {
     "id": 5,
-    "query": "What features does the LSTM model use?",
-    "expected_answer": "The LSTM model uses 5 features: Open (opening price), High (daily high), Low (daily low), Close (closing price), and Volume (trading volume). Data is normalized using MinMaxScaler.",
+    "query": "Quais features o modelo LSTM utiliza?",
+    "expected_answer": "O modelo LSTM utiliza 5 features: Open (preço de abertura), High (máxima diária), Low (mínima diária), Close (preço de fechamento) e Volume (volume negociado). Os dados são normalizados usando MinMaxScaler.",
     "contexts": [
-      "The LSTM model takes 5 input features: Open, High, Low, Close, and Volume.",
-      "Normalization is done with scikit-learn's MinMaxScaler to scale data between 0 and 1."
+      "O modelo LSTM recebe 5 features de entrada: Open, High, Low, Close e Volume.",
+      "A normalização é feita com MinMaxScaler do scikit-learn para escalar os dados entre 0 e 1."
     ]
   },
   {
     "id": 6,
-    "query": "What is the architecture of the neural network?",
-    "expected_answer": "The model is a bidirectional LSTM with 2 layers, 128 hidden units, dropout of 0.2, sequence length of 60 days, and 5 input features. It outputs predictions for all 5 features (Open, High, Low, Close, Volume).",
+    "query": "Qual é a arquitetura da rede neural?",
+    "expected_answer": "O modelo é um LSTM bidirecional com 2 camadas, 128 unidades ocultas, dropout de 0.2, sequence length de 60 dias e 5 features de entrada. Ele gera previsões para todas as 5 features (Open, High, Low, Close, Volume).",
     "contexts": [
-      "Architecture: LSTM with input_size=5, hidden_size=128, num_layers=2, dropout=0.2.",
-      "The sequence_length is 60 days, meaning the model uses 60 days of history for each prediction."
+      "Arquitetura: LSTM com input_size=5, hidden_size=128, num_layers=2, dropout=0.2.",
+      "O sequence_length é de 60 dias, ou seja, o modelo usa 60 dias de histórico para cada previsão."
     ]
   },
   {
     "id": 7,
-    "query": "What is NVIDIA's average trading volume?",
-    "expected_answer": "NVIDIA's average trading volume can be obtained from the historical data available in the database. Volume is one of the 5 features used by the prediction model.",
+    "query": "Qual é o volume médio de negociação da NVIDIA?",
+    "expected_answer": "O volume médio de negociação da NVIDIA pode ser obtido nos dados históricos disponíveis no banco de dados. O Volume é uma das 5 features utilizadas pelo modelo de previsão.",
     "contexts": [
-      "Volume is the number of shares traded in a day.",
-      "Volume is an important feature for technical analysis and is used by the LSTM model."
+      "Volume é o número de ações negociadas em um dia.",
+      "O Volume é uma feature importante para análise técnica e é utilizada pelo modelo LSTM."
     ]
   },
   {
     "id": 8,
-    "query": "Can the model be used for investment decisions?",
-    "expected_answer": "The LSTM model provides statistical forecasts based on historical data, but it should NOT be used as the sole basis for investment decisions. Market predictions have inherent uncertainty. Consult a certified financial professional before investing.",
+    "query": "O modelo pode ser usado para decisões de investimento?",
+    "expected_answer": "O modelo LSTM fornece previsões estatísticas baseadas em dados históricos, mas NÃO deve ser usado como única base para decisões de investimento. Previsões de mercado têm incerteza inerente. Consulte um profissional financeiro certificado antes de investir.",
     "contexts": [
-      "RISK WARNING: Stock price predictions are not investment recommendations.",
-      "Machine learning models for financial forecasting have limitations and do not guarantee future results."
+      "AVISO DE RISCO: Previsões de preços de ações não são recomendações de investimento.",
+      "Modelos de machine learning para previsão financeira têm limitações e não garantem resultados futuros."
     ]
   },
   {
     "id": 9,
-    "query": "How was the model trained?",
-    "expected_answer": "Training uses NVIDIA historical data since 2017, split into 70% training, 15% validation, and 15% test. The optimizer is Adam with learning rate 0.001, loss function MSE, batch size 32, and early stopping with patience of 10 epochs. Tracking is done via MLflow.",
+    "query": "Como o modelo foi treinado?",
+    "expected_answer": "O treinamento utiliza dados históricos da NVIDIA desde 2017, divididos em 70% treino, 15% validação e 15% teste. O otimizador é Adam com learning rate 0.001, função de perda MSE, batch size 32 e early stopping com paciência de 10 épocas. O rastreamento é feito via MLflow.",
     "contexts": [
-      "Training parameters: batch_size=32, epochs=100, learning_rate=0.001, optimizer=Adam.",
-      "Early stopping with patience=10 prevents overfitting. MLflow records metrics and artifacts."
+      "Parâmetros de treino: batch_size=32, epochs=100, learning_rate=0.001, optimizer=Adam.",
+      "Early stopping com patience=10 previne overfitting. O MLflow registra métricas e artefatos."
     ]
   },
   {
     "id": 10,
-    "query": "What is NVIDIA's market position?",
-    "expected_answer": "NVIDIA Corporation is a leading semiconductor company specializing in GPU design. It is a key player in AI, gaming, data centers, and autonomous vehicles. Listed on NASDAQ as NVDA, it's one of the most valuable technology companies globally.",
+    "query": "Qual é a posição da NVIDIA no mercado?",
+    "expected_answer": "A NVIDIA Corporation é uma empresa líder em semicondutores especializada em design de GPUs. É um player fundamental em IA, gaming, data centers e veículos autônomos. Listada na NASDAQ como NVDA, é uma das empresas de tecnologia mais valiosas do mundo.",
     "contexts": [
-      "NVIDIA Corporation is a global leader in GPUs and semiconductors for AI and gaming.",
-      "Listed on NASDAQ as NVDA, the company is a dominant player in accelerated computing."
+      "NVIDIA Corporation é líder global em GPUs e semicondutores para IA e gaming.",
+      "Listada na NASDAQ como NVDA, a empresa é dominante em computação acelerada."
     ]
   },
   {
     "id": 11,
-    "query": "What is the difference between NVIDIA's high and low price today?",
-    "expected_answer": "The difference between the day's high and low price represents intraday volatility. This value can be consulted in the most recent historical data from the database.",
+    "query": "Qual é a diferença entre o preço máximo e mínimo da NVIDIA hoje?",
+    "expected_answer": "A diferença entre o High e o Low do dia representa a volatilidade intradiária. Este valor pode ser consultado nos dados históricos mais recentes do banco de dados.",
     "contexts": [
-      "High and Low represent the maximum and minimum prices reached during the trading session.",
-      "The High-Low spread is an indicator of intraday volatility."
+      "High e Low representam os preços máximo e mínimo atingidos durante a sessão de negociação.",
+      "O spread High-Low é um indicador de volatilidade intradiária."
     ]
   },
   {
     "id": 12,
-    "query": "How does the system's RAG pipeline work?",
-    "expected_answer": "The RAG (Retrieval-Augmented Generation) pipeline uses ChromaDB as a vector store to index knowledge documents about NVIDIA and the model. When a question is asked, the system retrieves the most relevant documents to enrich the LLM's context, improving response quality.",
+    "query": "Como funciona o pipeline RAG do sistema?",
+    "expected_answer": "O pipeline RAG (Retrieval-Augmented Generation) utiliza o ChromaDB como vector store para indexar documentos de conhecimento sobre a NVIDIA e o modelo. Quando uma pergunta é feita, o sistema recupera os documentos mais relevantes para enriquecer o contexto do LLM, melhorando a qualidade das respostas.",
     "contexts": [
-      "RAG combines document retrieval with text generation by an LLM.",
-      "ChromaDB stores document embeddings for semantic similarity search."
+      "RAG combina recuperação de documentos com geração de texto por um LLM.",
+      "O ChromaDB armazena embeddings de documentos para busca por similaridade semântica."
     ]
   },
   {
     "id": 13,
-    "query": "What evaluation metrics are used in the model?",
-    "expected_answer": "Evaluation metrics include: RMSE (Root Mean Square Error), MAE (Mean Absolute Error), MAPE (Mean Absolute Percentage Error), and R² (coefficient of determination). These metrics are calculated on the test set and recorded in MLflow.",
+    "query": "Quais métricas de avaliação são usadas no modelo?",
+    "expected_answer": "As métricas de avaliação incluem: RMSE (Root Mean Square Error), MAE (Mean Absolute Error), MAPE (Mean Absolute Percentage Error) e R² (coeficiente de determinação). Essas métricas são calculadas no conjunto de teste e registradas no MLflow.",
     "contexts": [
-      "RMSE and MAE measure the absolute error of predictions against actual values.",
-      "R² indicates the proportion of variance explained by the model, ranging from 0 to 1."
+      "RMSE e MAE medem o erro absoluto das previsões em relação aos valores reais.",
+      "R² indica a proporção da variância explicada pelo modelo, variando de 0 a 1."
     ]
   },
   {
     "id": 14,
-    "query": "Is it possible to retrain the model with new data?",
-    "expected_answer": "Yes, the model can be retrained through the /train endpoint of the API or via the training script. New data can be fetched from Yahoo Finance, and the model will be retrained with updated hyperparameters. All training runs are tracked in MLflow.",
+    "query": "É possível retreinar o modelo com novos dados?",
+    "expected_answer": "Sim, o modelo pode ser retreinado pelo endpoint /train da API ou via script de treinamento. Novos dados podem ser obtidos do Yahoo Finance e o modelo será retreinado com hiperparâmetros atualizados. Todas as execuções de treino são rastreadas no MLflow.",
     "contexts": [
-      "The POST /train endpoint allows starting a new model training run.",
-      "MLflow records each training run with parameters, metrics, and artifacts."
+      "O endpoint POST /train permite iniciar uma nova execução de treinamento do modelo.",
+      "O MLflow registra cada execução de treino com parâmetros, métricas e artefatos."
     ]
   },
   {
     "id": 15,
-    "query": "What is Monte Carlo Dropout and how is it used in predictions?",
-    "expected_answer": "Monte Carlo Dropout is a technique that keeps dropout active during inference, generating multiple different predictions for the same input. The variation between predictions is used to estimate model uncertainty, generating confidence intervals for predictions.",
+    "query": "O que é Monte Carlo Dropout e como é usado nas previsões?",
+    "expected_answer": "Monte Carlo Dropout é uma técnica que mantém o dropout ativo durante a inferência, gerando múltiplas previsões diferentes para a mesma entrada. A variação entre as previsões é usada para estimar a incerteza do modelo, gerando intervalos de confiança para as previsões.",
     "contexts": [
-      "Monte Carlo Dropout enables uncertainty estimation by keeping dropout active during inference.",
-      "Multiple samples are generated to compute the mean and standard deviation of predictions."
+      "Monte Carlo Dropout permite estimar incerteza mantendo o dropout ativo na inferência.",
+      "Múltiplas amostras são geradas para calcular a média e o desvio padrão das previsões."
     ]
   },
   {
     "id": 16,
-    "query": "What are the risks of investing based on AI predictions?",
-    "expected_answer": "The main risks include: (1) overfitting to historical data, (2) inability to predict black swan events, (3) market regime changes, (4) spurious correlations, (5) bias in training data. AI predictions are complementary tools and do not replace professional analysis.",
+    "query": "Quais são os riscos de investir com base em previsões de IA?",
+    "expected_answer": "Os principais riscos incluem: (1) overfitting a dados históricos, (2) incapacidade de prever eventos black swan, (3) mudanças de regime de mercado, (4) correlações espúrias, (5) viés nos dados de treino. Previsões de IA são ferramentas complementares e não substituem análise profissional.",
     "contexts": [
-      "WARNING: ML models do not capture unpredictable events such as crises, pandemics, or regulatory changes.",
-      "Stock investments carry a risk of loss. Past results do not guarantee future returns."
+      "AVISO: Modelos de ML não capturam eventos imprevisíveis como crises, pandemias ou mudanças regulatórias.",
+      "Investimentos em ações carregam risco de perda. Resultados passados não garantem retornos futuros."
     ]
   },
   {
     "id": 17,
-    "query": "How does the system detect data drift?",
-    "expected_answer": "The system uses PSI (Population Stability Index) with the Evidently library to detect data drift. A PSI > 0.1 generates a warning alert, and PSI > 0.2 triggers an automatic model retraining.",
+    "query": "Como o sistema detecta data drift?",
+    "expected_answer": "O sistema usa PSI (Population Stability Index) com a biblioteca Evidently para detectar data drift. Um PSI > 0.1 gera um alerta de aviso, e PSI > 0.2 aciona o retreinamento automático do modelo.",
     "contexts": [
-      "PSI (Population Stability Index) compares the distribution of current data against training data.",
-      "Evidently is an open-source library for ML model monitoring."
+      "PSI (Population Stability Index) compara a distribuição dos dados atuais com os dados de treino.",
+      "Evidently é uma biblioteca open-source para monitoramento de modelos de ML."
     ]
   },
   {
     "id": 18,
-    "query": "What data sources does the system use?",
-    "expected_answer": "The system uses Yahoo Finance (via yfinance library) as the primary data source for NVIDIA stock data (ticker: NVDA). Historical data is stored in a SQLite database and includes Open, High, Low, Close prices and trading Volume.",
+    "query": "Quais fontes de dados o sistema utiliza?",
+    "expected_answer": "O sistema usa o Yahoo Finance (via biblioteca yfinance) como fonte primária de dados de ações da NVIDIA (ticker: NVDA). Os dados históricos são armazenados em um banco SQLite e incluem preços Open, High, Low, Close e Volume de negociação.",
     "contexts": [
-      "Data obtained from Yahoo Finance via the yfinance library for the NVDA ticker.",
-      "SQLite is used as a local database to store processed historical data."
+      "Dados obtidos do Yahoo Finance via biblioteca yfinance para o ticker NVDA.",
+      "SQLite é usado como banco de dados local para armazenar os dados históricos processados."
     ]
   },
   {
     "id": 19,
-    "query": "What sequence length is used and why?",
-    "expected_answer": "The sequence length is 60 days, meaning the model uses a sliding window of 60 consecutive days of data to make each prediction. This value was chosen to capture medium-term market patterns, covering approximately 3 months of trading data.",
+    "query": "Qual sequence length é usada e por quê?",
+    "expected_answer": "O sequence length é de 60 dias, ou seja, o modelo usa uma janela deslizante de 60 dias consecutivos de dados para fazer cada previsão. Esse valor foi escolhido para capturar padrões de mercado de médio prazo, cobrindo aproximadamente 3 meses de dados de negociação.",
     "contexts": [
-      "A sequence length of 60 days allows capturing medium-term temporal patterns.",
-      "The 60-day sliding window generates the input sequences for the LSTM model."
+      "Um sequence length de 60 dias permite capturar padrões temporais de médio prazo.",
+      "A janela deslizante de 60 dias gera as sequências de entrada para o modelo LSTM."
     ]
   },
   {
     "id": 20,
-    "query": "How can I access the system's API?",
-    "expected_answer": "The API is available on port 8000. The main endpoints are: GET /health (status), POST /predict (predictions), POST /train (training), GET /data/historical (data), POST /agent/query (AI agent). Interactive documentation is at /docs (Swagger UI) or /redoc.",
+    "query": "Como posso acessar a API do sistema?",
+    "expected_answer": "A API está disponível na porta 8000. Os principais endpoints são: GET /health (status), POST /predict (previsões), POST /train (treinamento), GET /data/historical (dados), POST /agent/query (agente de IA). A documentação interativa está em /docs (Swagger UI) ou /redoc.",
     "contexts": [
-      "The FastAPI runs on port 8000 with automatic documentation via Swagger UI.",
-      "Available endpoints: /health, /predict, /train, /data, /agent/query."
+      "A FastAPI roda na porta 8000 com documentação automática via Swagger UI.",
+      "Endpoints disponíveis: /health, /predict, /train, /data, /agent/query."
     ]
   },
   {
     "id": 21,
-    "query": "Does the model account for dividends and stock splits?",
-    "expected_answer": "Yahoo Finance data includes adjusted prices that account for splits and dividends. However, the LSTM model uses raw prices (Open, High, Low, Close) and Volume, so corporate events may cause discontinuities in the learned patterns.",
+    "query": "O modelo considera dividendos e desdobramentos de ações?",
+    "expected_answer": "Os dados do Yahoo Finance incluem preços ajustados que consideram splits e dividendos. Porém, o modelo LSTM usa preços brutos (Open, High, Low, Close) e Volume, então eventos corporativos podem causar descontinuidades nos padrões aprendidos.",
     "contexts": [
-      "Yahoo Finance provides adjusted data (Adj Close) that incorporates splits and dividends.",
-      "Corporate events such as stock splits can cause discontinuities in historical data."
+      "O Yahoo Finance fornece dados ajustados (Adj Close) que incorporam splits e dividendos.",
+      "Eventos corporativos como desdobramentos de ações podem causar descontinuidades nos dados históricos."
     ]
   },
   {
     "id": 22,
-    "query": "What security measures protect the agent?",
-    "expected_answer": "The agent is protected by: (1) Input guardrails that detect prompt injection attempts and validate topics, (2) Output guardrails with PII detection using Presidio, (3) Content filtering to prevent harmful outputs, (4) Max input length restrictions, and (5) OWASP LLM Top 10 compliance checks.",
+    "query": "Quais medidas de segurança protegem o agente?",
+    "expected_answer": "O agente é protegido por: (1) guardrails de entrada que detectam tentativas de prompt injection e validam tópicos, (2) guardrails de saída com detecção de PII usando Presidio, (3) filtragem de conteúdo para evitar saídas prejudiciais, (4) restrições de tamanho máximo de entrada, e (5) verificações de conformidade com OWASP LLM Top 10.",
     "contexts": [
-      "Input guardrails detect prompt injection attempts and validate the topic.",
-      "Presidio is used for detection and anonymization of PII (personally identifiable information)."
+      "Guardrails de entrada detectam tentativas de prompt injection e validam o tópico.",
+      "Presidio é usado para detecção e anonimização de PII (informações pessoalmente identificáveis)."
     ]
   },
   {
     "id": 23,
-    "query": "What is the typical latency of a prediction?",
-    "expected_answer": "Prediction latency depends on available hardware. On CPU, a 30-day forecast typically takes between 0.5 and 2 seconds. The time is monitored via Prometheus metrics. The ReAct agent may take longer (5–15s) due to LLM calls.",
+    "query": "Qual é a latência típica de uma previsão?",
+    "expected_answer": "A latência de previsão depende do hardware disponível. Em CPU, uma previsão de 30 dias tipicamente leva entre 0,5 e 2 segundos. O tempo é monitorado via métricas Prometheus. O agente ReAct pode demorar mais (5–15s) devido às chamadas ao LLM.",
     "contexts": [
-      "Latency metrics are collected by Prometheus for continuous monitoring.",
-      "The ReAct agent involves multiple LLM calls, increasing total latency."
+      "Métricas de latência são coletadas pelo Prometheus para monitoramento contínuo.",
+      "O agente ReAct envolve múltiplas chamadas ao LLM, aumentando a latência total."
     ]
   },
   {
     "id": 24,
-    "query": "How does the system handle missing data?",
-    "expected_answer": "The preprocessing pipeline includes missing data handling: (1) removal of rows with NaN in critical columns, (2) forward fill to fill small gaps in time series, (3) data integrity validation before training.",
+    "query": "Como o sistema lida com dados ausentes?",
+    "expected_answer": "O pipeline de pré-processamento inclui tratamento de dados ausentes: (1) remoção de linhas com NaN em colunas críticas, (2) forward fill para preencher lacunas pequenas na série temporal, (3) validação de integridade dos dados antes do treinamento.",
     "contexts": [
-      "Preprocessing includes handling NaN values and data normalization.",
-      "Stock market data may have gaps on holidays and weekends."
+      "O pré-processamento inclui tratamento de valores NaN e normalização dos dados.",
+      "Dados do mercado de ações podem ter lacunas em feriados e fins de semana."
     ]
   },
   {
     "id": 25,
-    "query": "What is MLflow and how is it used in the project?",
-    "expected_answer": "MLflow is an open-source platform for ML lifecycle management. In the project, it is used for: (1) experiment tracking (parameters, metrics, artifacts), (2) model registry, (3) comparison of different training runs. The MLflow UI is accessible on port 5000.",
+    "query": "O que é MLflow e como é usado no projeto?",
+    "expected_answer": "MLflow é uma plataforma open-source para gerenciamento do ciclo de vida de ML. No projeto, é usado para: (1) rastreamento de experimentos (parâmetros, métricas, artefatos), (2) registro de modelos (Model Registry), (3) comparação de diferentes execuções de treinamento. A interface do MLflow está acessível na porta 5000.",
     "contexts": [
-      "MLflow records each run with parameters, metrics, and model artifacts.",
-      "The MLflow UI allows visually comparing different training runs."
+      "O MLflow registra cada execução com parâmetros, métricas e artefatos do modelo.",
+      "A interface do MLflow permite comparar visualmente diferentes execuções de treinamento."
     ]
   }
 ]
