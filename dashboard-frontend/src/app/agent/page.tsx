@@ -4,15 +4,16 @@ import { useRef, useState, useEffect } from "react";
 import { Send, Trash2, Sparkles, Bot, Brain, XCircle, Cpu, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { api } from "@/lib/api";
+import { PageHeader } from "@/components/page-header";
 
 /* ── LLM Model Info (read from env via API or hardcoded fallback) ── */
 const MODEL_INFO: Record<string, { name: string; provider: string; strengths: string; speed: string; context: string }> = {
-  "google/gemini-2.0-flash-001": { name: "Gemini 2.0 Flash", provider: "Google (via OpenRouter)", strengths: "Fast, cost-effective, great for structured Q&A", speed: "~0.3s/req", context: "1M tokens" },
-  "google/gemini-2.5-pro-preview": { name: "Gemini 2.5 Pro", provider: "Google (via OpenRouter)", strengths: "Top-tier reasoning, deep analysis", speed: "~1.5s/req", context: "1M tokens" },
-  "openai/gpt-4o": { name: "GPT-4o", provider: "OpenAI (via OpenRouter)", strengths: "Multimodal, strong general reasoning", speed: "~0.8s/req", context: "128K tokens" },
-  "openai/gpt-4o-mini": { name: "GPT-4o Mini", provider: "OpenAI (via OpenRouter)", strengths: "Balanced cost/performance", speed: "~0.3s/req", context: "128K tokens" },
-  "anthropic/claude-sonnet-4": { name: "Claude Sonnet 4", provider: "Anthropic (via OpenRouter)", strengths: "Excellent at analysis and long-form", speed: "~1.0s/req", context: "200K tokens" },
-  "meta-llama/llama-4-maverick": { name: "Llama 4 Maverick", provider: "Meta (via OpenRouter)", strengths: "Open-source, fast inference", speed: "~0.2s/req", context: "128K tokens" },
+  "google/gemini-2.0-flash-001": { name: "Gemini 2.0 Flash", provider: "Google (via OpenRouter)", strengths: "Rápido, econômico, ótimo para Q&A estruturado", speed: "~0.3s/req", context: "1M tokens" },
+  "google/gemini-2.5-pro-preview": { name: "Gemini 2.5 Pro", provider: "Google (via OpenRouter)", strengths: "Raciocínio avançado, análise profunda", speed: "~1.5s/req", context: "1M tokens" },
+  "openai/gpt-4o": { name: "GPT-4o", provider: "OpenAI (via OpenRouter)", strengths: "Multimodal, raciocínio geral forte", speed: "~0.8s/req", context: "128K tokens" },
+  "openai/gpt-4o-mini": { name: "GPT-4o Mini", provider: "OpenAI (via OpenRouter)", strengths: "Equilíbrio custo/desempenho", speed: "~0.3s/req", context: "128K tokens" },
+  "anthropic/claude-sonnet-4": { name: "Claude Sonnet 4", provider: "Anthropic (via OpenRouter)", strengths: "Excelente em análise e textos longos", speed: "~1.0s/req", context: "200K tokens" },
+  "meta-llama/llama-4-maverick": { name: "Llama 4 Maverick", provider: "Meta (via OpenRouter)", strengths: "Open-source, inferência rápida", speed: "~0.2s/req", context: "128K tokens" },
 };
 
 interface Message {
@@ -25,10 +26,10 @@ interface Message {
 }
 
 const EXAMPLE_QUERIES = [
-  "What is the current NVIDIA stock trend?",
-  "Analyze NVIDIA's financial performance this quarter",
-  "What are the main risks for NVIDIA stock?",
-  "Compare NVIDIA with AMD in the GPU market",
+  "Qual é a tendência atual das ações da NVIDIA?",
+  "Analise o desempenho financeiro da NVIDIA neste trimestre",
+  "Quais são os principais riscos para as ações da NVIDIA?",
+  "Compare NVIDIA e AMD no mercado de GPUs",
 ];
 
 export default function AgentPage() {
@@ -94,7 +95,7 @@ export default function AgentPage() {
     } catch (err) {
       const errorMsg: Message = {
         role: "assistant",
-        content: `Error: ${err instanceof Error ? err.message : "Failed to get response"}`,
+        content: `Error: ${err instanceof Error ? err.message : "Falha ao obter resposta"}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -106,22 +107,25 @@ export default function AgentPage() {
   const clearChat = () => setMessages([]);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col">
+    <div className="mx-auto max-w-7xl flex h-[calc(100vh-4rem)] flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4">
-        <div>
-          <h2 className="flex items-center gap-2 text-2xl font-semibold"><Bot className="h-6 w-6 text-nvidia" /> AI Agent</h2>
-          <p className="mt-1 text-sm text-white/50">
-            ReAct agent with RAG for financial analysis and Q&amp;A
-          </p>
-        </div>
+      <div className="pb-2">
+        <PageHeader
+          label="RAG · Conversacional"
+          title="Agente de"
+          gradient="IA"
+          subtitle="Agente ReAct com RAG para análise financeira e perguntas e respostas."
+          icon={Bot}
+        />
         {messages.length > 0 && (
-          <button
-            onClick={clearChat}
-            className="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-hover px-3 py-2 text-xs text-white/50 hover:text-white"
-          >
-            <Trash2 className="h-3.5 w-3.5" /> Clear Chat
-          </button>
+          <div className="mt-3 flex justify-center">
+            <button
+              onClick={clearChat}
+              className="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-hover px-3 py-2 text-xs text-white/50 hover:text-white"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Limpar chat
+            </button>
+          </div>
         )}
       </div>
 
@@ -130,7 +134,7 @@ export default function AgentPage() {
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <Cpu className="h-4 w-4 text-nvidia" />
-            <span className="text-xs font-semibold text-white/60">Active Model</span>
+            <span className="text-xs font-semibold text-white/60">Modelo Ativo</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-nvidia/20 px-2.5 py-0.5 text-xs font-bold text-nvidia">{modelInfo.name}</span>
@@ -138,7 +142,7 @@ export default function AgentPage() {
           </div>
           <div className="hidden items-center gap-3 text-[11px] text-white/40 sm:flex">
             <span className="flex items-center gap-1"><Zap className="h-3 w-3 text-amber-400" />{modelInfo.speed}</span>
-            <span>Context: {modelInfo.context}</span>
+            <span>Contexto: {modelInfo.context}</span>
             <span className="text-white/25">|</span>
             <span>{modelInfo.strengths}</span>
           </div>
@@ -152,10 +156,10 @@ export default function AgentPage() {
           <div className="flex h-full flex-col items-center justify-center">
             <Sparkles className="mb-4 h-12 w-12 text-nvidia/30" />
             <h3 className="text-lg font-semibold text-white/30">
-              Ask me anything about NVIDIA
+              Pergunte-me qualquer coisa sobre NVIDIA
             </h3>
             <p className="mt-2 text-sm text-white/20">
-              Financial analysis, stock predictions, market insights
+              Análise financeira, predições de preço, insights de mercado
             </p>
             <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {EXAMPLE_QUERIES.map((q) => (
@@ -184,7 +188,7 @@ export default function AgentPage() {
                   }`}
                 >
                   <div className="flex items-center gap-2 text-xs text-white/30">
-                    <span className="flex items-center gap-1">{msg.role === "user" ? "You" : <><Bot className="inline h-3 w-3" /> Agent</>}</span>
+                    <span className="flex items-center gap-1">{msg.role === "user" ? "Você" : <><Bot className="inline h-3 w-3" /> Agente</>}</span>
                     <span>
                       {msg.timestamp.toLocaleTimeString([], {
                         hour: "2-digit",
@@ -205,7 +209,7 @@ export default function AgentPage() {
                   {/* Reasoning info */}
                   {msg.reasoningCount !== undefined && msg.reasoningCount > 0 && (
                     <div className="mt-2 flex items-center gap-3 text-[10px] text-white/30">
-                      <span className="flex items-center gap-1"><Brain className="inline h-3 w-3" /> {msg.reasoningCount} reasoning steps</span>
+                      <span className="flex items-center gap-1"><Brain className="inline h-3 w-3" /> {msg.reasoningCount} etapas de raciocínio</span>
                       {msg.elapsedTime !== undefined && (
                         <span>⏱ {msg.elapsedTime.toFixed(2)}s</span>
                       )}
@@ -233,7 +237,7 @@ export default function AgentPage() {
                 <div className="rounded-xl bg-surface-hover px-4 py-3">
                   <div className="flex items-center gap-2 text-sm text-white/50">
                     <div className="h-2 w-2 animate-pulse rounded-full bg-nvidia" />
-                    <span>Thinking...</span>
+                    <span>Processando...</span>
                   </div>
                 </div>
               </div>
@@ -250,7 +254,7 @@ export default function AgentPage() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-          placeholder="Ask about NVIDIA stock, financials, or market analysis..."
+          placeholder="Pergunte sobre ações da NVIDIA, financeiro ou análise de mercado..."
           disabled={loading}
           className="flex-1 rounded-xl border border-surface-border bg-surface-card px-4 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-nvidia/50 disabled:opacity-50"
         />
@@ -260,7 +264,7 @@ export default function AgentPage() {
           className="flex items-center gap-2 rounded-xl bg-nvidia px-5 py-3 text-sm font-semibold text-black transition-all hover:bg-nvidia-dark disabled:opacity-50"
         >
           <Send className="h-4 w-4" />
-          Send
+          Enviar
         </button>
       </div>
     </div>

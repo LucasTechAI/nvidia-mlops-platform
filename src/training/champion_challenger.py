@@ -211,23 +211,23 @@ def compare_models(
     if rmse_delta_pct <= -threshold:
         result.promote = True
         result.reason = (
-            f"Challenger RMSE ({challenger_metrics.rmse:.4f}) is "
-            f"{abs(rmse_delta_pct) * 100:.2f}% better than champion "
-            f"({champion_metrics.rmse:.4f}). Promoting."
+            f"RMSE do Challenger ({challenger_metrics.rmse:.4f}) é "
+            f"{abs(rmse_delta_pct) * 100:.2f}% melhor que o Champion "
+            f"({champion_metrics.rmse:.4f}). Promovendo."
         )
         logger.info("✅ PROMOTE: %s", result.reason)
     elif rmse_delta < 0:
         result.promote = False
         result.reason = (
-            f"Challenger RMSE improved by {abs(rmse_delta_pct) * 100:.2f}% "
-            f"but below threshold ({threshold * 100:.1f}%). Keeping champion."
+            f"RMSE do Challenger melhorou {abs(rmse_delta_pct) * 100:.2f}% "
+            f"mas abaixo do threshold ({threshold * 100:.1f}%). Mantendo Champion."
         )
         logger.info("⚠️ NO PROMOTE (below threshold): %s", result.reason)
     else:
         result.promote = False
         result.reason = (
-            f"Challenger RMSE ({challenger_metrics.rmse:.4f}) is worse "
-            f"than champion ({champion_metrics.rmse:.4f}). Keeping champion."
+            f"RMSE do Challenger ({challenger_metrics.rmse:.4f}) é pior "
+            f"que o Champion ({champion_metrics.rmse:.4f}). Mantendo Champion."
         )
         logger.info("❌ NO PROMOTE: %s", result.reason)
 

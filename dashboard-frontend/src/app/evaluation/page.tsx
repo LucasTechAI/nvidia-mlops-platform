@@ -8,36 +8,63 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from "recharts";
-import { RefreshCw, ClipboardList, Trophy, Swords, Play } from "lucide-react";
-import TabGroup from "@/components/tab-group";
+import { RefreshCw, ClipboardList, Trophy, Swords, Play, BarChart2, Microscope, Bot } from "lucide-react";
 import LoadingSpinner from "@/components/loading-spinner";
 import { api } from "@/lib/api";
+import { PageHeader } from "@/components/page-header";
+import { InfoTooltip } from "@/components/info-tooltip";
 
 const TABS = [
-  { id: "eval", label: "📊 Evaluation Metrics" },
-  { id: "explain", label: "🔍 Explainability" },
-  { id: "llm", label: "🤖 LLM Evaluation" },
-];
+  { id: "eval", label: "Métricas de Avaliação", icon: BarChart2 },
+  { id: "explain", label: "Explicabilidade", icon: Microscope },
+  { id: "llm", label: "Avaliação do LLM", icon: Bot },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
 
 export default function EvaluationPage() {
+  const [activeTab, setActiveTab] = useState<TabId>("eval");
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="flex items-center gap-2 text-2xl font-semibold"><ClipboardList className="h-6 w-6 text-nvidia" /> Evaluation</h2>
-        <p className="mt-1 text-sm text-white/50">
-          Model evaluation metrics, explainability analysis, and LLM benchmark results
-        </p>
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageHeader
+        label="Avaliação · Qualidade"
+        title="Avaliação do"
+        gradient="Modelo"
+        subtitle="Métricas de avaliação, análise de explicabilidade e resultados de benchmark LLM."
+        icon={ClipboardList}
+      />
+
+      <div className="flex justify-center">
+        <div className="flex gap-1 rounded-xl border border-surface-border bg-surface-card p-1">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium transition ${
+                  activeTab === tab.id
+                    ? "bg-nvidia/20 text-nvidia"
+                    : "text-white/50 hover:bg-surface-hover hover:text-white"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <TabGroup tabs={TABS}>
-        {(activeTab) => {
-          if (activeTab === "eval") return <EvalMetricsTab />;
-          if (activeTab === "explain") return <ExplainabilityTab />;
-          return <LLMEvalTab />;
-        }}
-      </TabGroup>
+      <div>
+        {activeTab === "eval" && <EvalMetricsTab />}
+        {activeTab === "explain" && <ExplainabilityTab />}
+        {activeTab === "llm" && <LLMEvalTab />}
+      </div>
     </div>
   );
 }
@@ -79,18 +106,18 @@ function EvalMetricsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Model Comparison</h3>
+        <h3 className="text-lg font-semibold">Comparação de Modelos</h3>
         <button
           onClick={loadResults}
           disabled={loading}
           className="flex items-center gap-2 rounded-lg bg-nvidia px-4 py-2 text-sm font-semibold text-black hover:bg-nvidia-dark disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Load Results
+          Carregar Resultados
         </button>
       </div>
 
-      {loading && <LoadingSpinner text="Loading evaluation results..." />}
+      {loading && <LoadingSpinner text="Carregando resultados da avaliação..." />}
       {error && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
           {error}
@@ -104,6 +131,7 @@ function EvalMetricsTab() {
             <div className="rounded-xl border border-nvidia/30 bg-surface-card p-6">
               <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-nvidia">
                 <Trophy className="h-5 w-5" /> Champion
+                <InfoTooltip text="Modelo atualmente em produção com melhor desempenho histórico. Métricas calculadas no conjunto de teste (15% dos dados)." />
               </h4>
               {champion ? (
                 <div className="space-y-2">
@@ -117,12 +145,13 @@ function EvalMetricsTab() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-white/40">No data</p>
+                <p className="text-sm text-white/40">Sem dados</p>
               )}
             </div>
             <div className="rounded-xl border border-sky-400/30 bg-surface-card p-6">
               <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-sky-400">
                 <Swords className="h-5 w-5" /> Challenger
+                <InfoTooltip text="Modelo candidato treinado recentemente. Será promovido a Champion automaticamente se superar o RMSE do modelo atual." />
               </h4>
               {challenger ? (
                 <div className="space-y-2">
@@ -136,7 +165,7 @@ function EvalMetricsTab() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-white/40">No data</p>
+                <p className="text-sm text-white/40">Sem dados</p>
               )}
             </div>
           </div>
@@ -144,8 +173,9 @@ function EvalMetricsTab() {
           {/* Comparison chart */}
           {comparisonData.length > 0 && (
             <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-              <h4 className="mb-4 text-sm font-semibold text-white/70">
-                Metrics Comparison
+              <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white/70">
+                Comparação de Métricas
+                <InfoTooltip text="Comparação visual de RMSE, MAE, MAPE e R² entre Champion e Challenger. Menor RMSE/MAE e maior R² indica melhor desempenho." />
               </h4>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={comparisonData}>
@@ -159,6 +189,7 @@ function EvalMetricsTab() {
                       borderRadius: 8,
                     }}
                   />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="Champion" fill="#76B900" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Challenger" fill="#4ECDC4" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -176,8 +207,9 @@ function EvalMetricsTab() {
               }`}
             >
               {data.promoted !== undefined && (
-                <p className={`font-semibold ${data.promoted ? "text-green-400" : "text-amber-400"}`}>
-                  {data.promoted ? "✅ Challenger promoted!" : "⚠️ Champion retained"}
+                <p className={`flex items-center gap-2 font-semibold ${data.promoted ? "text-green-400" : "text-amber-400"}`}>
+                  {data.promoted ? "✅ Challenger promovido!" : "⚠️ Champion mantido"}
+                  <InfoTooltip text="Resultado automático: o Challenger é promovido a Champion se seu RMSE for menor que o do Champion atual." />
                 </p>
               )}
               {typeof data.promotion_reason === "string" && data.promotion_reason && (
@@ -205,7 +237,7 @@ function ExplainabilityTab() {
             subTab === "perm" ? "bg-nvidia text-black" : "text-white/50 hover:text-white"
           }`}
         >
-          🔀 Permutation Importance
+          Permutation Importance
         </button>
         <button
           onClick={() => setSubTab("lime")}
@@ -213,7 +245,7 @@ function ExplainabilityTab() {
             subTab === "lime" ? "bg-[#22C55E] text-black" : "text-white/50 hover:text-white"
           }`}
         >
-          🍋 LIME
+          LIME
         </button>
       </div>
 
@@ -268,7 +300,7 @@ function PermutationSection() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Permutation Importance</h3>
-          <p className="text-sm text-white/40">Feature importance based on permutation analysis</p>
+          <p className="text-sm text-white/40">Importância de features baseada em análise de permutação</p>
         </div>
         <button
           onClick={recompute}
@@ -276,16 +308,20 @@ function PermutationSection() {
           className="flex items-center gap-2 rounded-lg bg-nvidia px-4 py-2 text-sm font-semibold text-black hover:bg-nvidia-dark disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${computing ? "animate-spin" : ""}`} />
-          {computing ? "Computing..." : "Compute Importance"}
+          {computing ? "Calculando..." : "Calcular Importância"}
         </button>
       </div>
 
-      {(loading || computing) && <LoadingSpinner text={computing ? "Computing feature importance (this takes ~30s)..." : "Loading..."} />}
+      {(loading || computing) && <LoadingSpinner text={computing ? "Calculando importância das features (~30s)..." : "Carregando..."} />}
       {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">{error}</div>}
 
       {chartData.length > 0 && !loading && (
         <>
           <div className="rounded-xl border border-surface-border bg-surface-card p-6">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-sm font-semibold text-white/70">Importância por Permutação</span>
+              <InfoTooltip text="Mede quanto o erro do modelo aumenta ao embaralhar cada feature aleatoriamente. Maior queda na performance = feature mais importante." />
+            </div>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -298,12 +334,15 @@ function PermutationSection() {
           </div>
 
           <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-            <h4 className="mb-3 text-sm font-semibold text-white/70">Feature Details</h4>
+            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-white/70">
+              Detalhes das Features
+              <InfoTooltip text="Ranking detalhado de importância das features por Permutation Importance. Features no topo têm maior impacto na precisão do modelo." />
+            </h4>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-border text-left text-xs text-white/40">
                   <th className="pb-2">Feature</th>
-                  <th className="pb-2">Importance</th>
+                  <th className="pb-2">Importância</th>
                 </tr>
               </thead>
               <tbody>
@@ -382,7 +421,7 @@ function LimeSection() {
         <div>
           <h3 className="text-lg font-semibold">LIME — Local Explanations</h3>
           <p className="text-sm text-white/40">
-            Mean |weight| across {meta?.n_explained ?? "N"} explained samples (Ribeiro et al. 2016)
+            Peso médio |weight| em {meta?.n_explained ?? "N"} amostras explicadas (Ribeiro et al. 2016)
           </p>
         </div>
         <button
@@ -391,20 +430,24 @@ function LimeSection() {
           className="flex items-center gap-2 rounded-lg bg-[#22C55E] px-4 py-2 text-sm font-semibold text-black hover:bg-[#16A34A] disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${computing ? "animate-spin" : ""}`} />
-          {computing ? "Computing..." : "Compute LIME"}
+          {computing ? "Calculando..." : "Calcular LIME"}
         </button>
       </div>
 
       <div className="rounded-lg border border-[#22C55E]/20 bg-[#22C55E]/5 p-3 text-xs text-white/50">
-        <span className="font-semibold text-[#22C55E]">🍋 How it works:</span> LIME approximates the LSTM locally with a linear model around each prediction. Each feature gets a signed weight; the chart shows the mean absolute weight across samples — indicating global relevance from a local perspective.
+        <span className="font-semibold text-[#22C55E]">Como funciona:</span> O LIME aproxima a LSTM localmente com um modelo linear ao redor de cada previsão. Cada feature recebe um peso com sinal; o gráfico exibe o peso absoluto médio entre as amostras — indicando relevância global sob perspectiva local.
       </div>
 
-      {(loading || computing) && <LoadingSpinner text={computing ? "Computing LIME explanations (~60s)..." : "Loading..."} />}
+      {(loading || computing) && <LoadingSpinner text={computing ? "Calculando explicações LIME (~60s)..." : "Carregando..."} />}
       {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">{error}</div>}
 
       {chartData.length > 0 && !loading && (
         <>
           <div className="rounded-xl border border-surface-border bg-surface-card p-6">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-sm font-semibold text-white/70">Importância por LIME</span>
+              <InfoTooltip text="Peso absoluto médio de cada feature em múltiplas amostras. O LIME aproxima o LSTM localmente com um modelo linear — features com maior peso médio têm maior influência local." />
+            </div>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -417,13 +460,16 @@ function LimeSection() {
           </div>
 
           <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-            <h4 className="mb-3 text-sm font-semibold text-white/70">Feature Details</h4>
+            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-white/70">
+              Detalhes das Features
+              <InfoTooltip text="Importância média e desvio padrão de cada feature calculados pelo LIME em múltiplas amostras. Desvio alto indica comportamento instável para aquela feature." />
+            </h4>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-border text-left text-xs text-white/40">
                   <th className="pb-2">Feature</th>
-                  <th className="pb-2">Mean |Weight|</th>
-                  <th className="pb-2">Std Dev</th>
+                  <th className="pb-2">Peso Médio |Peso|</th>
+                  <th className="pb-2">Desvio Padrão</th>
                 </tr>
               </thead>
               <tbody>
@@ -502,7 +548,7 @@ function LLMEvalTab() {
       await api.evaluation.runEvaluation();
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Evaluation failed");
+      setError(err instanceof Error ? err.message : "Falha na avaliação");
     } finally {
       setRunning(false);
     }
@@ -517,8 +563,8 @@ function LLMEvalTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">LLM Evaluation (RAGAS)</h3>
-          <p className="text-sm text-white/40">Golden set evaluation and benchmark results</p>
+          <h3 className="text-lg font-semibold">Avaliação do LLM (RAGAS)</h3>
+          <p className="text-sm text-white/40">Avaliação do golden set e resultados de benchmark</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -527,7 +573,7 @@ function LLMEvalTab() {
             className="flex items-center gap-2 rounded-lg border border-surface-border px-4 py-2 text-sm font-semibold text-white/70 hover:bg-surface-hover disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Load Results
+            Carregar Resultados
           </button>
           <button
             onClick={runEval}
@@ -535,13 +581,13 @@ function LLMEvalTab() {
             className="flex items-center gap-2 rounded-lg bg-nvidia px-4 py-2 text-sm font-semibold text-black hover:bg-nvidia-dark disabled:opacity-50"
           >
             <Play className={`h-4 w-4 ${running ? "animate-pulse" : ""}`} />
-            {running ? "Running..." : "Run Evaluation"}
+            {running ? "Executando..." : "Executar Avaliação"}
           </button>
         </div>
       </div>
 
       {(loading || running) && (
-        <LoadingSpinner text={running ? "Running RAGAS + LLM-Judge on golden set (~60s)..." : "Loading..."} />
+        <LoadingSpinner text={running ? "Executando RAGAS + LLM-Judge no golden set (~60s)..." : "Carregando..."} />
       )}
       {error && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">{error}</div>
@@ -550,9 +596,9 @@ function LLMEvalTab() {
       {/* Empty state */}
       {!hasResults && !loading && !running && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-10 text-center">
-          <p className="text-white/40">No evaluation results yet.</p>
+          <p className="text-white/40">Nenhum resultado de avaliação ainda.</p>
           <p className="mt-1 text-xs text-white/30">
-            Click <span className="font-semibold text-nvidia">Run Evaluation</span> to compute RAGAS + LLM-Judge scores on the {goldenSet.length || 25}-sample golden set.
+            Clique em <span className="font-semibold text-nvidia">Executar Avaliação</span> para calcular os scores RAGAS + LLM-Judge no golden set de {goldenSet.length || 25} amostras.
           </p>
         </div>
       )}
@@ -561,15 +607,16 @@ function LLMEvalTab() {
       {ragas && !loading && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-6">
           <div className="mb-4 flex items-center gap-3">
-            <h4 className="text-sm font-semibold text-white/70">📐 RAGAS Metrics</h4>
-            <span className="text-xs text-white/30">{ragas.n_samples} samples · scale 0 → 1</span>
+            <h4 className="text-sm font-semibold text-white/70">Métricas RAGAS</h4>
+            <span className="text-xs text-white/30">{ragas.n_samples} amostras · escala 0 → 1</span>
+            <InfoTooltip text="4 métricas automáticas do pipeline RAG: faithfulness (fidelidade ao contexto), answer relevancy (relevância da resposta), context precision e context recall. Escala 0–1." />
           </div>
           {ragas.note && (
             <div className="mb-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
               <p>⚠️ {ragas.note}</p>
               {ragas.note.toLowerCase().includes("openai") && (
                 <p className="mt-1 text-amber-300/60">
-                  Set <code className="rounded bg-black/30 px-1">OPENAI_API_KEY</code> in your environment and restart the API to enable LLM-based RAGAS scoring.
+                  Defina <code className="rounded bg-black/30 px-1">OPENAI_API_KEY</code> no seu ambiente e reinicie a API para habilitar o scoring RAGAS baseado em LLM.
                 </p>
               )}
             </div>
@@ -587,11 +634,12 @@ function LLMEvalTab() {
         <div className="rounded-xl border border-surface-border bg-surface-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h4 className="text-sm font-semibold text-white/70">🧑‍⚖️ LLM-as-Judge</h4>
-              <span className="text-xs text-white/30">{judge.n_samples} samples · scale 1 → 5</span>
+              <h4 className="text-sm font-semibold text-white/70">LLM-as-Judge</h4>
+              <span className="text-xs text-white/30">{judge.n_samples} amostras · escala 1 → 5</span>
+              <InfoTooltip text="Um LLM avalia as respostas do agente em 3 critérios: Relevância da Resposta, Acurácia Factual e Utilidade para Investimento. Escala 1 (ruim) a 5 (excelente)." />
             </div>
             <span className="rounded-full border border-nvidia/30 bg-nvidia/10 px-3 py-0.5 text-xs font-semibold text-nvidia">
-              Overall: {judge.overall_avg} / 5.0
+              Geral: {judge.overall_avg} / 5.0
             </span>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -605,13 +653,18 @@ function LLMEvalTab() {
       {/* Golden Set */}
       {goldenSet.length > 0 && !loading && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-          <h4 className="mb-3 text-sm font-semibold text-white/70">Golden Set ({goldenSet.length} samples)</h4>
+          <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-white/70">
+            Conjunto de Avaliação — Golden Set ({goldenSet.length} amostras)
+            <InfoTooltip text="25 pares pergunta-resposta criados manualmente, usados como gabarito para avaliar automaticamente a qualidade das respostas do agente RAG." />
+          </h4>
           <div className="space-y-2 pr-1">
             {goldenSet.map((item) => (
               <div key={item.id} className="rounded-lg bg-surface-hover p-3">
-                <p className="mb-1 text-xs font-semibold text-white/30">#{item.id}</p>
+                <p className="mb-1 text-xs font-semibold text-white/30">Amostra #{item.id}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-white/30">Pergunta</p>
                 <p className="text-sm font-medium text-white/80">{item.query}</p>
-                <p className="mt-1 line-clamp-2 text-xs text-white/40">{item.expected_answer}</p>
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-white/30">Resposta Esperada</p>
+                <p className="mt-0.5 line-clamp-2 text-xs text-white/40">{item.expected_answer}</p>
               </div>
             ))}
           </div>

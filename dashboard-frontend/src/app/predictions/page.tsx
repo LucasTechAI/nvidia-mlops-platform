@@ -20,6 +20,7 @@ import { Download, TrendingUp, TrendingDown, DollarSign, Target, BarChart3, Rock
 import StatCard from "@/components/stat-card";
 import LoadingSpinner from "@/components/loading-spinner";
 import { api } from "@/lib/api";
+import { PageHeader } from "@/components/page-header";
 
 interface PredictionPoint {
   date: string;
@@ -203,20 +204,21 @@ export default function PredictionsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="flex items-center gap-2 text-2xl font-semibold"><BarChart3 className="h-6 w-6 text-nvidia" /> Stock Predictions</h2>
-        <p className="mt-1 text-sm text-white/50">
-          LSTM-based forecasts with Monte Carlo Dropout uncertainty estimation
-        </p>
-      </div>
+      <PageHeader
+        label="Forecasting · NVDA"
+        title="Previsões de"
+        gradient="Ações"
+        subtitle="Forecasts LSTM com estimativa de incerteza via Monte Carlo Dropout."
+        icon={BarChart3}
+      />
 
       {/* Controls */}
       <div className="flex flex-wrap items-end gap-4 rounded-xl border border-surface-border bg-surface-card p-5">
         <div>
           <label className="mb-1 block text-xs font-medium text-white/50">
-            Forecast Horizon
+            Horizonte de Previsão
           </label>
           <div className="flex gap-2">
             {[7, 30, 60, 90].map((d) => (
@@ -237,7 +239,7 @@ export default function PredictionsPage() {
 
         <div>
           <label className="mb-1 block text-xs font-medium text-white/50">
-            Historical Context (days)
+            Contexto Histórico (dias)
           </label>
           <input
             type="range"
@@ -257,7 +259,7 @@ export default function PredictionsPage() {
             onChange={(e) => setShowConfidence(e.target.checked)}
             className="accent-nvidia"
           />
-          Confidence Intervals
+          Intervalos de Confiança
         </label>
 
         <button
@@ -265,7 +267,7 @@ export default function PredictionsPage() {
           disabled={loading}
           className="ml-auto rounded-lg bg-nvidia px-6 py-2.5 text-sm font-semibold text-black transition-all hover:bg-nvidia-dark disabled:opacity-50"
         >
-          {loading ? "Generating..." : <><Rocket className="inline h-4 w-4" /> Generate Forecast</>}
+          {loading ? "Gerando..." : <><Rocket className="inline h-4 w-4" /> Gerar Previsão</>}
         </button>
       </div>
 
@@ -278,12 +280,12 @@ export default function PredictionsPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Current Price"
+          label="Preço Atual"
           value={`$${currentPrice.toFixed(2)}`}
           icon={<DollarSign className="h-5 w-5 text-nvidia" />}
         />
         <StatCard
-          label="Predicted Price"
+          label="Preço Previsto"
           value={
             lastPrediction ? `$${lastPrediction.predicted_price.toFixed(2)}` : "—"
           }
@@ -301,13 +303,13 @@ export default function PredictionsPage() {
           accentColor={forecastChange >= 0 ? "#4ade80" : "#ef4444"}
         />
         <StatCard
-          label="Forecast Low"
+          label="Mínimo Previsto"
           value={forecastLow ? `$${forecastLow.toFixed(2)}` : "—"}
           icon={<TrendingDown className="h-5 w-5 text-sky-400" />}
           accentColor="#38bdf8"
         />
         <StatCard
-          label="Forecast High"
+          label="Máximo Previsto"
           value={forecastHigh ? `$${forecastHigh.toFixed(2)}` : "—"}
           icon={<Target className="h-5 w-5 text-amber-400" />}
           accentColor="#fbbf24"
@@ -318,10 +320,10 @@ export default function PredictionsPage() {
       <div className="rounded-xl border border-surface-border bg-surface-card p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h3 className="text-lg font-semibold">Price Forecast</h3>
+            <h3 className="text-lg font-semibold">Previsão de Preço</h3>
             {liveData.length > 0 && (
               <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">
-                {liveData.length} live {liveData.length === 1 ? "day" : "days"} (after {dbLastDate})
+                {liveData.length} dia{liveData.length !== 1 ? "s" : ""} ao vivo (após {dbLastDate})
               </span>
             )}
           </div>
@@ -330,13 +332,13 @@ export default function PredictionsPage() {
               onClick={downloadCSV}
               className="flex items-center gap-2 rounded-lg bg-surface-hover px-3 py-1.5 text-xs text-white/60 hover:text-white"
             >
-              <Download className="h-3.5 w-3.5" /> Export CSV
+              <Download className="h-3.5 w-3.5" /> Exportar CSV
             </button>
           )}
         </div>
 
         {loading ? (
-          <LoadingSpinner text="Generating forecast..." />
+          <LoadingSpinner text="Gerando previsão..." />
         ) : chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={420}>
             <ComposedChart data={chartData}>
@@ -361,13 +363,13 @@ export default function PredictionsPage() {
                 }}
                 formatter={(value: unknown, name: string) => {
                   if (name === "confidenceBand" && Array.isArray(value)) {
-                    return [`$${Number(value[0]).toFixed(2)} – $${Number(value[1]).toFixed(2)}`, "95% Confidence"];
+                    return [`$${Number(value[0]).toFixed(2)} – $${Number(value[1]).toFixed(2)}`, "Confiança 95%"];
                   }
                   const num = Number(value);
                   const label =
-                    name === "historical" ? "Historical"
-                    : name === "predicted" ? "Predicted"
-                    : name === "real" ? "Real (Live)"
+                    name === "historical" ? "Histórico"
+                    : name === "predicted" ? "Previsto"
+                    : name === "real" ? "Real (Ao vivo)"
                     : name;
                   return [`$${num.toFixed(2)}`, label];
                 }}
@@ -378,10 +380,10 @@ export default function PredictionsPage() {
                 iconType="line"
                 wrapperStyle={{ paddingBottom: 12, fontSize: 12, color: "rgba(255,255,255,0.6)" }}
                 payload={[
-                  { value: "Historical", type: "line", color: "#4ECDC4" },
-                  { value: "Predicted", type: "line", color: "#76B900" },
-                  ...(liveData.length > 0 ? [{ value: "Real (Live)", type: "line" as const, color: "#FBBF24" }] : []),
-                  ...(showConfidence ? [{ value: "95% Confidence", type: "rect" as const, color: "rgba(118,185,0,0.35)" }] : []),
+                  { value: "Histórico", type: "line", color: "#4ECDC4" },
+                  { value: "Previsto", type: "line", color: "#76B900" },
+                  ...(liveData.length > 0 ? [{ value: "Real (Ao vivo)", type: "line" as const, color: "#FBBF24" }] : []),
+                  ...(showConfidence ? [{ value: "Confiança 95%", type: "rect" as const, color: "rgba(118,185,0,0.35)" }] : []),
                 ]}
               />
 
@@ -405,7 +407,7 @@ export default function PredictionsPage() {
                 stroke="#4ECDC4"
                 strokeWidth={2}
                 dot={false}
-                name="Historical"
+                name="Histórico"
               />
 
               {/* Prediction line */}
@@ -416,7 +418,7 @@ export default function PredictionsPage() {
                 strokeWidth={2}
                 strokeDasharray="6 3"
                 dot={false}
-                name="Predicted"
+                name="Previsto"
               />
 
               {/* Real (Live) line — actual market data more recent than DB */}
@@ -427,7 +429,7 @@ export default function PredictionsPage() {
                   stroke="#FBBF24"
                   strokeWidth={2.5}
                   dot={{ r: 3, fill: "#FBBF24", stroke: "#FBBF24" }}
-                  name="Real (Live)"
+                  name="Real (Ao vivo)"
                   connectNulls
                 />
               )}
@@ -436,7 +438,7 @@ export default function PredictionsPage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-white/30">
             <TrendingUp className="mb-3 h-12 w-12" />
-            <p>Click &quot;Generate Forecast&quot; to see predictions</p>
+            <p>Clique em &quot;Gerar Previsão&quot; para ver as previsões</p>
           </div>
         )}
       </div>
@@ -446,15 +448,15 @@ export default function PredictionsPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Table */}
           <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-            <h3 className="mb-4 text-lg font-semibold">Predictions Table</h3>
+            <h3 className="mb-4 text-lg font-semibold">Tabela de Previsões</h3>
             <div className="max-h-80 overflow-auto">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-surface-card">
                   <tr className="border-b border-surface-border text-left text-xs text-white/40">
-                    <th className="pb-2">Date</th>
-                    <th className="pb-2">Price</th>
-                    <th className="pb-2">Low</th>
-                    <th className="pb-2">High</th>
+                    <th className="pb-2">Data</th>
+                    <th className="pb-2">Preço</th>
+                    <th className="pb-2">Mín</th>
+                    <th className="pb-2">Máx</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -482,7 +484,7 @@ export default function PredictionsPage() {
 
           {/* Daily Changes Chart */}
           <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-            <h3 className="mb-4 text-lg font-semibold">Daily Changes</h3>
+            <h3 className="mb-4 text-lg font-semibold">Variações Diárias</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={dailyChanges}>
                 <CartesianGrid
@@ -509,7 +511,7 @@ export default function PredictionsPage() {
                     borderRadius: 8,
                     color: "#fff",
                   }}
-                  formatter={(value: number) => [`$${value.toFixed(2)}`, "Change"]}
+                  formatter={(value: number) => [`$${value.toFixed(2)}`, "Variação"]}
                 />
                 <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
                 <Bar dataKey="change" radius={[4, 4, 0, 0]}>

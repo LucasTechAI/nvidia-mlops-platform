@@ -103,3 +103,9 @@ htmlcov/
 
 # Planning (internal notes)
 .plan/
+
+# Runtime / generated files
+.services.pid
+*.db-shm
+*.db-wal
+dashboard-frontend/tsconfig.tsbuildinfo

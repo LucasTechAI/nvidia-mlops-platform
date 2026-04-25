@@ -71,7 +71,20 @@ body {
   }
 }
 
-/* Recharts overrides for dark theme */
+/* Hide the design-system's internal nav when inside the app layout
+   (we have the global top-nav instead) */
+.ds-scope > nav {
+  display: none !important;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 .recharts-cartesian-grid line {
   stroke: rgba(255, 255, 255, 0.05) !important;
 }
@@ -85,4 +98,62 @@ body {
   background: #1a1c24 !important;
   border: 1px solid rgba(118, 185, 0, 0.3) !important;
   border-radius: 8px !important;
+}
+
+/* ── ds-scope: override Tailwind nvidia/surface tokens with teal design system ── */
+.ds-scope .text-nvidia,
+.ds-scope [class*="text-nvidia"] {
+  color: #14b8a6 !important;
+}
+.ds-scope [class*="border-nvidia"] {
+  border-color: rgba(20,184,166,0.25) !important;
+}
+.ds-scope [class*="bg-nvidia"] {
+  background-color: rgba(20,184,166,0.1) !important;
+}
+.ds-scope .from-nvidia\/5,
+.ds-scope [class*="from-nvidia"] {
+  --tw-gradient-from: rgba(20,184,166,0.05) !important;
+}
+.ds-scope .gradient-card {
+  background: rgba(8,9,16,0.96) !important;
+  border-color: rgba(20,184,166,0.2) !important;
+}
+.ds-scope .text-nvidia-light {
+  color: #5eead4 !important;
+}
+.ds-scope [class*="bg-surface-card"] {
+  background: rgba(8,9,16,0.95) !important;
+}
+.ds-scope [class*="border-surface-border"] {
+  border-color: rgba(255,255,255,0.08) !important;
+}
+.ds-scope [class*="bg-surface-hover"] {
+  background: rgba(20,184,166,0.04) !important;
+}
+.ds-scope [class*="hover\:bg-surface-hover"]:hover {
+  background: rgba(20,184,166,0.04) !important;
+}
+.ds-scope [class*="hover\:border-nvidia"]:hover {
+  border-color: rgba(20,184,166,0.3) !important;
+}
+.ds-scope .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #080910 !important;
+  border-color: rgba(20,184,166,0.3) !important;
+}
+
+/* ── stat-card teal overrides inside ds-scope ── */
+.ds-scope .stat-card::before {
+  background: #14b8a6 !important;
+}
+.ds-scope .stat-card {
+  background: rgba(8,9,16,0.92) !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+.ds-scope .stat-card:hover {
+  border-color: rgba(20,184,166,0.3) !important;
+  box-shadow: 0 0 20px rgba(20,184,166,0.08) !important;
+}
+.ds-scope .stat-card:hover::before {
+  box-shadow: 0 0 8px rgba(20,184,166,0.5) !important;
 }
