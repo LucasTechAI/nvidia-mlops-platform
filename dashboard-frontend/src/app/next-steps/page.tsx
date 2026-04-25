@@ -21,6 +21,7 @@ import {
   MessageCircle,
   Mail,
 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 
 interface NextStep {
   id: string;
@@ -36,130 +37,130 @@ interface NextStep {
 const NEXT_STEPS: NextStep[] = [
   {
     id: "test-models",
-    title: "Test Alternative Models",
-    description: "Compare LSTM with other time-series models",
+    title: "Testar Modelos Alternativos",
+    description: "Comparar LSTM com outros modelos de séries temporais",
     category: "model",
     priority: "high",
     status: "planned",
     icon: Brain,
     details: [
-      "▸ ARIMA/SARIMA — Traditional statistical models",
-      "▸ Prophet (Meta) — For seasonality and trends",
-      "▸ Transformer — Attention mechanism for time series",
-      "▸ GRU — Lightweight alternative to LSTM",
-      "▸ XGBoost/LightGBM — Ensemble models",
+      "▸ ARIMA/SARIMA — Modelos estatísticos tradicionais",
+      "▸ Prophet (Meta) — Para sazonalidade e tendências",
+      "▸ Transformer — Mecanismo de atenção para séries temporais",
+      "▸ GRU — Alternativa leve ao LSTM",
+      "▸ XGBoost/LightGBM — Modelos ensemble",
       "▸ TCN (Temporal Convolutional Networks)",
-      "▸ N-BEATS — Neural basis expansion",
+      "▸ N-BEATS — Expansão de base neural",
     ],
   },
   {
     id: "production-deploy",
-    title: "Production Deployment",
-    description: "Full deploy with CI/CD and monitoring",
+    title: "Deploy em Produção",
+    description: "Deploy completo com CI/CD e monitoramento",
     category: "production",
     priority: "high",
     status: "planned",
     icon: Rocket,
     details: [
-      "▸ Kubernetes deployment with auto-scaling",
-      "▸ CI/CD pipeline (GitHub Actions / GitLab CI)",
-      "▸ Blue-Green deployment strategy",
-      "▸ Load balancer & reverse proxy (Nginx)",
-      "▸ SSL/TLS certificates (Let's Encrypt)",
-      "▸ Database replication & automated backup",
-      "▸ Aggregated logging (ELK Stack / Loki)",
-      "▸ Alerting & on-call (PagerDuty / Opsgenie)",
+      "▸ Deploy com Kubernetes e auto-scaling",
+      "▸ Pipeline CI/CD (GitHub Actions / GitLab CI)",
+      "▸ Estratégia de deploy Blue-Green",
+      "▸ Load balancer e reverse proxy (Nginx)",
+      "▸ Certificados SSL/TLS (Let's Encrypt)",
+      "▸ Replicação de banco de dados e backup automatizado",
+      "▸ Logging centralizado (ELK Stack / Loki)",
+      "▸ Alertas e on-call (PagerDuty / Opsgenie)",
     ],
   },
   {
     id: "multi-target",
-    title: "Multi-Target Predictions",
-    description: "Expand predictions beyond closing price",
+    title: "Predições Multi-Alvo",
+    description: "Expandir predições além do preço de fechamento",
     category: "features",
     priority: "high",
     status: "planned",
     icon: TrendingUp,
     details: [
-      "▸ Predict High (daily maximum)",
-      "▸ Predict Low (daily minimum)",
-      "▸ Predict Volume (trading volume)",
-      "▸ Predict intraday volatility",
-      "▸ Multi-task learning (multiple outputs)",
-      "▸ Confidence intervals for each prediction",
-      "▸ Predict multiple horizons (1d, 7d, 30d)",
+      "▸ Prever Máxima (máximo diário)",
+      "▸ Prever Mínima (mínimo diário)",
+      "▸ Prever Volume (volume de negociações)",
+      "▸ Prever volatilidade intradiária",
+      "▸ Multi-task learning (múltiplas saídas)",
+      "▸ Intervalos de confiança para cada predição",
+      "▸ Prever múltiplos horizontes (1d, 7d, 30d)",
     ],
   },
   {
     id: "news-integration",
-    title: "News & Research Papers Integration",
-    description: "Sentiment analysis and insight extraction",
+    title: "Integração com Notícias e Papers",
+    description: "Análise de sentimento e extração de insights",
     category: "research",
     priority: "medium",
     status: "planned",
     icon: FileText,
     details: [
-      "▸ Web scraping of financial news (Reuters, Bloomberg)",
+      "▸ Web scraping de notícias financeiras (Reuters, Bloomberg)",
       "▸ News API (NewsAPI, Finnhub, Alpha Vantage)",
-      "▸ Sentiment analysis with NLP (BERT, FinBERT)",
-      "▸ Entity extraction (companies, products, events)",
-      "▸ Scientific papers (arXiv, Google Scholar API)",
-      "▸ Correlation between sentiment and price movements",
-      "▸ RAG with news & research papers knowledge base",
-      "▸ Automated alerts for relevant news",
+      "▸ Análise de sentimento com NLP (BERT, FinBERT)",
+      "▸ Extração de entidades (empresas, produtos, eventos)",
+      "▸ Papers científicos (arXiv, Google Scholar API)",
+      "▸ Correlação entre sentimento e movimentos de preço",
+      "▸ RAG com base de conhecimento de notícias e papers",
+      "▸ Alertas automáticos para notícias relevantes",
     ],
   },
   {
     id: "access-control",
-    title: "Access Control & Authentication",
-    description: "Google Auth login, roles and per-user permissions",
+    title: "Controle de Acesso e Autenticação",
+    description: "Login Google Auth, papéis e permissões por usuário",
     category: "production",
     priority: "high",
     status: "planned",
     icon: Shield,
     details: [
-      "▸ Google OAuth 2.0 login (NextAuth.js / Firebase Auth)",
-      "▸ Enterprise SSO (Single Sign-On) via SAML/OIDC",
-      "▸ Roles: Admin, Analyst, Viewer, API-only",
-      "▸ Granular permissions per page and resource",
-      "▸ Admin sees everything: logs, model, settings, agent",
-      "▸ Analyst sees predictions, data, explainability",
-      "▸ Viewer sees dashboard and predictions only",
-      "▸ API keys with scopes and rate limits per user",
-      "▸ Audit trail: who accessed what and when",
-      "▸ Session management with JWT + refresh tokens",
-      "▸ Optional 2FA (Two-Factor Authentication)",
-      "▸ Admin page for managing users and roles",
+      "▸ Login Google OAuth 2.0 (NextAuth.js / Firebase Auth)",
+      "▸ SSO empresarial (Single Sign-On) via SAML/OIDC",
+      "▸ Papéis: Admin, Analista, Visualizador, Somente API",
+      "▸ Permissões granulares por página e recurso",
+      "▸ Admin vê tudo: logs, modelo, configurações, agente",
+      "▸ Analista vê predições, dados, explicabilidade",
+      "▸ Visualizador vê apenas dashboard e predições",
+      "▸ Chaves de API com escopos e rate limits por usuário",
+      "▸ Trilha de auditoria: quem acessou o quê e quando",
+      "▸ Gerenciamento de sessão com JWT + refresh tokens",
+      "▸ 2FA opcional (Autenticação de Dois Fatores)",
+      "▸ Página de admin para gerenciar usuários e papéis",
     ],
   },
   {
     id: "microservices",
-    title: "Microservices Architecture",
-    description: "Break the monolith into independent, scalable services",
+    title: "Arquitetura de Microsserviços",
+    description: "Dividir o monólito em serviços independentes e escaláveis",
     category: "production",
     priority: "high",
     status: "planned",
     icon: GitBranch,
     details: [
-      "▸ Split into separate repos: api-gateway, model-service, evaluation-service, agent-service, dashboard",
-      "▸ API Gateway (Kong / Traefik) for routing, rate limiting, and auth",
-      "▸ Model Service: training, inference, registry (gRPC for low latency)",
-      "▸ Evaluation Service: RAGAS, LLM-Judge, golden set management",
-      "▸ Agent Service: ReAct agent, RAG, ChromaDB vector store",
-      "▸ ETL Service: data ingestion, feature engineering, scheduling",
-      "▸ Monitoring Service: Prometheus, Grafana, SLA, drift detection",
-      "▸ Dashboard: standalone Next.js app consuming all service APIs",
-      "▸ Shared contracts via OpenAPI specs + Protobuf schemas",
-      "▸ Independent CI/CD pipelines per service (GitHub Actions)",
-      "▸ Docker Compose for local dev, Kubernetes (Helm charts) for prod",
-      "▸ Service mesh (Istio / Linkerd) for observability and mTLS",
-      "▸ Event-driven communication via Redis Streams or Kafka",
-      "▸ Independent scaling: GPU nodes for model, CPU for API/dashboard",
+      "▸ Dividir em repositórios: api-gateway, model-service, evaluation-service, agent-service, dashboard",
+      "▸ API Gateway (Kong / Traefik) para roteamento, rate limiting e autenticação",
+      "▸ Model Service: treinamento, inferência, registro (gRPC para baixa latência)",
+      "▸ Evaluation Service: RAGAS, LLM-Judge, gestão do golden set",
+      "▸ Agent Service: agente ReAct, RAG, ChromaDB vector store",
+      "▸ ETL Service: ingestão de dados, feature engineering, agendamento",
+      "▸ Monitoring Service: Prometheus, Grafana, SLA, detecção de drift",
+      "▸ Dashboard: app Next.js standalone consumindo todas as APIs dos serviços",
+      "▸ Contratos compartilhados via OpenAPI specs + Protobuf schemas",
+      "▸ Pipelines CI/CD independentes por serviço (GitHub Actions)",
+      "▸ Docker Compose para dev local, Kubernetes (Helm charts) para produção",
+      "▸ Service mesh (Istio / Linkerd) para observabilidade e mTLS",
+      "▸ Comunicação orientada a eventos via Redis Streams ou Kafka",
+      "▸ Escalamento independente: nós GPU para modelo, CPU para API/dashboard",
     ],
   },
   {
     id: "multi-asset",
-    title: "Multi-Asset Big Tech Coverage",
-    description: "Expand beyond NVIDIA to cover all major tech stocks",
+    title: "Cobertura Multi-Ativo Big Tech",
+    description: "Expandir além da NVIDIA para cobrir as principais ações de tecnologia",
     category: "features",
     priority: "high",
     status: "planned",
@@ -167,97 +168,97 @@ const NEXT_STEPS: NextStep[] = [
     details: [
       "▸ Add MSFT (Microsoft), GOOGL (Alphabet), META (Meta), AAPL (Apple), AMZN (Amazon)",
       "▸ TSLA (Tesla), AMD, INTC (Intel), TSM (TSMC), AVGO (Broadcom)",
-      "▸ Asset selector in dashboard — switch between stocks or view all",
-      "▸ Unified ETL pipeline: Yahoo Finance / Alpha Vantage / Polygon.io for all tickers",
-      "▸ One LSTM model per asset with shared architecture, independent weights",
-      "▸ Cross-asset correlation matrix (heatmap) for portfolio analysis",
-      "▸ Sector comparison: GPU (NVDA vs AMD) / Cloud (MSFT vs GOOGL vs AMZN)",
-      "▸ Portfolio simulation: allocate weights, backtest, Sharpe & drawdown",
-      "▸ Relative strength index (RSI) and momentum across all assets",
-      "▸ Agent RAG updated with multi-company knowledge base",
-      "▸ Combined P&L tracking for multi-asset portfolio",
-      "▸ Alerts: cross-asset divergence, unusual volume, earnings calendar",
-      "▸ Benchmark comparison vs S&P 500 (SPY) and Nasdaq (QQQ)",
+      "▸ Seletor de ativos no dashboard — alternar entre ações ou ver todas",
+      "▸ Pipeline ETL unificado: Yahoo Finance / Alpha Vantage / Polygon.io para todos os tickers",
+      "▸ Um modelo LSTM por ativo com arquitetura compartilhada e pesos independentes",
+      "▸ Matriz de correlação entre ativos (heatmap) para análise de portfólio",
+      "▸ Comparação setorial: GPU (NVDA vs AMD) / Cloud (MSFT vs GOOGL vs AMZN)",
+      "▸ Simulação de portfólio: alocar pesos, backtest, Sharpe & drawdown",
+      "▸ Índice de força relativa (RSI) e momentum em todos os ativos",
+      "▸ RAG do agente atualizado com base de conhecimento multi-empresa",
+      "▸ Rastreamento de P&L combinado para portfólio multi-ativo",
+      "▸ Alertas: divergência entre ativos, volume incomum, calendário de resultados",
+      "▸ Comparação com benchmark S&P 500 (SPY) e Nasdaq (QQQ)",
     ],
   },
   {
     id: "cost-control",
-    title: "Infrastructure Cost Control",
-    description: "Monitor, optimize and reduce cloud and compute costs",
+    title: "Controle de Custos de Infraestrutura",
+    description: "Monitorar, otimizar e reduzir custos de cloud e computação",
     category: "production",
     priority: "high",
     status: "planned",
     icon: DollarSign,
     details: [
-      "▸ Real-time cost dashboard: GPU hours, storage, network, API calls",
-      "▸ Budget alerts: configurable thresholds per service (Slack/email)",
-      "▸ GPU utilization tracking — idle time detection & auto-shutdown",
-      "▸ Spot instance strategy: fallback to on-demand with cost comparison",
-      "▸ Model inference cost-per-prediction tracking and optimization",
-      "▸ LLM token usage analytics: cost per query, daily/weekly trends",
-      "▸ Storage lifecycle policies: auto-archive old checkpoints & logs",
-      "▸ Right-sizing recommendations: CPU/RAM/GPU based on actual usage",
-      "▸ Multi-cloud cost comparison (AWS vs GCP vs Azure vs on-prem)",
-      "▸ FinOps reports: monthly cost breakdown by team, project, model",
-      "▸ Cost attribution per pipeline stage (ETL, training, inference, monitoring)",
-      "▸ Automated resource scaling based on prediction demand patterns",
+      "▸ Dashboard de custos em tempo real: horas GPU, armazenamento, rede, chamadas API",
+      "▸ Alertas de orçamento: limites configuráveis por serviço (Slack/email)",
+      "▸ Rastreamento de uso de GPU — detecção de tempo ocioso e desligamento automático",
+      "▸ Estratégia de spot instances: fallback para on-demand com comparação de custos",
+      "▸ Rastreamento de custo por predição na inferência e otimização",
+      "▸ Analytics de uso de tokens LLM: custo por query, tendências diárias/semanais",
+      "▸ Políticas de ciclo de vida de storage: auto-arquivar checkpoints e logs antigos",
+      "▸ Recomendações de right-sizing: CPU/RAM/GPU baseado no uso real",
+      "▸ Comparação de custos multi-cloud (AWS vs GCP vs Azure vs on-prem)",
+      "▸ Relatórios FinOps: detalhamento mensal por equipe, projeto, modelo",
+      "▸ Atribuição de custo por estágio do pipeline (ETL, treinamento, inferência, monitoramento)",
+      "▸ Escalamento automatizado de recursos baseado em padrões de demanda de predição",
     ],
   },
   {
     id: "productization",
-    title: "Productization & Business Model",
-    description: "Transform the platform into a commercial SaaS product",
+    title: "Produtização & Modelo de Negócio",
+    description: "Transformar a plataforma em um produto SaaS comercial",
     category: "production",
     priority: "medium",
     status: "planned",
     icon: Briefcase,
     details: [
-      "▸ Multi-tenant architecture: isolated environments per customer",
-      "▸ Subscription tiers: Free (1 stock), Pro (10 stocks), Enterprise (unlimited)",
-      "▸ User authentication & authorization (OAuth2, SSO, RBAC)",
-      "▸ API key management: rate limiting, usage quotas, billing per call",
-      "▸ White-label dashboard: custom branding, logos, color themes",
-      "▸ SLA guarantees: 99.9% uptime, <200ms prediction latency",
-      "▸ Self-service onboarding: guided setup wizard for new customers",
-      "▸ Usage analytics & billing dashboard for customers",
-      "▸ Marketplace integration: AWS Marketplace, GCP Marketplace",
-      "▸ Revenue tracking: MRR, churn, LTV, CAC metrics",
-      "▸ Compliance certifications: SOC2, ISO 27001, LGPD/GDPR",
-      "▸ Documentation portal: API docs, tutorials, SDK (Python/JS)",
+      "▸ Arquitetura multi-tenant: ambientes isolados por cliente",
+      "▸ Planos de assinatura: Free (1 ação), Pro (10 ações), Enterprise (ilimitado)",
+      "▸ Autenticação e autorização de usuários (OAuth2, SSO, RBAC)",
+      "▸ Gestão de chaves API: rate limiting, cotas de uso, cobrança por chamada",
+      "▸ Dashboard white-label: branding personalizado, logos, temas de cores",
+      "▸ Garantias de SLA: 99.9% uptime, <200ms de latência de predição",
+      "▸ Onboarding self-service: assistente guiado de configuração para novos clientes",
+      "▸ Analytics de uso e dashboard de faturamento para clientes",
+      "▸ Integração com marketplace: AWS Marketplace, GCP Marketplace",
+      "▸ Rastreamento de receita: métricas MRR, churn, LTV, CAC",
+      "▸ Certificações de conformidade: SOC2, ISO 27001, LGPD/GDPR",
+      "▸ Portal de documentação: docs de API, tutoriais, SDK (Python/JS)",
     ],
   },
   {
     id: "integrations",
-    title: "Messaging & Notification Integrations",
-    description: "Deliver alerts and predictions via Email, WhatsApp and Telegram",
+    title: "Integrações de Mensagens e Notificações",
+    description: "Entregar alertas e predições via Email, WhatsApp e Telegram",
     category: "features",
     priority: "high",
     status: "planned",
     icon: MessageCircle,
     details: [
-      "▸ Telegram Bot: daily predictions, alerts, portfolio summary commands",
-      "▸ WhatsApp Business API: automated prediction delivery to subscribers",
-      "▸ Email reports: scheduled daily/weekly PDF with charts and insights",
-      "▸ Custom alert rules: price threshold, drift detected, model retrained",
-      "▸ Multi-channel routing: user picks preferred channel per alert type",
-      "▸ Interactive Telegram commands: /predict NVDA, /portfolio, /status",
-      "▸ WhatsApp quick-reply buttons for buy/sell/hold confirmations",
-      "▸ Email digest: weekly performance summary with P&L and accuracy",
-      "▸ Slack integration for team-based alerts and incident notifications",
-      "▸ Push notifications: mobile PWA support with service workers",
-      "▸ Webhook support: generic HTTP callbacks for custom integrations",
-      "▸ Notification preferences dashboard: frequency, channels, quiet hours",
+      "▸ Telegram Bot: predições diárias, alertas, comandos de resumo de portfólio",
+      "▸ WhatsApp Business API: entrega automática de predições para assinantes",
+      "▸ Relatórios por email: PDF diário/semanal agendado com gráficos e insights",
+      "▸ Regras de alerta personalizadas: limite de preço, drift detectado, modelo retreinado",
+      "▸ Roteamento multi-canal: usuário escolhe canal preferido por tipo de alerta",
+      "▸ Comandos interativos no Telegram: /predict NVDA, /portfolio, /status",
+      "▸ Botões de resposta rápida no WhatsApp para confirmações de compra/venda/manutenção",
+      "▸ Digest de email: resumo semanal de desempenho com P&L e acurácia",
+      "▸ Integração com Slack para alertas de equipe e notificações de incidentes",
+      "▸ Push notifications: suporte PWA mobile com service workers",
+      "▸ Suporte a webhook: callbacks HTTP genéricos para integrações customizadas",
+      "▸ Dashboard de preferências de notificação: frequência, canais, horário silencioso",
     ],
   },
 ];
 
 const CATEGORIES = [
-  { id: "all", label: "All", icon: Target },
-  { id: "model", label: "Models", icon: Brain },
-  { id: "production", label: "Production", icon: Rocket },
-  { id: "features", label: "Features", icon: Settings },
-  { id: "data", label: "Data", icon: Database },
-  { id: "research", label: "Research", icon: FileText },
+  { id: "all", label: "Todos", icon: Target },
+  { id: "model", label: "Modelos", icon: Brain },
+  { id: "production", label: "Produção", icon: Rocket },
+  { id: "features", label: "Funcionalidades", icon: Settings },
+  { id: "data", label: "Dados", icon: Database },
+  { id: "research", label: "Pesquisa", icon: FileText },
 ];
 
 const PRIORITY_COLORS = {
@@ -285,31 +286,37 @@ export default function NextStepsPage() {
   ).sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="flex items-center gap-2 text-2xl font-semibold"><Rocket className="h-6 w-6 text-nvidia" /> Next Steps</h2>
-        <p className="mt-1 text-sm text-white/50">
-          Roadmap, planned improvements and upcoming features
-        </p>
-      </div>
+      <PageHeader
+        label="Evolução · Roadmap"
+        title="Próximos"
+        gradient="Passos"
+        subtitle="Roadmap, melhorias planejadas e próximas funcionalidades."
+        icon={Rocket}
+      />
 
       {/* Category Filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              selectedCategory === cat.id
-                ? "bg-nvidia text-black"
-                : "bg-surface-hover text-white/70 hover:bg-surface-border"
-            }`}
-          >
-            <cat.icon className="h-4 w-4" />
-            {cat.label}
-          </button>
-        ))}
+      <div className="flex justify-center">
+        <div className="flex gap-1 rounded-xl border border-surface-border bg-surface-card p-1">
+          {CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium transition ${
+                  selectedCategory === cat.id
+                    ? "bg-nvidia/20 text-nvidia"
+                    : "text-white/50 hover:bg-surface-hover hover:text-white"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Next Steps List */}
@@ -326,7 +333,7 @@ export default function NextStepsPage() {
 
       {filteredSteps.length === 0 && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-12 text-center">
-          <p className="text-white/40">No items found in this category</p>
+          <p className="text-white/40">Nenhum item encontrado nesta categoria</p>
         </div>
       )}
     </div>
@@ -369,14 +376,14 @@ function StepCard({ step, isExpanded, onToggle }: StepCardProps) {
                   PRIORITY_COLORS[step.priority]
                 }`}
               >
-                {step.priority === "high" && <><span className="inline-block h-2 w-2 rounded-full bg-red-400" /> High</>}
-                {step.priority === "medium" && <><span className="inline-block h-2 w-2 rounded-full bg-yellow-400" /> Medium</>}
-                {step.priority === "low" && <><span className="inline-block h-2 w-2 rounded-full bg-blue-400" /> Low</>}
+                {step.priority === "high" && <><span className="inline-block h-2 w-2 rounded-full bg-red-400" /> Alta</>}
+                {step.priority === "medium" && <><span className="inline-block h-2 w-2 rounded-full bg-yellow-400" /> Média</>}
+                {step.priority === "low" && <><span className="inline-block h-2 w-2 rounded-full bg-blue-400" /> Baixa</>}
               </span>
               <span className="rounded-full border border-surface-border bg-surface-hover px-2.5 py-1 text-xs text-white/70">
-                {step.status === "completed" && <><CheckCircle2 className="inline h-3.5 w-3.5" /> Completed</>}
-                {step.status === "in-progress" && <><Clock className="inline h-3.5 w-3.5" /> In Progress</>}
-                {step.status === "planned" && <><ClipboardList className="inline h-3.5 w-3.5" /> Planned</>}
+                {step.status === "completed" && <><CheckCircle2 className="inline h-3.5 w-3.5" /> Concluído</>}
+                {step.status === "in-progress" && <><Clock className="inline h-3.5 w-3.5" /> Em Andamento</>}
+                {step.status === "planned" && <><ClipboardList className="inline h-3.5 w-3.5" /> Planejado</>}
               </span>
             </div>
           </div>
@@ -396,7 +403,7 @@ function StepCard({ step, isExpanded, onToggle }: StepCardProps) {
 
       {/* Expand Indicator */}
       <div className="border-t border-surface-border px-6 py-3 text-center text-xs text-white/40">
-        {isExpanded ? "▲ Click to collapse" : "▼ Click to expand details"}
+        {isExpanded ? "▲ Clique para recolher" : "▼ Clique para expandir detalhes"}
       </div>
     </div>
   );

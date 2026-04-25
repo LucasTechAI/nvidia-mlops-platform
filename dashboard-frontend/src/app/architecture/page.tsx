@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Info, GitBranch } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 
 /* ─── tiny tooltip helper ──────────────────────────────────────────── */
 function Tip({ text }: { text: string }) {
@@ -150,16 +151,16 @@ function Check({ label, detail, done = true }: { label: string; detail: string; 
 
 /* ─── tab definitions ──────────────────────────────────────────── */
 const TABS = [
-  { id: "general",       label: "🏗️ General" },
-  { id: "webapp",        label: "🌐 Web Application" },
-  { id: "agent",         label: "🤖 LLM Agent & RAG" },
-  { id: "evaluation",    label: "📊 Evaluation" },
-  { id: "monitoring",    label: "📡 Monitoring & Drift" },
-  { id: "security",      label: "🔒 Security & Gov." },
-  { id: "champion",      label: "🏆 Champion-Challenger" },
-  { id: "testing",       label: "🧪 Testing & CI/CD" },
-  { id: "explainability", label: "🔬 Explainability" },
-  { id: "checklist",     label: "📋 Requirements" },
+  { id: "general",       label: "General" },
+  { id: "webapp",        label: "Web Application" },
+  { id: "agent",         label: "LLM Agent & RAG" },
+  { id: "evaluation",    label: "Evaluation" },
+  { id: "monitoring",    label: "Monitoring & Drift" },
+  { id: "security",      label: "Security & Gov." },
+  { id: "champion",      label: "Champion-Challenger" },
+  { id: "testing",       label: "Testing & CI/CD" },
+  { id: "explainability", label: "Explainability" },
+  { id: "checklist",     label: "Requirements" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -169,32 +170,34 @@ export default function ArchitecturePage() {
   const [activeTab, setActiveTab] = useState<TabId>("general");
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="flex items-center gap-2 text-2xl font-semibold"><GitBranch className="h-6 w-6 text-nvidia" /> Project Architecture</h2>
-        <p className="mt-1 text-sm text-white/50">
-          End-to-end view of the MLOps platform — from raw data to final prediction.
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageHeader
+        label="Arquitetura · Plataforma"
+        title="Arquitetura do"
+        gradient="Projeto"
+        subtitle="Visão ponta a ponta da plataforma MLOps — dos dados brutos à predição final."
+        icon={GitBranch}
+      />
 
-      {/* Tab Bar */}
-      <div className="sticky top-0 z-30 -mx-1 overflow-x-auto rounded-xl border border-surface-border bg-[#12131a]/95 px-1 py-1.5 backdrop-blur-md">
-        <div className="flex gap-1">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-shrink-0 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                activeTab === tab.id
-                  ? "bg-nvidia/20 text-nvidia shadow-sm shadow-nvidia/10"
-                  : "text-white/40 hover:bg-white/5 hover:text-white/70"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Tab Bar — 2 rows of 5 */}
+      <div className="sticky top-0 z-30 -mx-1 rounded-xl border border-surface-border bg-[#12131a]/95 px-1 py-1.5 backdrop-blur-md">
+        {[TABS.slice(0, 5), TABS.slice(5)].map((row, rowIdx) => (
+          <div key={rowIdx} className="flex gap-1">
+            {row.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
+                  activeTab === tab.id
+                    ? "bg-nvidia/20 text-nvidia shadow-sm shadow-nvidia/10"
+                    : "text-white/40 hover:bg-white/5 hover:text-white/70"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        ))}
       </div>
 
       {/* ════════════ GENERAL TAB ════════════ */}

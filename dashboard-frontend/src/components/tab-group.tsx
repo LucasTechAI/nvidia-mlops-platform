@@ -12,14 +12,15 @@ interface Tab {
 interface TabGroupProps {
   tabs: Tab[];
   children: (activeTab: string) => React.ReactNode;
+  centered?: boolean;
 }
 
-export default function TabGroup({ tabs, children }: TabGroupProps) {
+export default function TabGroup({ tabs, children, centered }: TabGroupProps) {
   const [active, setActive] = useState(tabs[0]?.id ?? "");
 
   return (
     <div>
-      <div className="mb-6 flex gap-1 border-b border-surface-border">
+      <div className={clsx("mb-6 flex gap-1 border-b border-surface-border", centered && "justify-center")}>
         {tabs.map((tab) => (
           <button
             key={tab.id}

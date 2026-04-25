@@ -25,6 +25,7 @@ import { Award, Zap, Target, BarChart3, TrendingDown, GitCompareArrows, Info, Li
 import StatCard from "@/components/stat-card";
 import LoadingSpinner from "@/components/loading-spinner";
 import { api } from "@/lib/api";
+import { PageHeader } from "@/components/page-header";
 
 function MetricCard({ label, value, tooltip }: { label: string; value: string; tooltip?: string }) {
   const [showTip, setShowTip] = useState(false);
@@ -134,7 +135,7 @@ export default function MetricsPage() {
     load();
   }, []);
 
-  if (loading) return <LoadingSpinner text="Loading model metrics..." />;
+  if (loading) return <LoadingSpinner text="Carregando métricas do modelo..." />;
   if (error)
     return (
       <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-400">
@@ -190,26 +191,27 @@ export default function MetricsPage() {
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="flex items-center gap-2 text-2xl font-semibold"><LineChartIcon className="h-6 w-6 text-nvidia" /> Model Metrics</h2>
-        <p className="mt-1 text-sm text-white/50">
-          Training performance, test metrics, and hyperparameter optimization results
-        </p>
-      </div>
+      <PageHeader
+        label="Análise · Desempenho"
+        title="Métricas do"
+        gradient="Modelo"
+        subtitle="Desempenho no treino, métricas de teste e resultados da otimização de hiperparâmetros."
+        icon={LineChartIcon}
+      />
 
       {/* Training Overview */}
       <div>
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-          Training Overview
+          Visão Geral do Treinamento
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Best Epoch"
             value={String(modelInfo?.best_epoch ?? modelInfo?.epoch ?? "—")}
             icon={<Award className="h-5 w-5 text-nvidia" />}
-            tooltip="Epoch where the model achieved the lowest validation error. Training may have continued past this point, but this was the best checkpoint."
+            tooltip="Epoch em que o modelo atingiu o menor erro de validação. O treinamento pode ter continuado além desse ponto, mas este foi o melhor checkpoint."
           />
           <StatCard
             label="Best Val Loss"
@@ -220,27 +222,27 @@ export default function MetricsPage() {
             }
             icon={<TrendingDown className="h-5 w-5 text-sky-400" />}
             accentColor="#38bdf8"
-            tooltip="Lowest loss value achieved on the validation set. The lower this value, the better the model generalizes to unseen data."
+            tooltip="Menor valor de loss alcançado no validation set. Quanto menor, melhor o modelo generaliza para dados não vistos."
           />
           <StatCard
             label="Total Epochs"
             value={String(modelInfo?.epoch ?? "—")}
             icon={<Zap className="h-5 w-5 text-amber-400" />}
             accentColor="#fbbf24"
-            tooltip="Total number of epochs executed during training. One epoch = one complete pass through all training data."
+            tooltip="Total de epochs executados durante o treinamento. Uma epoch = uma passagem completa por todos os dados de treino."
           />
           <StatCard
             label="Early Stopping"
             value={
               trainingInfo["Early Stopped"] === true
-                ? "Triggered"
+                ? "Ativado"
                 : trainingInfo.early_stopping_patience
                   ? `Patience ${trainingInfo.early_stopping_patience}`
-                  : "Enabled"
+                  : "Habilitado"
             }
             icon={<Target className="h-5 w-5 text-purple-400" />}
             accentColor="#a78bfa"
-            tooltip="Technique that stops training when validation error stops improving, preventing overfitting. 'Triggered' = stopped before reaching the maximum number of epochs."
+            tooltip="Técnica que interrompe o treinamento quando o erro de validação para de melhorar, prevenindo overfitting. 'Ativado' = parou antes de atingir o máximo de epochs."
           />
         </div>
       </div>
@@ -249,19 +251,19 @@ export default function MetricsPage() {
       {Object.keys(testMetrics).length > 0 && (
         <div>
           <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-            Test Performance
+           Performance no Teste
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {Object.entries(testMetrics).map(([key, val]) => {
               const tooltips: Record<string, string> = {
-                rmse: "Root Mean Squared Error — penalizes large errors more severely. Lower is better. Measured in dollars ($).",
-                mae: "Mean Absolute Error — average magnitude of errors. More robust to outliers than RMSE. Measured in dollars ($).",
-                mape: "Mean Absolute Percentage Error — scale-independent metric. Values below 10% indicate excellent accuracy.",
-                r2_score: "Coefficient of Determination (R²) — proportion of variance explained by the model. 1.0 = perfect, 0 = no predictive power.",
-                correlation: "Pearson correlation between actual and predicted values. The closer to 1.0, the more aligned the predictions.",
-                directional_accuracy: "Directional Accuracy — percentage of times the model correctly predicted the direction (up/down). Above 50% = better than random chance.",
-                sharpe_ratio: "Sharpe Ratio — risk-adjusted return. Values above 1.0 indicate a good return/risk ratio in the predictions.",
-                max_drawdown: "Maximum Drawdown — largest percentage drop from peak to trough. The lower, the more stable the model-based strategy.",
+                rmse: "Root Mean Squared Error — penaliza erros grandes com mais severidade. Quanto menor, melhor. Medido em dólares ($).",
+                mae: "Mean Absolute Error — magnitude média dos erros. Mais robusto a outliers do que o RMSE. Medido em dólares ($).",
+                mape: "Mean Absolute Percentage Error — métrica independente de escala. Valores abaixo de 10% indicam excelente precisão.",
+                r2_score: "Coeficiente de Determinação (R²) — proporção da variância explicada pelo modelo. 1.0 = perfeito, 0 = sem poder preditivo.",
+                correlation: "Correlação de Pearson entre valores reais e previstos. Quanto mais próximo de 1.0, mais alinhadas as previsões.",
+                directional_accuracy: "Directional Accuracy — percentual de vezes que o modelo previu corretamente a direção (alta/queda). Acima de 50% = melhor que o acaso.",
+                sharpe_ratio: "Sharpe Ratio — retorno ajustado ao risco. Valores acima de 1.0 indicam boa relação retorno/risco nas previsões.",
+                max_drawdown: "Maximum Drawdown — maior queda percentual de pico a vale. Quanto menor, mais estável a estratégia baseada no modelo.",
               };
               return (
                 <MetricCard
@@ -280,12 +282,12 @@ export default function MetricsPage() {
       {curveData.length > 0 && (
         <div>
           <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-            Training Curves
+            Curvas de Treinamento
           </p>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Loss */}
             <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-              <ChartHeader title="Loss Curve" tooltip="Loss (MSE) curve per epoch. Shows how well the model is learning. Train and validation lines should converge — if validation rises while train drops, overfitting is occurring." />
+              <ChartHeader title="Curva de Loss" tooltip="Curva de Loss (MSE) por epoch. Mostra como o modelo está aprendendo. As linhas de treino e validação devem convergir — se a validação sobe enquanto o treino cai, há overfitting." />
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={curveData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -312,7 +314,7 @@ export default function MetricsPage() {
             {/* RMSE */}
             {(history?.train_rmse || history?.val_rmse) && (
             <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-              <ChartHeader title="RMSE Curve" tooltip="Root Mean Squared Error per epoch. Measures average deviation of predictions from actual values (in the same unit as the data). Lower means more accurate predictions." />
+              <ChartHeader title="Curva de RMSE" tooltip="Root Mean Squared Error por epoch. Mede o desvio médio das previsões em relação aos valores reais (na mesma unidade dos dados). Quanto menor, mais preciso." />
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={curveData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -340,7 +342,7 @@ export default function MetricsPage() {
             {/* MAE */}
             {(history?.train_mae || history?.val_mae) && (
             <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-              <ChartHeader title="MAE Curve" tooltip="Mean Absolute Error per epoch. Indicates the average magnitude of errors regardless of direction. Less sensitive to outliers than RMSE. Lower is better." />
+              <ChartHeader title="Curva de MAE" tooltip="Mean Absolute Error por epoch. Indica a magnitude média dos erros independente da direção. Menos sensível a outliers do que o RMSE. Quanto menor, melhor." />
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={curveData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -368,7 +370,7 @@ export default function MetricsPage() {
             {/* R² */}
             {(history?.train_r2 || history?.val_r2) && (
             <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-              <ChartHeader title="R² Score Curve" tooltip="Coefficient of determination per epoch. Ranges from 0 to 1 — values close to 1 indicate the model explains the data variance well. Ideal: both curves rising and converging." />
+              <ChartHeader title="Curva de R²" tooltip="Coeficiente de determinação por epoch. Varia de 0 a 1 — valores próximos de 1 indicam que o modelo explica bem a variância dos dados. Ideal: ambas as curvas subindo e convergindo." />
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={curveData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -400,8 +402,8 @@ export default function MetricsPage() {
               <div className="flex flex-wrap items-center gap-5">
                 <div className="flex items-center gap-2">
                   <div className="h-0.5 w-6 bg-orange-500" />
-                  <span className="text-xs font-semibold text-orange-400">Test Set (per-epoch)</span>
-                  <span className="text-[10px] text-white/30">(last 15% of data, evaluated each epoch)</span>
+                  <span className="text-xs font-semibold text-orange-400">Test Set (por epoch)</span>
+                  <span className="text-[10px] text-white/30">(últimos 15% dos dados, avaliado a cada epoch)</span>
                 </div>
                 <div className="flex flex-wrap gap-4 text-xs text-white/50">
                   <span>Final Loss: <strong className="text-orange-400">{testLossArr![testLossArr!.length - 1]?.toFixed(6)}</strong></span>
@@ -417,8 +419,8 @@ export default function MetricsPage() {
               <div className="flex flex-wrap items-center gap-5">
                 <div className="flex items-center gap-2">
                   <div className="h-px w-6 border-t-2 border-dashed border-orange-500" />
-                  <span className="text-xs font-semibold text-orange-400">Test Set Baseline</span>
-                  <span className="text-[10px] text-white/30">({testN} samples, last 15% of data)</span>
+                  <span className="text-xs font-semibold text-orange-400">Baseline do Test Set</span>
+                  <span className="text-[10px] text-white/30">({testN} amostras, últimos 15% dos dados)</span>
                 </div>
                 <div className="flex flex-wrap gap-4 text-xs text-white/50">
                   <span>Loss: <strong className="text-orange-400">{testLoss.toFixed(6)}</strong></span>
@@ -436,7 +438,7 @@ export default function MetricsPage() {
       {radarData.length > 0 && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-6">
           <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-            <Target className="h-5 w-5 text-nvidia" /> Hyperparameter Optimization
+            <Target className="h-5 w-5 text-nvidia" /> Otimização de Hiperparâmetros
           </h3>
           <ResponsiveContainer width="100%" height={350}>
             <RadarChart data={radarData}>
@@ -454,15 +456,15 @@ export default function MetricsPage() {
         <div className="mb-4 flex items-center gap-3">
           <GitCompareArrows className="h-5 w-5 text-nvidia" />
           <div>
-            <h3 className="text-lg font-semibold">Actual vs Predicted (Backtest)</h3>
+            <h3 className="text-lg font-semibold">Real vs Previsto (Backtest)</h3>
             <p className="text-xs text-white/40">
-              Model predictions over the entire known historical period — direct comparison between actual and predicted prices
+              Previsões do modelo ao longo de todo o histórico conhecido — comparação direta entre preços reais e previstos
             </p>
           </div>
         </div>
 
         {backtestLoading ? (
-          <LoadingSpinner text="Loading backtest data..." />
+          <LoadingSpinner text="Carregando dados de backtest..." />
         ) : backtestData.length > 0 ? (
           <div>
             <ResponsiveContainer width="100%" height={400}>
@@ -491,7 +493,7 @@ export default function MetricsPage() {
                     }}
                     formatter={(value: number, name: string) => [
                       `$${value?.toFixed(2)}`,
-                      name === "actual" ? "Actual" : "Predicted",
+                      name === "actual" ? "Real" : "Previsto",
                     ]}
                   />
                   <Legend
@@ -506,7 +508,7 @@ export default function MetricsPage() {
                     stroke="#4ECDC4"
                     strokeWidth={2}
                     dot={false}
-                    name="Actual"
+                    name="Real"
                   />
                   <Line
                     type="monotone"
@@ -515,14 +517,14 @@ export default function MetricsPage() {
                     strokeWidth={2}
                     strokeDasharray="6 3"
                     dot={false}
-                    name="Predicted"
+                    name="Previsto"
                   />
                 </ComposedChart>
               </ResponsiveContainer>
 
             {/* Residual (Error) Chart */}
             <div className="mt-6">
-              <ChartHeader title="Residual Error (Actual − Predicted)" tooltip="Difference between the actual and predicted value per day. Green bars indicate the model underestimated (actual > predicted), red bars indicate overestimation. Ideally residuals stay close to zero." />
+              <ChartHeader title="Erro Residual (Real − Previsto)" tooltip="Diferença entre o valor real e o previsto por dia. Barras verdes indicam que o modelo subestimou (real > previsto), vermelhas indicam superestimação. O ideal é que os resíduos fiquem próximos de zero." />
               <ResponsiveContainer width="100%" height={250}>
                 <ComposedChart data={backtestData.map((d) => ({ ...d, error: +(d.actual - d.predicted).toFixed(2) }))}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -546,12 +548,12 @@ export default function MetricsPage() {
                       borderRadius: 8,
                       color: "#fff",
                     }}
-                    formatter={(value: number) => [`$${value?.toFixed(2)}`, "Error"]}
+                    formatter={(value: number) => [`$${value?.toFixed(2)}`, "Erro"]}
                   />
                   <ReferenceLine y={0} stroke="rgba(255,255,255,0.3)" strokeDasharray="4 4" />
                   <Bar
                     dataKey="error"
-                    name="Error"
+                    name="Erro"
                     radius={[2, 2, 0, 0]}
                   >
                     {backtestData.map((d, idx) => (
@@ -565,7 +567,7 @@ export default function MetricsPage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-white/30">
             <GitCompareArrows className="mb-3 h-10 w-10" />
-            <p>No backtest data available</p>
+            <p>Nenhum dado de backtest disponível</p>
           </div>
         )}
 

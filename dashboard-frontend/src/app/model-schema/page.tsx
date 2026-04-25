@@ -15,6 +15,7 @@ import { Cpu, Layers, Hash, Box, Info, Trophy, SlidersHorizontal, Brain, Target,
 import StatCard from "@/components/stat-card";
 import LoadingSpinner from "@/components/loading-spinner";
 import { api } from "@/lib/api";
+import { PageHeader } from "@/components/page-header";
 
 const COLORS = ["#76B900", "#4ECDC4", "#45B7D1", "#FF6B35"];
 
@@ -127,14 +128,15 @@ export default function ModelSchemaPage() {
     .reduce((sum, [, v]) => sum + v.count, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="flex items-center gap-2 text-2xl font-semibold"><Brain className="h-6 w-6 text-nvidia" /> Model Architecture</h2>
-        <p className="mt-1 text-sm text-white/50">
-          Explore the LSTM neural network architecture, layer configuration, and parameter distribution.
-        </p>
-      </div>
+      <PageHeader
+        label="ML · Arquitetura"
+        title="Arquitetura do"
+        gradient="Modelo"
+        subtitle="Explore a rede neural LSTM — camadas, configuração e distribuição de parâmetros."
+        icon={Brain}
+      />
 
       {/* Model Purpose */}
       <div className="rounded-xl border border-nvidia/20 bg-gradient-to-br from-nvidia/5 via-surface-card to-surface-card p-6">
@@ -143,25 +145,25 @@ export default function ModelSchemaPage() {
             <Target className="h-6 w-6 text-nvidia" />
           </div>
           <div>
-            <h3 className="mb-2 text-lg font-semibold">Model Purpose</h3>
+            <h3 className="mb-2 text-lg font-semibold">Propósito do Modelo</h3>
             <p className="text-sm leading-relaxed text-white/60">
-              This model uses an{" "}
-              <span className="font-medium text-nvidia">LSTM (Long Short-Term Memory)</span> neural network to
-              forecast the <span className="font-medium text-nvidia">Close price</span> of{" "}
-              <span className="font-medium text-nvidia">NVIDIA (NVDA)</span> stock over the
-              next 30 days. LSTMs are especially effective for time series due to their ability to
-              memorize long-term dependencies — it analyzes {seqLength} days of history across 5 input features
-              (Open, High, Low, Close and Volume) to identify trend patterns, seasonality and volatility,
-              outputting a single Close price prediction with confidence intervals via Monte Carlo Dropout.
+              Este modelo utiliza uma rede neural{" "}
+              <span className="font-medium text-nvidia">LSTM (Long Short-Term Memory)</span> para prever o{" "}
+              <span className="font-medium text-nvidia">Close price</span> da ação da{" "}
+              <span className="font-medium text-nvidia">NVIDIA (NVDA)</span> pelos próximos 30 dias.
+              LSTMs são especialmente eficazes em séries temporais por capturar dependências de longo prazo
+              — o modelo analisa {seqLength} dias de histórico em 5 features de entrada
+              (Open, High, Low, Close e Volume) para identificar padrões de tendência, sazonalidade e volatilidade,
+              gerando uma previsão de Close price com intervalos de confiança via Monte Carlo Dropout.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {[
-                { label: "Type", value: "Recurrent LSTM" },
-                { label: "Asset", value: "NVDA" },
-                { label: "Target", value: "Close Price" },
-                { label: "Horizon", value: "30 days" },
-                { label: "Window", value: `${seqLength} days` },
-                { label: "Input", value: `OHLCV (${inputSize} features)` },
+                { label: "Tipo", value: "Recurrent LSTM" },
+                { label: "Ativo", value: "NVDA" },
+                { label: "Alvo", value: "Close Price" },
+                { label: "Horizonte", value: "30 dias" },
+                { label: "Janela", value: `${seqLength} dias` },
+                { label: "Entrada", value: `OHLCV (${inputSize} features)` },
               ].map((tag) => (
                 <span
                   key={tag.label}
@@ -178,42 +180,42 @@ export default function ModelSchemaPage() {
       {/* Model Overview */}
       <div>
         <p className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-          <ClipboardList className="h-3.5 w-3.5" /> Model Overview
+          <ClipboardList className="h-3.5 w-3.5" /> Visão Geral do Modelo
         </p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="gradient-card rounded-xl border border-nvidia/20 p-5">
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-semibold text-nvidia"><Diamond className="mr-1 inline h-3.5 w-3.5" /> Architecture Type</h4>
+              <h4 className="text-sm font-semibold text-nvidia"><Diamond className="mr-1 inline h-3.5 w-3.5" /> Tipo de Arquitetura</h4>
               <div className="group relative">
                 <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
                 <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
-                  LSTM é uma rede neural recorrente projetada para aprender padrões em séries temporais. É ideal para previsão de preços de ações por capturar dependências de longo prazo.
+                  LSTM é uma rede neural recorrente projetada para aprender padrões em séries temporais. Ideal para previsão de preços de ações por capturar dependências de longo prazo.
                   <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
                 </div>
               </div>
             </div>
             <p className="mt-1 font-semibold text-white">LSTM (Long Short-Term Memory)</p>
             <p className="mt-1 text-sm text-white/50">
-              A recurrent neural network capable of learning long-term dependencies in sequential data.
+              Rede neural recorrente capaz de aprender dependências de longo prazo em dados sequenciais.
             </p>
           </div>
           <div className="gradient-card rounded-xl border border-blue-400/20 p-5">
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-semibold text-blue-400"><Zap className="mr-1 inline h-3.5 w-3.5" /> Key Characteristics</h4>
+              <h4 className="text-sm font-semibold text-blue-400"><Zap className="mr-1 inline h-3.5 w-3.5" /> Características Principais</h4>
               <div className="group relative">
                 <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
                 <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
-                  Características principais da LSTM: processamento sequencial para dados ordenados no tempo, células de memória para reter informações, e gates para controlar o fluxo de dados.
+                  Características principais da LSTM: processamento sequencial para dados ordenados no tempo, Memory Cells para reter informações e Gates para controlar o fluxo de dados.
                   <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
                 </div>
               </div>
             </div>
             <div className="mt-2 space-y-2">
               {[
-                "Sequential Processing — Processes data one step at a time",
-                "Memory Cells — Maintains information over long sequences",
-                "Gating Mechanism — Input, Forget, Output gates",
-                `Bidirectional — ${bidirectional ? "Enabled" : "Not enabled"}`,
+                "Sequential Processing — Processa os dados um passo de cada vez",
+                "Memory Cells — Mantém informações ao longo de longas sequências",
+                "Gating Mechanism — Gates Input, Forget e Output",
+                `Bidirectional — ${bidirectional ? "Ativado" : "Não ativado"}`,
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm text-white/70">
                   <span className="text-nvidia">▸</span>
@@ -228,13 +230,13 @@ export default function ModelSchemaPage() {
       {/* Architecture Configuration */}
       <div>
         <p className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-          <Settings className="h-3.5 w-3.5" /> Architecture Configuration
+          <Settings className="h-3.5 w-3.5" /> Configuração da Arquitetura
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="Input Size" value={inputSize} subtitle="Number of input features" icon={<Box className="h-5 w-5 text-nvidia" />} tooltip="Número de features de entrada (Open, High, Low, Close, Volume). Cada timestep tem essas 5 dimensões." />
-          <StatCard label="Hidden Size" value={hiddenSize} subtitle="LSTM hidden state dim" icon={<Layers className="h-5 w-5 text-sky-400" />} accentColor="#38bdf8" tooltip="Dimensão do estado oculto da LSTM. Valores maiores permitem capturar padrões mais complexos, mas aumentam o risco de overfitting." />
-          <StatCard label="Num Layers" value={numLayers} subtitle="Stacked LSTM layers" icon={<Hash className="h-5 w-5 text-amber-400" />} accentColor="#fbbf24" tooltip="Número de camadas LSTM empilhadas. Mais camadas permitem abstrações hierárquicas, mas tornam o treinamento mais lento." />
-          <StatCard label="Output Size" value={`${outputSize} → 1`} subtitle="OHLCV out → Close only" icon={<Cpu className="h-5 w-5 text-purple-400" />} accentColor="#a78bfa" tooltip="The FC layer outputs 5 values (OHLCV), but only the Close price (index 3) is extracted for the final prediction." />
+          <StatCard label="Input Size" value={inputSize} subtitle="Número de features de entrada" icon={<Box className="h-5 w-5 text-nvidia" />} tooltip="Número de features de entrada (Open, High, Low, Close, Volume). Cada timestep possui essas 5 dimensões." />
+          <StatCard label="Hidden Size" value={hiddenSize} subtitle="Dimensão do hidden state LSTM" icon={<Layers className="h-5 w-5 text-sky-400" />} accentColor="#38bdf8" tooltip="Dimensão do hidden state da LSTM. Valores maiores capturam padrões mais complexos, mas aumentam o risco de overfitting." />
+          <StatCard label="Num Layers" value={numLayers} subtitle="Camadas LSTM empilhadas" icon={<Hash className="h-5 w-5 text-amber-400" />} accentColor="#fbbf24" tooltip="Número de camadas LSTM empilhadas. Mais camadas permitem abstrações hierárquicas, mas tornam o treinamento mais lento." />
+          <StatCard label="Output Size" value={`${outputSize} → 1`} subtitle="OHLCV out → Close only" icon={<Cpu className="h-5 w-5 text-purple-400" />} accentColor="#a78bfa" tooltip="A camada FC gera 5 valores (OHLCV), mas apenas o Close price (índice 3) é extraído para a previsão final." />
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-lg border border-surface-border bg-surface-card p-4">
@@ -243,7 +245,7 @@ export default function ModelSchemaPage() {
               <div className="group relative">
                 <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
                 <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
-                  Taxa de dropout aplicada entre as camadas LSTM e antes da camada densa. Desativa aleatoriamente neurônios durante o treino para evitar overfitting.
+                  Taxa de dropout aplicada entre as camadas LSTM e antes da camada Dense. Desativa neurônios aleatoriamente durante o treinamento para evitar overfitting.
                   <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
                 </div>
               </div>
@@ -256,12 +258,12 @@ export default function ModelSchemaPage() {
               <div className="group relative">
                 <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
                 <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
-                  Se ativado, a LSTM processa a sequência nos dois sentidos (passado→futuro e futuro→passado), dobrando o hidden size efetivo.
+                  Quando ativado, a LSTM processa a sequência nos dois sentidos (passado→futuro e futuro→passado), dobrando o hidden size efetivo.
                   <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
                 </div>
               </div>
             </div>
-            <p className="text-xl font-bold">{bidirectional ? "Yes" : "No"}</p>
+            <p className="text-xl font-bold">{bidirectional ? "Sim" : "Não"}</p>
           </div>
           <div className="rounded-lg border border-surface-border bg-surface-card p-4">
             <div className="flex items-center gap-1.5">
@@ -269,7 +271,7 @@ export default function ModelSchemaPage() {
               <div className="group relative">
                 <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
                 <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
-                  Número de dias passados que o modelo analisa para fazer uma previsão. 60 dias = ~3 meses de histórico por previsão.
+                  Número de dias anteriores que o modelo analisa para fazer uma previsão. 60 dias ≈ 3 meses de histórico por inferência.
                   <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
                 </div>
               </div>
@@ -282,7 +284,7 @@ export default function ModelSchemaPage() {
               <div className="group relative">
                 <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
                 <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
-                  Número de direções de processamento. 1 = unidirecional (só olha o passado), 2 = bidirecional.
+                  Número de direções de processamento. 1 = unidirecional (apenas o passado), 2 = bidirecional.
                   <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
                 </div>
               </div>
@@ -295,7 +297,7 @@ export default function ModelSchemaPage() {
       {/* Model Tree */}
       <div>
         <div className="mb-3 flex items-center gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">🌳 Model Tree Structure</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">🌳 Estrutura do Modelo</p>
           <div className="group relative">
             <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
             <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
@@ -412,26 +414,26 @@ export default function ModelSchemaPage() {
       {/* Parameter Analysis */}
       <div>
         <div className="mb-3 flex items-center gap-2">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/30"><BarChart3 className="h-3.5 w-3.5" /> Parameter Analysis</p>
+          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/30"><BarChart3 className="h-3.5 w-3.5" /> Análise de Parâmetros</p>
           <div className="group relative">
             <Info className="h-3 w-3 cursor-help text-white/25 transition-colors hover:text-white/60" />
             <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg border border-surface-border bg-[#1a1c24] px-3 py-2 text-[11px] font-normal text-white/70 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
-              Análise quantitativa dos parâmetros do modelo. Cada parâmetro é um peso aprendido durante o treinamento. Mais parâmetros = maior capacidade, mas mais risco de overfitting.
+              Análise quantitativa dos parâmetros do modelo. Cada parâmetro é um peso aprendido durante o treinamento. Mais parâmetros = maior capacidade, mas maior risco de overfitting.
               <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a1c24]" />
             </div>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4">
           <div className="rounded-lg border border-surface-border bg-surface-card p-4">
-            <p className="text-xs text-white/40">Total Parameters</p>
+            <p className="text-xs text-white/40">Total de Parâmetros</p>
             <p className="text-2xl font-bold">{params?.total.toLocaleString()}</p>
           </div>
           <div className="rounded-lg border border-surface-border bg-surface-card p-4">
-            <p className="text-xs text-white/40">Trainable Parameters</p>
+            <p className="text-xs text-white/40">Parâmetros Treináveis</p>
             <p className="text-2xl font-bold">{params?.trainable.toLocaleString()}</p>
           </div>
           <div className="rounded-lg border border-surface-border bg-surface-card p-4">
-            <p className="text-xs text-white/40">Model Size</p>
+            <p className="text-xs text-white/40">Tamanho do Modelo</p>
             <p className="text-2xl font-bold">{sizeMB.toFixed(2)} MB</p>
           </div>
         </div>
@@ -440,7 +442,7 @@ export default function ModelSchemaPage() {
         {pieData.length > 0 && (
           <div className="mt-4 rounded-xl border border-surface-border bg-surface-card p-6">
             <h4 className="mb-2 text-sm font-semibold text-white/80">
-              Parameter Distribution by Layer Type
+              Distribuição de Parâmetros por Tipo de Camada
             </h4>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={pieData} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
@@ -464,7 +466,7 @@ export default function ModelSchemaPage() {
                     border: "1px solid rgba(118,185,0,0.3)",
                     borderRadius: 8,
                   }}
-                  formatter={(value: number) => [value.toLocaleString(), "Parameters"]}
+                  formatter={(value: number) => [value.toLocaleString(), "Parâmetros"]}
                 />
                 <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={28}>
                   {pieData.map((_, i) => (
@@ -480,15 +482,15 @@ export default function ModelSchemaPage() {
       {/* Layer Detail Table */}
       {params?.layers && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-          <SectionHeader title="Detailed Layer Information" tooltip="Tabela com cada camada do modelo, sua forma (shape), número de parâmetros e tipo de dado. Permite entender onde estão concentrados os pesos do modelo." />
+          <SectionHeader title="Informações Detalhadas por Camada" tooltip="Tabela com cada camada do modelo, seu shape, número de parâmetros e tipo de dado. Permite identificar onde os pesos estão concentrados." />
           <div className="overflow-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-border text-left text-xs text-white/40">
-                  <th className="pb-2">Layer</th>
+                <th className="pb-2">Camada</th>
                   <th className="pb-2">Shape</th>
-                  <th className="pb-2">Parameters</th>
-                  <th className="pb-2">Type</th>
+                  <th className="pb-2">Parâmetros</th>
+                  <th className="pb-2">Tipo</th>
                 </tr>
               </thead>
               <tbody>
@@ -508,16 +510,16 @@ export default function ModelSchemaPage() {
 
       {/* Data Flow */}
       <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-          <SectionHeader title="Data Flow" tooltip="Fluxo completo dos dados desde a entrada até a previsão final. Mostra como os dados são transformados em cada etapa do modelo." />
+          <SectionHeader title="Fluxo de Dados" tooltip="Fluxo completo dos dados desde a entrada até a previsão final. Mostra como os dados são transformados em cada etapa do modelo." />
         <div className="space-y-4">
           {[
-            { step: "1. Input Preparation", desc: `Historical prices are normalized and shaped into sequences of ${seqLength} time steps.`, shape: `(batch, ${seqLength}, ${inputSize})` },
-            { step: "2. LSTM Processing", desc: `${numLayers} stacked LSTM layers process the sequence, learning temporal patterns.`, shape: `(batch, ${seqLength}, ${hiddenSize})` },
-            { step: "3. Final Hidden State", desc: "The last hidden state from the final LSTM layer is extracted.", shape: `(batch, ${hiddenSize})` },
-            { step: "4. Dropout", desc: `Dropout with rate ${dropout} is applied for regularization.`, shape: `(batch, ${hiddenSize})` },
-            { step: "5. Dense Layer", desc: `Fully connected layer maps hidden state to ${outputSize} OHLCV outputs.`, shape: `(batch, ${outputSize})` },
-            { step: "6. Close Extraction", desc: "Only the Close price (index 3) is extracted from the 5-feature output.", shape: "(batch, 1)" },
-            { step: "7. Inverse Transform", desc: "Close prediction is converted back to original price scale.", shape: "Predicted Close ($)" },
+            { step: "1. Preparação dos Dados", desc: `Preços históricos são normalizados e organizados em sequências de ${seqLength} timesteps.`, shape: `(batch, ${seqLength}, ${inputSize})` },
+            { step: "2. Processamento LSTM", desc: `${numLayers} camadas LSTM empilhadas processam a sequência, aprendendo padrões temporais.`, shape: `(batch, ${seqLength}, ${hiddenSize})` },
+            { step: "3. Hidden State Final", desc: "O último hidden state da camada LSTM final é extraído.", shape: `(batch, ${hiddenSize})` },
+            { step: "4. Dropout", desc: `Dropout com taxa ${dropout} é aplicado para regularização.`, shape: `(batch, ${hiddenSize})` },
+            { step: "5. Camada Dense", desc: `Camada totalmente conectada mapeia o hidden state para ${outputSize} saídas OHLCV.`, shape: `(batch, ${outputSize})` },
+            { step: "6. Extração do Close", desc: "Apenas o Close price (índice 3) é extraído das 5 saídas.", shape: "(batch, 1)" },
+            { step: "7. Transformação Inversa", desc: "A previsão de Close é convertida de volta para a escala de preço original.", shape: "Close Previsto ($)" },
           ].map((s) => (
             <div key={s.step} className="flex items-start justify-between gap-4 rounded-lg bg-surface-hover p-4">
               <div>
@@ -535,10 +537,10 @@ export default function ModelSchemaPage() {
       {/* Training Configuration */}
       {Object.keys(trainingInfo).length > 0 && (
         <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-          <SectionHeader title="Training Configuration" tooltip="Hiperparâmetros usados no treinamento do modelo. Estes valores controlam a velocidade de aprendizado, regularização e critérios de parada." />
+          <SectionHeader title="Configuração de Treinamento" tooltip="Hiperparâmetros usados no treinamento do modelo. Esses valores controlam a taxa de aprendizado, regularização e critérios de parada." />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
-              <h4 className="mb-2 text-sm font-semibold text-white/60">Optimizer &amp; Learning</h4>
+              <h4 className="mb-2 text-sm font-semibold text-white/60">Optimizer &amp; Aprendizado</h4>
               <div className="space-y-2">
                 {[
                   ["Optimizer", trainingInfo.optimizer ?? "Adam"],
@@ -554,7 +556,7 @@ export default function ModelSchemaPage() {
               </div>
             </div>
             <div>
-              <h4 className="mb-2 text-sm font-semibold text-white/60">Regularization &amp; Stopping</h4>
+              <h4 className="mb-2 text-sm font-semibold text-white/60">Regularização &amp; Parada</h4>
               <div className="space-y-2">
                 {[
                   ["Dropout Rate", dropout],
@@ -565,7 +567,7 @@ export default function ModelSchemaPage() {
                   <div key={String(k)} className="flex justify-between text-sm">
                     <span className="text-white/50">{String(k)}</span>
                     <code className="text-nvidia">
-                      {typeof v === "boolean" ? (v ? "Yes" : "No") : String(v)}
+                      {typeof v === "boolean" ? (v ? "Sim" : "Não") : String(v)}
                     </code>
                   </div>
                 ))}
@@ -610,18 +612,18 @@ export default function ModelSchemaPage() {
         return (
           <div className="rounded-xl border border-amber-400/30 bg-gradient-to-br from-amber-400/5 to-transparent p-6">
             <SectionHeader
-              title="Best Parameters"
+              title="Melhores Parâmetros"
               tooltip={hasHpo
-                ? "Best hyperparameters found by automatic optimization (HPO — Hyperparameter Optimization). Selected via Bayesian search to maximize performance."
-                : "Parameters used to train the current model. This configuration produced the best result (lowest validation loss)."
+                ? "Melhores hiperparâmetros encontrados por otimização automática (HPO — Hyperparameter Optimization). Selecionados via Bayesian search para maximizar a performance."
+                : "Parâmetros usados para treinar o modelo atual. Essa configuração produziu o melhor resultado (menor validation loss)."
               }
             />
             <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2">
               <Trophy className="h-4 w-4 text-amber-400" />
               <span className="text-xs text-amber-300/80">
                 {hasHpo
-                  ? "Automatically optimized via Optuna — selected for best performance"
-                  : "Model configuration with best performance (lowest validation loss)"}
+                  ? "Otimizado automaticamente via Optuna — selecionado pela melhor performance"
+                  : "Configuração do modelo com melhor desempenho (menor validation loss)"}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
