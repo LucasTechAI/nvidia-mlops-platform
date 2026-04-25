@@ -74,14 +74,14 @@ class TestCompareModels:
         challenger = ModelMetrics(rmse=9.996)  # 0.04% — below 0.5%
         result = compare_models(champ, challenger)
         assert result.promote is False
-        assert "below threshold" in result.reason
+        assert "abaixo do threshold" in result.reason
 
     def test_no_promote_when_worse(self):
         champ = ModelMetrics(rmse=10.0)
         challenger = ModelMetrics(rmse=11.0)  # worse
         result = compare_models(champ, challenger)
         assert result.promote is False
-        assert "worse" in result.reason
+        assert "pior" in result.reason
 
     def test_custom_threshold(self):
         champ = ModelMetrics(rmse=10.0)
