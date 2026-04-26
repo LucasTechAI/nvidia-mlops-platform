@@ -1,4 +1,5 @@
 """Unit tests for BusinessMetricsTracker using a real SQLite in-memory path."""
+
 import pytest
 
 from src.monitoring.business_metrics import BusinessMetricsTracker, BusinessSnapshot

@@ -1,4 +1,5 @@
 """Extended monitoring API tests: all-triggers drift and runs history."""
+
 from pathlib import Path
 from unittest.mock import patch
 
@@ -94,10 +95,7 @@ class TestRunsHistory:
         run_dir = exp_dir / "abc123def456"
         run_dir.mkdir()
         (run_dir / "meta.yaml").write_text(
-            "run_name: test_run\n"
-            "status: 3\n"
-            "start_time: 1700000000000\n"
-            "end_time: 1700003600000\n"
+            "run_name: test_run\nstatus: 3\nstart_time: 1700000000000\nend_time: 1700003600000\n"
         )
 
         metrics_dir = run_dir / "metrics"
