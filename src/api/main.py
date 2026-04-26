@@ -4,9 +4,12 @@ FastAPI main application.
 NVIDIA Stock Price Prediction API.
 """
 
+import asyncio
 import logging
+import time
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -97,10 +100,52 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("Model not loaded - some endpoints may not work")
 
+    # Populate business metrics from real backtest data (replaces seed data if stale)
+    if success:
+        try:
+            from src.monitoring.business_metrics import BusinessMetricsTracker
+
+            await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: BusinessMetricsTracker.get_instance().populate_from_backtest(model_state),
+            )
+        except Exception as _exc:
+            logger.warning("Could not populate business metrics from backtest: %s", _exc)
+
+    # Start periodic health check loop
+    hc_task = asyncio.create_task(_health_check_loop())
+
     yield
 
     # Shutdown
+    hc_task.cancel()
     logger.info("Shutting down API...")
+
+
+async def _health_check_loop():
+    """Periodic real health check — records results in the SLA monitor."""
+    await asyncio.sleep(30)  # Let server fully start before first check
+    while True:
+        try:
+            t0 = time.perf_counter()
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.get("http://localhost:8000/health")
+            latency_ms = (time.perf_counter() - t0) * 1000
+            status = "healthy" if resp.status_code == 200 else "unhealthy"
+            code = resp.status_code
+        except Exception:
+            latency_ms = 5000.0
+            status = "unhealthy"
+            code = 503
+
+        try:
+            from src.monitoring.sla_monitor import SLAMonitor
+
+            SLAMonitor.get_instance().record_health_check(status, latency_ms, code)
+        except Exception:
+            pass
+
+        await asyncio.sleep(60)
 
 
 # Create FastAPI application

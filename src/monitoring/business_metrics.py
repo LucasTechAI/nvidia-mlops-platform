@@ -254,16 +254,112 @@ class BusinessMetricsTracker:
             )
             return [dict(r) for r in reversed(cur.fetchall())]
 
+    def populate_from_backtest(self, model_state) -> bool:
+        """Replace stale seed data with real LSTM predictions vs actual NVIDIA prices.
+
+        Called after the model loads in the API lifespan. Reads from nvidia_stock.db,
+        runs the same sliding-window inference used in /predict/backtest, and stores
+        real predicted vs actual pairs via record_prediction().
+
+        Returns True if data was refreshed, False if skipped or failed.
+        """
+        try:
+            # Skip if data was recently inserted (not stale seed)
+            with self._cursor() as cur:
+                cur.execute("SELECT MAX(timestamp) as latest_ts FROM business_metrics")
+                row = cur.fetchone()
+                if row["latest_ts"]:
+                    latest_insert = datetime.fromisoformat(row["latest_ts"])
+                    if (datetime.utcnow() - latest_insert).days <= 3:
+                        logger.info("Business metrics recently populated, skipping backtest refresh")
+                        return False
+
+            if not model_state.is_ready:
+                logger.warning("Model not ready — cannot populate business metrics from backtest")
+                return False
+
+            import numpy as np
+            import torch
+
+            from src.etl.preprocessing import load_data_from_db
+
+            df = load_data_from_db(start_year=2017)
+            rename_map = {col: col.capitalize() for col in df.columns if col.islower()}
+            if rename_map:
+                df = df.rename(columns=rename_map)
+            df["_date"] = pd.to_datetime(df["Date"])
+            df = df.sort_values("_date").reset_index(drop=True)
+
+            sequence_length = model_state.model_config.get("sequence_length", 60)
+            feature_columns = ["Open", "High", "Low", "Close", "Volume"]
+            available = [c for c in feature_columns if c in df.columns]
+            feature_data = df[available].values
+            normalized = model_state.scaler.transform(feature_data)
+
+            n_features = model_state.scaler.n_features_in_
+            close_idx = 3  # Close is the 4th OHLCV column
+
+            backtest_days = min(60, len(normalized) - sequence_length)
+            if backtest_days <= 0:
+                logger.warning("Not enough data for backtest populate")
+                return False
+
+            start_idx = len(normalized) - backtest_days - sequence_length
+            model_state.model.eval()
+
+            # Clear stale data before repopulating
+            with self._cursor() as cur:
+                cur.execute("DELETE FROM business_metrics")
+                cur.execute("DELETE FROM sqlite_sequence WHERE name='business_metrics'")
+
+            prev_close = None
+            last_date = None
+            for i in range(backtest_days):
+                idx = start_idx + i
+                seq = normalized[idx : idx + sequence_length]
+                seq_tensor = torch.FloatTensor(seq).unsqueeze(0).to(model_state.device)
+
+                with torch.no_grad():
+                    pred = model_state.model(seq_tensor)
+
+                pred_np = pred.cpu().numpy().flatten()
+                dummy = np.zeros((1, n_features))
+                dummy[0, : len(pred_np)] = pred_np
+                pred_price = float(model_state.scaler.inverse_transform(dummy)[0, close_idx])
+
+                actual_row = df.iloc[idx + sequence_length]
+                actual_price = float(actual_row["Close"])
+                last_date = actual_row["_date"].strftime("%Y-%m-%d")
+
+                self.record_prediction(
+                    date=last_date,
+                    actual_close=round(actual_price, 2),
+                    predicted_close=round(pred_price, 2),
+                    prev_close=round(prev_close, 2) if prev_close is not None else None,
+                )
+                prev_close = actual_price
+
+            logger.info(
+                "Populated business metrics with %d real backtest entries (latest date: %s)",
+                backtest_days,
+                last_date,
+            )
+            return True
+
+        except Exception as exc:
+            logger.error("populate_from_backtest failed: %s", exc, exc_info=True)
+            return False
+
     def seed_sample_data(self):
-        """Seed realistic sample data for demo."""
-        import random
-
-        random.seed(42)
-
+        """Seed placeholder data on first startup (replaced by populate_from_backtest after model loads)."""
         with self._cursor() as cur:
             cur.execute("SELECT COUNT(*) as c FROM business_metrics")
             if cur.fetchone()["c"] > 0:
                 return
+
+        import random
+
+        random.seed(42)
 
         base_price = 170.0
         prev_close = base_price
@@ -272,10 +368,8 @@ class BusinessMetricsTracker:
             day = datetime.utcnow() - timedelta(days=60 - i)
             date_str = day.strftime("%Y-%m-%d")
 
-            # Random walk
             change = random.gauss(0.2, 3.0)
             actual = prev_close + change
-            # Prediction with some noise
             pred_noise = random.gauss(0, 1.5)
             predicted = actual + pred_noise
 
@@ -287,4 +381,4 @@ class BusinessMetricsTracker:
             )
             prev_close = actual
 
-        logger.info("Seeded 60 sample business metric entries")
+        logger.info("Seeded 60 placeholder business metric entries (will be replaced by real backtest on startup)")
