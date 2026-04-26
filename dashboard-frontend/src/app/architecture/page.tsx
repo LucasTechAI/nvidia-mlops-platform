@@ -474,7 +474,7 @@ export default function ArchitecturePage() {
 
         {/* Watermark */}
         <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-4">
-          <span className="text-[10px] text-white/15">NVIDIA MLOps Platform — E2E Architecture Diagram</span>
+          <span className="text-[10px] text-white/15">TradeOps Platform — E2E Architecture Diagram</span>
           <div className="flex items-center gap-2">
             <span className="rounded border border-white/10 px-2 py-0.5 text-[9px] text-white/20">draw.io style</span>
             <span className="text-[10px] text-white/15">v1.0</span>

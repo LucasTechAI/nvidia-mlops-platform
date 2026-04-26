@@ -39,10 +39,10 @@ export default function TopNav() {
       {/* Logo */}
       <div className="flex flex-shrink-0 items-center gap-2.5 border-r border-teal-500/10 px-5 h-full">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/15 ring-1 ring-teal-500/20">
-          <span className="text-sm font-bold text-teal-400">N</span>
+          <span className="text-sm font-bold text-teal-400">T</span>
         </div>
         <span className="hidden text-sm font-bold text-white sm:block whitespace-nowrap">
-          NVIDIA MLOps
+          TradeOps
         </span>
       </div>
 

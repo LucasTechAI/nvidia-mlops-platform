@@ -61,7 +61,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </div>
         {!collapsed && (
           <div className="min-w-0 overflow-hidden">
-            <h1 className="truncate text-sm font-bold text-white">NVIDIA MLOps</h1>
+            <h1 className="truncate text-sm font-bold text-white">TradeOps</h1>
             <p className="truncate text-xs text-white/40">Stock Prediction Platform</p>
           </div>
         )}

@@ -108,7 +108,7 @@ export default function HomePage() {
           TOP NAV — índice do pitch
           ============================================================ */}
       <nav>
-        <div className="nav-logo">NVDA · MLOps</div>
+        <div className="nav-logo">TradeOps</div>
         <ul className="nav-links">
           <li><a href="#hero">Capa</a></li>
           <li><a href="#sobre">Sobre</a></li>
@@ -814,7 +814,7 @@ export default function HomePage() {
               <div className="bc-shimmer"></div>
               <div className="bc-header">
                 <div className="bc-live-dot"></div>
-                <span className="bc-header-title">data flow · NVIDIA MLOps Platform</span>
+                <span className="bc-header-title">data flow · TradeOps Platform</span>
                 <span className="bc-header-tag">docker compose</span>
               </div>
               <div className="bc-body" style={{padding: '24px 20px'}}>

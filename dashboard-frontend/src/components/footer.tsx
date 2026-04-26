@@ -50,7 +50,7 @@ export default function Footer() {
               />
               <div>
                 <div className="text-sm font-bold tracking-widest text-white">
-                  NVDA · MLOps
+                  TradeOps
                 </div>
                 <div className="text-[10px] text-teal-400/70">
                   por Lucas · FIAP Post-Tech MLET

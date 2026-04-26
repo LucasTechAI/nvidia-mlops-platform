@@ -4,8 +4,8 @@ import Footer from "@/components/footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NVIDIA MLOps Dashboard",
-  description: "Stock Prediction Platform — NVIDIA MLOps",
+  title: "TradeOps Dashboard",
+  description: "Stock Prediction Platform — TradeOps",
 };
 
 export default function RootLayout({
