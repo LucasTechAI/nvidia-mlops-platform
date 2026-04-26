@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/NVIDIA-MLOps_Platform-76B900?style=for-the-badge&logo=nvidia&logoColor=white" alt="NVIDIA MLOps Platform" />
+  <img src="https://img.shields.io/badge/NVIDIA-MLOps_Platform-76B900?style=for-the-badge&logo=nvidia&logoColor=white" alt="TradeOps" />
 </p>
 
-<h1 align="center">🟢 NVIDIA MLOps Platform</h1>
+<h1 align="center">🟢 TradeOps</h1>
 
 <p align="center">
   <strong>End-to-end ML platform for stock price prediction with LSTM, real-time monitoring, LLM-powered agent, and a modern Next.js dashboard.</strong>
@@ -58,59 +58,27 @@ A production-grade MLOps platform that predicts **NVIDIA (NVDA) stock closing pr
 
 ## 🏗 Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                        NVIDIA MLOps Platform                             │
-│                                                                          │
-│   ┌─────────────┐     ┌──────────────┐     ┌──────────────────────┐      │
-│   │ Yahoo       │────▶│ ETL Pipeline │────▶│ SQLite DB (6700+)    │      │
-│   │ Finance     │     │ (yfinance)   │     │ + Feature Store      │      │
-│   └─────────────┘     └──────────────┘     └──────────┬───────────┘      │
-│                                                       │                  │
-│   ┌───────────────────────────────────────────────────┼──────────┐       │
-│   │                  Training Pipeline                │          │       │
-│   │   ┌──────────────┐  ┌───────────┐  ┌────────────┐ │          │       │
-│   │   │ Preprocessing│─▶│ Sequence  │─▶│ LSTM Model │ │          │       │
-│   │   │ MinMaxScaler │  │ Generator │  │ 2×128 units│ │          │       │
-│   │   └──────────────┘  └───────────┘  └─────┬──────┘ │          │       │
-│   │                                          │        │          │       │
-│   │   ┌──────────┐   ┌──────────────┐  ┌────▼──────┐  │          │       │
-│   │   │ Optuna   │──▶│ Champion vs  │─▶│ Model     │  │          │       │
-│   │   │ HPO (50+)│   │ Challenger   │  │ Registry  │  │          │       │
-│   │   └──────────┘   └──────────────┘  └───────────┘  │           │      │
-│   └───────────────────────────────────────────────────────────────┘      │
-│                                                                          │
-│   ┌──────────────────── Services (6) ────────────────────────────┐       │
-│   │                                                              │       │
-│   │  ┌────────────┐  ┌────────────┐  ┌────────────┐              │       │
-│   │  │ FastAPI    │  │ Next.js    │  │  MLflow    │              │       │
-│   │  │ REST API   │  │ Dashboard  │  │  Tracking  │              │       │
-│   │  │ :8000      │  │ :3001      │  │  :5000     │              │       │
-│   │  └────────────┘  └────────────┘  └────────────┘              │       │
-│   │                                                              │       │
-│   │  ┌────────────┐  ┌────────────┐  ┌────────────┐              │       │
-│   │  │ Prometheus │  │  Grafana   │  │  Optuna    │              │       │
-│   │  │ Metrics    │  │ Dashboards │  │  Dashboard │              │       │
-│   │  │ :9090      │  │ :3000      │  │  :8080     │              │       │
-│   │  └────────────┘  └────────────┘  └────────────┘              │       │
-│   │                                                              │       │
-│   └──────────────────────────────────────────────────────────────┘       │
-│                                                                          │
-│   ┌──────────────────── AI & Evaluation ─────────────────────────┐       │
-│   │                                                              │       │
-│   │  ┌────────────┐  ┌────────────┐  ┌────────────┐              │       │
-│   │  │ ReAct      │  │ ChromaDB   │  │ OpenRouter │              │       │
-│   │  │ Agent      │◀▶│ Vector DB  │  │ Gemini 2.0 │              │       │
-│   │  └────────────┘  └────────────┘  └────────────┘              │       │
-│   │                                                              │       │
-│   │  ┌────────────┐  ┌────────────┐  ┌────────────┐              │       │
-│   │  │ RAGAS      │  │ LLM-Judge  │  │ LIME       │              │       │
-│   │  │ Evaluation │  │ Scoring    │  │ Explainer  │              │       │
-│   │  └────────────┘  └────────────┘  └────────────┘              │       │
-│   │                                                              │       │
-│   └──────────────────────────────────────────────────────────────┘       │
-│                                                                          │
-└──────────────────────────────────────────────────────────────────────────┘
+
+```mermaid
+flowchart TD
+
+A[Yahoo Finance] --> B[ETL Pipeline]
+B --> C[SQLite Database]
+
+C --> D[Training Pipeline]
+D --> E[LSTM Model]
+E --> F[Model Registry]
+
+F --> G[FastAPI API]
+G --> H[Next.js Dashboard]
+
+G --> I[MLflow]
+G --> J[Prometheus]
+J --> K[Grafana]
+
+G --> L[AI Agent]
+L --> M[ChromaDB]
+L --> N[Gemini]
 ```
 
 ---
@@ -653,8 +621,5 @@ This project is under the **MIT License** — see [LICENSE](LICENSE) for details
 
 ---
 
-<p align="center">
-  <a href="https://youtu.be/u7KbjOdAn5c">🎥 Watch the Demo</a>
-  <br/>
-  <a href="https://www.linkedin.com/in/lucas-mendes-barbosa/">🔗 LinkedIn</a>
-</p>
+> 🎥 YouTube: https://youtu.be/u7KbjOdAn5c
+> 🔗 LinkedIn: https://www.linkedin.com/in/lucas-mendes-barbosa/
