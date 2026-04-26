@@ -25,14 +25,8 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 
 # Key directories
 DATA_DIR = ROOT_DIR / "data"
-MODELS_DIR = DATA_DIR / "models"
 LOGS_DIR = ROOT_DIR / "logs"
-OUTPUTS_DIR = DATA_DIR / "outputs"
-MLRUNS_DIR = DATA_DIR / "mlruns"
-
-# Ensure directories exist
-for directory in [DATA_DIR, MODELS_DIR, LOGS_DIR, OUTPUTS_DIR, MLRUNS_DIR]:
-    directory.mkdir(parents=True, exist_ok=True)
+PROCESSED_DIR = DATA_DIR / "processed"
 
 # ============================================================================
 # Database Configuration
@@ -94,10 +88,18 @@ MLFLOW_ARTIFACT_LOCATION = os.getenv("MLFLOW_ARTIFACT_LOCATION", str(ROOT_DIR / 
 FORECAST_HORIZON = 30
 PREDICTION_UNCERTAINTY_FACTOR = 0.10  # 10% uncertainty for confidence intervals
 
-# Model and Output Directories
+# Model and Output Directories (canonical — matches Docker mounts)
 MODEL_DIR = ROOT_DIR / "models"
 OUTPUT_DIR = ROOT_DIR / "outputs"
 MLRUNS_DIR = ROOT_DIR / "mlruns"
+
+# Backward-compatible aliases
+MODELS_DIR = MODEL_DIR
+OUTPUTS_DIR = OUTPUT_DIR
+
+# Ensure directories exist
+for directory in [DATA_DIR, LOGS_DIR, PROCESSED_DIR, MODEL_DIR, OUTPUT_DIR, MLRUNS_DIR]:
+    directory.mkdir(parents=True, exist_ok=True)
 
 
 # ============================================================================
@@ -204,7 +206,7 @@ class HPOConfig:
     pruner: str = "MedianPruner"  # Options: "MedianPruner", "HyperbandPruner", "None"
 
     # Storage
-    storage: Optional[str] = field(default_factory=lambda: f"sqlite:///{MODELS_DIR}/optuna.db")
+    storage: Optional[str] = field(default_factory=lambda: f"sqlite:///{OUTPUT_DIR}/optuna_studies.db")
 
     # Parallelization
     n_jobs: int = 1  # Number of parallel trials
@@ -227,7 +229,7 @@ class PredictionConfig:
     n_samples: int = 100  # Monte Carlo samples for uncertainty
 
     # Output settings
-    output_dir: Path = field(default_factory=lambda: OUTPUTS_DIR / "predictions")
+    output_dir: Path = field(default_factory=lambda: OUTPUT_DIR / "predictions")
     save_format: str = "csv"  # Options: "csv", "json", "parquet"
 
     # Visualization
@@ -256,6 +258,7 @@ class Settings:
     model_dir: Path = MODEL_DIR
     output_dir: Path = OUTPUT_DIR
     mlruns_dir: Path = MLRUNS_DIR
+    processed_dir: Path = PROCESSED_DIR
 
     # Database
     database_path: str = DATABASE_PATH

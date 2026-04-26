@@ -103,7 +103,7 @@ X_train, y_train, X_val, y_val, X_test, y_test = train_val_test_split(
 
 # Save test data for explainability
 import numpy as np
-processed_dir = Path(settings.model_dir).parent / 'processed'
+processed_dir = Path(settings.data_dir) / 'processed'
 processed_dir.mkdir(parents=True, exist_ok=True)
 np.save(processed_dir / 'X_test.npy', X_test)
 np.save(processed_dir / 'y_test.npy', y_test)
