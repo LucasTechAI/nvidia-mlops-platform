@@ -238,10 +238,10 @@ export default function ArchitecturePage() {
             <Box
               icon="🗄️"
               title="SQLite Database"
-              subtitle="6,700+ historical records"
+              subtitle="6,846 historical records"
               color="#4ECDC4"
-              tech={["SQLite", "6700+ rows"]}
-              tip="Banco de dados local armazenando todo o histórico de preços e volumes da NVDA."
+              tech={["SQLite", "6846 rows"]}
+              tip="Banco de dados local armazenando todo o histórico de preços e volumes da NVDA (até 2026-04-10)."
             />
           </div>
 
@@ -430,8 +430,8 @@ export default function ArchitecturePage() {
               title="Dashboard Pages"
               subtitle="Full pipeline visualization"
               color="#ffffff"
-              tech={["Predictions", "Metrics", "Architecture", "Evaluation"]}
-              tip="Conjunto de páginas que permitem explorar previsões, métricas de treino, arquitetura do modelo e avaliação do sistema."
+              tech={["Predictions", "MLOps", "Metrics", "Evaluation", "Logs"]}
+              tip="12 páginas: Home, Predictions, Metrics, Model Schema, Observability, Evaluation, Agent, Architecture, MLOps, Logs, Next Steps e Landing."
             />
           </div>
 
@@ -511,7 +511,7 @@ export default function ArchitecturePage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { category: "Deep Learning", items: "PyTorch, LSTM, NumPy" },
-            { category: "MLOps", items: "MLflow, Optuna, DVC" },
+            { category: "MLOps", items: "MLflow Tracing, Optuna, DVC" },
             { category: "Backend", items: "FastAPI, Uvicorn, SQLite" },
             { category: "Frontend", items: "Next.js 14, React, Recharts" },
             { category: "Data", items: "pandas, yfinance, scikit-learn" },
@@ -533,7 +533,7 @@ export default function ArchitecturePage() {
       {/* ── Frontend Sub-Canvas ── */}
       <SubCanvas
         title="🖥️ Frontend — Next.js Dashboard"
-        subtitle="9-page interactive dashboard built with Next.js 14 App Router, React 18, Recharts and Tailwind CSS — port 3001."
+        subtitle="12-page interactive dashboard built with Next.js 14 App Router, React 18, Recharts and Tailwind CSS — port 3001."
       >
         <Lane label="App Router — Pages" color="#ffffff" />
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -547,6 +547,9 @@ export default function ArchitecturePage() {
             { page: "/evaluation", name: "Evaluation", icon: "🔬" },
             { page: "/agent", name: "Agent Chat", icon: "🤖" },
             { page: "/architecture", name: "Architecture", icon: "🏗️" },
+            { page: "/mlops", name: "MLOps", icon: "⚙️" },
+            { page: "/logs", name: "Logs", icon: "📜" },
+            { page: "/next-steps", name: "Next Steps", icon: "🚩" },
           ].map((p) => (
             <div key={p.page} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
               <span className="text-sm">{p.icon}</span>
@@ -602,7 +605,7 @@ export default function ArchitecturePage() {
       {/* ── Backend Sub-Canvas ── */}
       <SubCanvas
         title="⚡ Backend — FastAPI REST API"
-        subtitle="High-performance async API with 8 route modules, Prometheus metrics, CORS middleware and nginx reverse proxy — port 8000."
+        subtitle="High-performance async API with 10 route modules, Prometheus metrics, CORS middleware and nginx reverse proxy — port 8000."
       >
         <Lane label="Request Flow" color="#FF6B35" />
         <div className="flex items-center justify-center gap-3">
@@ -626,7 +629,7 @@ export default function ArchitecturePage() {
 
         <div className="flex justify-center"><ArrowDown label="Route" color="#76B900" /></div>
 
-        <Lane label="API Routers (8 modules)" color="#76B900" />
+        <Lane label="API Routers (10 modules)" color="#76B900" />
         <div className="flex flex-wrap items-center justify-center gap-2">
           {[
             { name: "/predict", desc: "LSTM forecast", icon: "🔮", color: "#4ECDC4" },
@@ -637,6 +640,8 @@ export default function ArchitecturePage() {
             { name: "/agent", desc: "Chat / ask", icon: "🤖", color: "#A855F7" },
             { name: "/train", desc: "Training pipeline", icon: "🏋️", color: "#EF5B5B" },
             { name: "/explainability", desc: "Feature importance", icon: "🔬", color: "#945DD6" },
+            { name: "/logs", desc: "Request logs", icon: "📜", color: "#06B6D4" },
+            { name: "/mlops", desc: "SLA, registry, costs", icon: "⚙️", color: "#F59E0B" },
           ].map((r) => (
             <div key={r.name} className="rounded-lg border-2 px-3 py-2 text-center" style={{ borderColor: `${r.color}40`, background: `${r.color}08` }}>
               <span className="text-sm">{r.icon}</span>
@@ -683,7 +688,7 @@ export default function ArchitecturePage() {
       {activeTab === "agent" && (
       <SubCanvas
         title="🤖 LLM Agent & RAG Pipeline"
-        subtitle="ReAct agent with 4 custom financial tools and ChromaDB-powered Retrieval-Augmented Generation."
+        subtitle="ReAct agent with 4 custom financial tools and ChromaDB-powered Retrieval-Augmented Generation. LLM: google/gemini-2.0-flash-001 via OpenRouter (configurável por env var)."
       >
         <Lane label="Agent Layer" color="#A855F7" />
         <div className="flex items-center justify-center gap-4">
@@ -737,7 +742,7 @@ export default function ArchitecturePage() {
 
         <Lane label="LLM-as-Judge" color="#8B5CF6" />
         <div className="flex items-center justify-center gap-4">
-          <Box icon="⚖️" title="LLM Judge" subtitle="GPT evaluates responses" color="#8B5CF6" tech={["GPT-4", "3 criteria"]} tip="LLM avalia cada resposta com 3 critérios: relevância (1-5), acurácia factual (1-5) e utilidade para investimento (1-5)." />
+          <Box icon="⚖️" title="LLM Judge" subtitle="OpenRouter LLM evaluates responses" color="#8B5CF6" tech={["Gemini 2.0 Flash", "gpt-4o-mini", "3 criteria"]} tip="LLM avalia cada resposta com 3 critérios: relevância (1-5), acurácia factual (1-5) e utilidade para investimento (1-5). Usa o modelo configurado em LLM_JUDGE_MODEL (padrão: google/gemini-2.0-flash-001 via OpenRouter)." />
           <ArrowRight color="#8B5CF6" />
           <div className="flex gap-3">
             {[
@@ -869,7 +874,7 @@ export default function ArchitecturePage() {
         <div className="flex items-center justify-center gap-4">
           <Box icon="🤖" title="LLM Calls" subtitle="Agent & RAG interactions" color="#06B6D4" tech={["traced calls"]} tip="Todas as chamadas ao LLM feitas pelo agente e RAG são instrumentadas." />
           <ArrowRight label="Trace" color="#06B6D4" />
-          <Box icon="🔭" title="Langfuse / TruLens" subtitle="LLM observability" color="#06B6D4" tech={["Langfuse"]} tip="Registra traces hierárquicos capturando latência, tokens, custo e qualidade de cada chamada LLM." />
+          <Box icon="🔭" title="MLflow LLM Tracing" subtitle="Native OpenAI-compatible traces" color="#06B6D4" tech={["MLflow", "mlruns/mlflow.db"]} tip="MLflow instrumenta automaticamente chamadas LLM via mlflow.openai.autolog(). Traces hierárquicos com latência, tokens e custo são armazenados em mlruns/mlflow.db e consultados pelo /cost-analysis." />
           <ArrowRight label="Analyze" color="#06B6D4" />
           <div className="flex gap-2">
             {["Faithfulness", "Relevancy", "Token Usage", "Latency"].map((m) => (
@@ -1006,7 +1011,7 @@ export default function ArchitecturePage() {
       {activeTab === "testing" && (
       <SubCanvas
         title="🧪 Testing & CI/CD Quality Gates"
-        subtitle="12 test modules (45+ files), pytest with coverage, linting, type checking and automated CI/CD."
+        subtitle="12 test modules (46 files, 577+ tests), pytest with coverage, linting, type checking and automated CI/CD."
       >
         <Lane label="Test Suites" color="#2496ED" />
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -1225,7 +1230,7 @@ export default function ArchitecturePage() {
           <Check label="Golden Set ≥ 20 Pairs" detail="data/golden_set/golden_set.json — curated Q&A pairs" />
           <Check label="RAGAS 4 Metrics" detail="evaluation/ragas_eval.py — faithfulness, relevancy, precision, recall" />
           <Check label="LLM-as-Judge ≥ 3 Criteria" detail="evaluation/llm_judge.py — relevance, accuracy, business utility" />
-          <Check label="Telemetry Dashboard" detail="Prometheus:9090 + Grafana:3000 + Langfuse telemetry" />
+          <Check label="Telemetry Dashboard" detail="Prometheus:9090 + Grafana:3000 + MLflow LLM Tracing (traces em mlruns/mlflow.db)" />
           <Check label="Drift Detection Documented" detail="src/monitoring/drift.py — Evidently PSI with thresholds" />
         </div>
 

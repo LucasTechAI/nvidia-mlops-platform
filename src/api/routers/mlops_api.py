@@ -7,6 +7,7 @@ import logging
 import os
 from dataclasses import asdict
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -385,19 +386,67 @@ async def cost_analysis(days: int = Query(30, ge=1, le=365)):
         llm_provider = os.getenv("LLM_PROVIDER", "openrouter")
         model_pricing = LLM_PRICING.get(llm_model, LLM_PRICING["google/gemini-2.0-flash-001"])
 
-        # ── Estimate LLM usage from golden set + agent queries ──
-        # Each evaluation run: ~25 questions × ~500 tokens avg input + ~200 tokens output
-        # RAGAS: 4 metrics × 25 samples × ~300 tokens each
-        # LLM-Judge: 25 samples × ~400 tokens input + ~150 tokens output
-        # Agent queries: estimate ~50/day × ~800 tokens avg
+        # ── Real LLM token usage from MLflow traces ──────────
+        cutoff_ms = int((datetime.utcnow() - timedelta(days=days)).timestamp() * 1000)
+        mlflow_db = Path(__file__).resolve().parent.parent.parent.parent / "mlruns" / "mlflow.db"
 
-        eval_runs_per_month = 10  # estimated evaluation runs
-        ragas_tokens_input = eval_runs_per_month * 4 * 25 * 300
-        ragas_tokens_output = eval_runs_per_month * 4 * 25 * 100
-        judge_tokens_input = eval_runs_per_month * 25 * 400
-        judge_tokens_output = eval_runs_per_month * 25 * 150
-        agent_tokens_input = 50 * days * 800
-        agent_tokens_output = 50 * days * 300
+        ragas_tokens_input = 0
+        ragas_tokens_output = 0
+        judge_tokens_input = 0
+        judge_tokens_output = 0
+        agent_tokens_input = 0
+        agent_tokens_output = 0
+        daily_token_map: dict = {}
+        _using_real_tokens = False
+
+        try:
+            import json
+            import sqlite3 as _sqlite3
+
+            con = _sqlite3.connect(str(mlflow_db))
+            rows = con.execute(
+                """
+                SELECT trm.key, trm.value, ti.timestamp_ms
+                FROM trace_request_metadata trm
+                JOIN trace_info ti ON trm.request_id = ti.request_id
+                WHERE trm.key IN (
+                    'mlflow.trace.tokenUsage',
+                    'mlflow.trace.inputs',
+                    'mlflow.trace.outputs'
+                )
+                  AND ti.timestamp_ms >= ?
+                """,
+                (cutoff_ms,),
+            ).fetchall()
+            con.close()
+
+            for key, value, ts_ms in rows:
+                day_str = datetime.utcfromtimestamp(ts_ms / 1000).strftime("%Y-%m-%d")
+                if key == "mlflow.trace.tokenUsage":
+                    try:
+                        usage = json.loads(value) if isinstance(value, str) else value
+                        inp = int(usage.get("input_tokens", usage.get("prompt_tokens", 0)))
+                        out = int(usage.get("output_tokens", usage.get("completion_tokens", 0)))
+                        agent_tokens_input += inp
+                        agent_tokens_output += out
+                        if day_str not in daily_token_map:
+                            daily_token_map[day_str] = {"input": 0, "output": 0}
+                        daily_token_map[day_str]["input"] += inp
+                        daily_token_map[day_str]["output"] += out
+                    except (json.JSONDecodeError, TypeError, KeyError):
+                        pass
+
+            _using_real_tokens = True
+        except Exception as _mlflow_exc:
+            logger.warning("Could not read MLflow token usage, falling back to estimate: %s", _mlflow_exc)
+            # Fallback estimates
+            eval_runs_per_month = 10
+            ragas_tokens_input = eval_runs_per_month * 4 * 25 * 300
+            ragas_tokens_output = eval_runs_per_month * 4 * 25 * 100
+            judge_tokens_input = eval_runs_per_month * 25 * 400
+            judge_tokens_output = eval_runs_per_month * 25 * 150
+            agent_tokens_input = 50 * days * 800
+            agent_tokens_output = 50 * days * 300
 
         total_input_tokens = ragas_tokens_input + judge_tokens_input + agent_tokens_input
         total_output_tokens = ragas_tokens_output + judge_tokens_output + agent_tokens_output
@@ -516,26 +565,32 @@ async def cost_analysis(days: int = Query(30, ge=1, le=365)):
                 "cost": round((judge_tokens_output / 1_000_000) * model_pricing["output"], 4),
             },
             {
-                "name": "RAG Agent (input)",
+                "name": "RAG Agent (input)" + (" (real)" if _using_real_tokens else " (estimated)"),
                 "tokens": agent_tokens_input,
                 "cost": round((agent_tokens_input / 1_000_000) * model_pricing["input"], 4),
             },
             {
-                "name": "RAG Agent (output)",
+                "name": "RAG Agent (output)" + (" (real)" if _using_real_tokens else " (estimated)"),
                 "tokens": agent_tokens_output,
                 "cost": round((agent_tokens_output / 1_000_000) * model_pricing["output"], 4),
             },
         ]
 
-        # ── Daily cost history (simulated projection) ──
+        # ── Daily cost history (real per-day tokens where available) ──
         daily_cost_history = []
+        day_infra = infra_total / days
         for i in range(min(days, 60)):
             day = datetime.utcnow() - timedelta(days=days - 1 - i)
-            day_infra = infra_total / days
-            day_llm = llm_total / days
+            day_str = day.strftime("%Y-%m-%d")
+            if day_str in daily_token_map:
+                d_inp = daily_token_map[day_str]["input"]
+                d_out = daily_token_map[day_str]["output"]
+                day_llm = (d_inp / 1_000_000) * model_pricing["input"] + (d_out / 1_000_000) * model_pricing["output"]
+            else:
+                day_llm = llm_total / days
             daily_cost_history.append(
                 {
-                    "date": day.strftime("%Y-%m-%d"),
+                    "date": day_str,
                     "infra": round(day_infra, 2),
                     "llm": round(day_llm, 4),
                     "total": round(day_infra + day_llm, 2),

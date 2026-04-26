@@ -332,73 +332,107 @@ class FeatureStore:
 
     # ── Seed demo data ────────────────────────────────────────
     def seed_sample_data(self):
-        """Seed feature store with sample NVIDIA stock features."""
+        """Seed feature store with real NVIDIA stock OHLCV data from nvidia_stock.db."""
+        stock_db = Path(__file__).resolve().parent.parent.parent / "data" / "nvidia_stock.db"
+
         with self._cursor() as cur:
-            cur.execute("SELECT COUNT(*) as c FROM feature_sets")
+            # Skip if already seeded with real data from the database source
+            cur.execute("SELECT COUNT(*) as c FROM feature_lineage WHERE source_name = 'data/nvidia_stock.db'")
             if cur.fetchone()["c"] > 0:
                 return
 
-        import random
+            # Clear any existing stale seed data (previously seeded from CSV/random)
+            cur.execute("SELECT COUNT(*) as c FROM feature_sets")
+            if cur.fetchone()["c"] > 0:
+                cur.execute("DELETE FROM feature_usage")
+                cur.execute("DELETE FROM feature_lineage")
+                cur.execute("DELETE FROM feature_data")
+                cur.execute("DELETE FROM feature_sets")
 
-        random.seed(42)
+        try:
+            import sqlite3 as _sqlite3
 
-        dates = pd.date_range(end=datetime.utcnow(), periods=252, freq="B")
+            con = _sqlite3.connect(str(stock_db))
+            stock_df = pd.read_sql_query(
+                "SELECT date, open, high, low, close, volume FROM nvidia_stock ORDER BY date",
+                con,
+            )
+            con.close()
+        except Exception as exc:
+            logger.warning("Could not load nvidia_stock.db, skipping feature store seed: %s", exc)
+            return
 
-        # Raw price features
-        raw_data = {
-            "close": [100 + i * 0.5 + random.gauss(0, 3) for i in range(252)],
-            "volume": [random.randint(10_000_000, 80_000_000) for _ in range(252)],
-            "high": [100 + i * 0.5 + abs(random.gauss(2, 1)) for i in range(252)],
-            "low": [100 + i * 0.5 - abs(random.gauss(2, 1)) for i in range(252)],
-            "open": [100 + i * 0.5 + random.gauss(0, 1) for i in range(252)],
-        }
-        raw_df = pd.DataFrame(raw_data, index=dates)
+        stock_df["date"] = pd.to_datetime(stock_df["date"], utc=True).dt.tz_localize(None)
+        stock_df = stock_df.set_index("date")
+        # Use the last 252 business days available
+        stock_df = stock_df.tail(252)
+
+        # ── Raw price features ────────────────────────────────
+        raw_df = stock_df[["open", "high", "low", "close", "volume"]].copy()
         self.register_feature_set(
             "nvidia_raw_prices",
             raw_df,
-            description="Raw NVIDIA stock OHLCV data",
-            source_type="csv",
-            source_name="data/raw/nvidia_stock.csv",
+            description="Real NVIDIA stock OHLCV data from nvidia_stock.db",
+            source_type="database",
+            source_name="data/nvidia_stock.db",
         )
 
-        # Technical indicators
-        close = pd.Series(raw_data["close"])
+        # ── Technical indicators (computed from real prices) ──
+        close = stock_df["close"]
+        high = stock_df["high"]
+        low = stock_df["low"]
+
+        # RSI-14 (real Wilder smoothing)
+        delta = close.diff()
+        gain = delta.clip(lower=0).ewm(alpha=1 / 14, adjust=False).mean()
+        loss = (-delta.clip(upper=0)).ewm(alpha=1 / 14, adjust=False).mean()
+        rs = gain / loss.replace(0, float("nan"))
+        rsi = 100 - (100 / (1 + rs))
+
+        # ATR-14 (real Average True Range)
+        prev_close = close.shift(1)
+        tr = pd.concat(
+            [high - low, (high - prev_close).abs(), (low - prev_close).abs()],
+            axis=1,
+        ).max(axis=1)
+        atr = tr.ewm(alpha=1 / 14, adjust=False).mean()
+
         tech_data = {
             "sma_5": close.rolling(5).mean().bfill(),
             "sma_20": close.rolling(20).mean().bfill(),
             "ema_12": close.ewm(span=12).mean(),
-            "rsi_14": 50 + pd.Series([random.gauss(0, 15) for _ in range(252)]),
+            "rsi_14": rsi.bfill(),
             "macd": close.ewm(span=12).mean() - close.ewm(span=26).mean(),
             "bollinger_upper": close.rolling(20).mean().bfill() + 2 * close.rolling(20).std().bfill(),
             "bollinger_lower": close.rolling(20).mean().bfill() - 2 * close.rolling(20).std().bfill(),
-            "atr_14": pd.Series([random.uniform(1, 5) for _ in range(252)]),
-            "volume_sma_20": pd.Series(raw_data["volume"]).rolling(20).mean().bfill(),
+            "atr_14": atr.bfill(),
+            "volume_sma_20": stock_df["volume"].rolling(20).mean().bfill(),
         }
-        tech_df = pd.DataFrame(tech_data, index=dates)
+        tech_df = pd.DataFrame(tech_data, index=stock_df.index)
         self.register_feature_set(
             "nvidia_technical_indicators",
             tech_df,
-            description="Technical analysis indicators derived from price data",
+            description="Technical indicators derived from real NVIDIA prices",
             source_type="feature_set",
-            source_name="nvidia_raw_prices",
+            source_name="data/nvidia_stock.db",
             transform_name="technical_indicators",
             transform_params={"sma_windows": [5, 20], "ema_span": 12, "rsi_period": 14},
         )
 
-        # Lag features (for LSTM input)
+        # ── Lag features (for LSTM input) ─────────────────────
         lag_data = {}
         for lag in range(1, 6):
             lag_data[f"close_lag_{lag}"] = close.shift(lag).bfill()
             lag_data[f"return_lag_{lag}"] = close.pct_change(lag).fillna(0)
-        lag_df = pd.DataFrame(lag_data, index=dates)
+        lag_df = pd.DataFrame(lag_data, index=stock_df.index)
         self.register_feature_set(
             "nvidia_lag_features",
             lag_df,
-            description="Lag features for sequence model input (5 lags of price & returns)",
+            description="Lag features for LSTM sequence input from real NVIDIA prices",
             source_type="feature_set",
-            source_name="nvidia_raw_prices",
+            source_name="data/nvidia_stock.db",
             transform_name="lag_generator",
             transform_params={"n_lags": 5, "features": ["close", "return"]},
         )
 
-        logger.info("Seeded feature store with 3 feature sets")
+        logger.info("Seeded feature store with 3 real feature sets from nvidia_stock.db")

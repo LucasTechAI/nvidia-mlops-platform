@@ -106,6 +106,58 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+const TAB_INFO: Record<TabId, { headline: string; description: string; why: string }> = {
+  sla: {
+    headline: "SLA & Uptime — Disponibilidade e Qualidade de Serviço",
+    description:
+      "Monitora em tempo real a disponibilidade da API, latência das requisições (p50 / p95 / p99) e taxa de erros. Os dados vêm diretamente do log de requisições e de health checks periódicos executados a cada 60 s.",
+    why:
+      "Garante que o modelo esteja servindo predições dentro do SLA contratado (99,5 % de uptime). Alertas automáticos detectam degradação antes que o usuário final perceba.",
+  },
+  business: {
+    headline: "Métricas de Negócio — P&L e Qualidade das Predições",
+    description:
+      "Compara as predições do modelo LSTM com os preços reais de fechamento da NVIDIA. Calcula P&L diário, ROI acumulado, Sharpe ratio, taxa de acerto direcional e RMSE ao longo do tempo.",
+    why:
+      "Traduz a acurácia técnica do modelo em valor de negócio. Um modelo com RMSE baixo, mas direção errada, pode gerar perdas; essas métricas expõem exatamente esse risco.",
+  },
+  registry: {
+    headline: "Registro de Modelos — Ciclo de Vida e Versionamento",
+    description:
+      "Centraliza todas as versões do modelo treinado, com status (Staging → Production → Archived), hiperparâmetros, métricas de validação e histórico de transições de stage.",
+    why:
+      "Permite rollback instantâneo para qualquer versão anterior, rastreabilidade completa de quais dados e configurações geraram cada modelo, e promoção controlada para produção.",
+  },
+  features: {
+    headline: "Feature Store — Repositório de Features Versionadas",
+    description:
+      "Armazena e versiona os conjuntos de features utilizados no treinamento e inferência: preços OHLCV brutos, indicadores técnicos (RSI, ATR, MACD, Bollinger) e features de lag para a janela LSTM. Todos derivados do `data/nvidia_stock.db`.",
+    why:
+      "Evita data leakage garantindo que treino e inferência usem exatamente as mesmas transformações. Facilita experimentos com novas features sem quebrar pipelines existentes.",
+  },
+  canary: {
+    headline: "Canary Deploy — Implantação Gradual com Safety Net",
+    description:
+      "Controla a proporção de tráfego enviada para um modelo candidato em relação ao modelo em produção. Cada etapa aumenta o tráfego gradualmente, com rollback automático se métricas degradarem.",
+    why:
+      "Reduz o risco de uma atualização de modelo causar impacto em 100 % dos usuários. Problemas são detectados com <5 % do tráfego antes de afetar toda a base.",
+  },
+  cost: {
+    headline: "Análise de Custos — Infraestrutura e Tokens LLM",
+    description:
+      "Estima os custos reais de operação: servidor de API, MLflow tracking, Prometheus/Grafana, armazenamento de modelos e tokens consumidos pelo agente RAG e avaliações LLM. Tokens são lidos diretamente dos traces do MLflow.",
+    why:
+      "Operações de ML têm custos ocultos que escalam com uso. Esta aba torna visível o custo por componente para otimizar gastos e justificar investimentos em infraestrutura.",
+  },
+  hardware: {
+    headline: "Hardware Setup — Requisitos de Infraestrutura",
+    description:
+      "Especifica os requisitos mínimos, recomendados e de produção para cada componente da plataforma: GPU para treinamento, CPU/RAM para a API, armazenamento para modelos e banco de dados.",
+    why:
+      "Garante que a equipe de DevOps provisione os recursos corretos antes do deploy, evitando gargalos de memória durante treinamento ou latência excessiva em produção.",
+  },
+};
+
 const COLORS = ["#76b900", "#0ea5e9", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6"];
 
 /* ══════════════════════════════════════════════════════════════
@@ -502,6 +554,30 @@ export default function MLOpsPage() {
           </button>
         ))}
       </div>
+
+      {/* Tab info block */}
+      {(() => {
+        const info = TAB_INFO[activeTab];
+        const tab = TABS.find((t) => t.id === activeTab)!;
+        const Icon = tab.icon;
+        return (
+          <div className="rounded-xl border border-surface-border bg-surface-card/60 px-5 py-4 flex gap-4">
+            <div className="mt-0.5 shrink-0">
+              <div className="rounded-lg bg-nvidia/10 p-2">
+                <Icon className="h-5 w-5 text-nvidia" />
+              </div>
+            </div>
+            <div className="space-y-1 min-w-0">
+              <p className="text-sm font-semibold text-white">{info.headline}</p>
+              <p className="text-xs text-white/55 leading-relaxed">{info.description}</p>
+              <p className="text-xs text-nvidia/80 leading-relaxed">
+                <span className="font-semibold text-nvidia">Por quê importa: </span>
+                {info.why}
+              </p>
+            </div>
+          </div>
+        );
+      })()}
 
       {error && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">{error}</div>
