@@ -607,7 +607,7 @@ export default function HomePage() {
         <div className="container">
           <div className="section-header reveal">
             <span className="section-label">02 — Objetivo &amp; Hipótese</span>
-            <h2>Provar que dá pra fazer <span className="text-gradient">MLOps de verdade</span> em um TCC</h2>
+            <h2>Provar que dá pra fazer <span className="text-gradient">MLOps de verdade</span> em um Datathon</h2>
             <p>Um único repositório open-source, reproduzível em qualquer máquina, cobrindo todo o ciclo de vida do modelo.</p>
           </div>
           <div className="bento-grid stagger-up" style={{gridTemplateColumns: '1fr'}}>
@@ -619,7 +619,7 @@ export default function HomePage() {
               <div className="bc-header">
                 <div className="bc-live-dot"></div>
                 <span className="bc-header-title">Hipótese central</span>
-                <span className="bc-header-tag">TCC · MLET</span>
+                <span className="bc-header-tag">Datathon · MLET</span>
               </div>
               <div className="bc-body">
                 <h2 style={{margin: 0}}>É possível construir uma plataforma MLOps <span className="text-gradient">end-to-end e open-source</span> que prevê NVDA com <span className="text-gradient">R² &gt; 0.95</span>, com SLA de produção, observabilidade nativa e agente LLM auditável.</h2>
@@ -1265,7 +1265,7 @@ export default function HomePage() {
         <div className="container">
           <div className="section-header reveal">
             <span className="section-label">07 — Diferenciais</span>
-            <h2>O que <span className="text-gradient">difere</span> este TCC</h2>
+            <h2>O que <span className="text-gradient">difere</span> este Datathon</h2>
             <p>Mais que um notebook entregando MAPE — um produto inteiro com guardrails, observabilidade e explicabilidade.</p>
           </div>
           <div className="bento-grid stagger-up" style={{gridTemplateColumns: '1fr 1fr 1fr'}}>
@@ -1640,7 +1640,7 @@ export default function HomePage() {
 
             {/* tag line */}
             <p style={{marginTop:'32px',fontSize:'11px',color:'rgba(255,255,255,0.2)',letterSpacing:'0.08em',textTransform:'uppercase'}}>
-              FIAP Post-Tech MLET · TCC Tech Challenge Fase 5 · 2025
+              FIAP Post-Tech MLET · Datathon Tech Challenge Fase 5 · 2025
             </p>
 
 
@@ -1649,59 +1649,8 @@ export default function HomePage() {
       </section>
 
       {/* ============================================================
-          FOOTER
+          FOOTER — rendered globally via layout.tsx
           ============================================================ */}
-      <footer>
-        <div className="container">
-          <div className="footer-grid">
-            <div className="footer-brand">
-              <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'12px'}}>
-                <img src="/lucas.png" alt="Lucas" style={{width:'36px',height:'36px',borderRadius:'50%',objectFit:'cover',objectPosition:'top',border:'1px solid rgba(20,184,166,0.3)',flexShrink:0}}/>
-                <div>
-                  <div className="nav-logo" style={{marginBottom:'0'}}>NVDA · MLOps</div>
-                  <div style={{fontSize:'10px',color:'rgba(20,184,166,0.7)',marginTop:'1px'}}>por Lucas · FIAP Post-Tech MLET</div>
-                </div>
-              </div>
-              <p>TCC FIAP Post-Tech MLET — Tech Challenge Fase 5. Plataforma MLOps end-to-end para forecasting de NVDA com LSTM, MLflow, agente RAG e observabilidade.</p>
-            </div>
-            <div>
-              <div className="footer-col-title">Pitch</div>
-              <ul className="footer-links">
-                <li><a href="#problema">Problema</a></li>
-                <li><a href="#objetivo">Objetivo</a></li>
-                <li><a href="#arquitetura">Arquitetura</a></li>
-                <li><a href="#resultados">Resultados</a></li>
-                <li><a href="#conclusao">Conclusão</a></li>
-              </ul>
-            </div>
-            <div>
-              <div className="footer-col-title">Demo</div>
-              <ul className="footer-links">
-                <li><a href="/predictions">Predictions</a></li>
-                <li><a href="/monitoring">Monitoring</a></li>
-                <li><a href="/agent">Agent</a></li>
-                <li><a href="/architecture">Architecture</a></li>
-                <li><a href="/metrics">Metrics</a></li>
-              </ul>
-            </div>
-            <div>
-              <div className="footer-col-title">Recursos</div>
-              <ul className="footer-links">
-                <li><a href="https://github.com/LucasTechAI/nvidia-mlops-platform" target="_blank" rel="noreferrer">GitHub</a></li>
-                <li><a href="https://github.com/LucasTechAI/nvidia-mlops-platform#-documentation" target="_blank" rel="noreferrer">Documentação</a></li>
-                <li><a href="#hero">Voltar ao topo</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="footer-bottom">
-            <div className="footer-copy">© Lucas · TCC FIAP MLET</div>
-            <div className="footer-socials">
-              <a className="social-link" href="https://github.com/LucasTechAI" target="_blank" rel="noreferrer"><span className="iconify" data-icon="lucide:github"></span></a>
-              <a className="social-link" href="https://www.linkedin.com/in/lucas-mendes-barbosa/" target="_blank" rel="noreferrer"><span className="iconify" data-icon="lucide:linkedin"></span></a>
-            </div>
-          </div>
-        </div>
-      </footer>
 
       <Script src="/ds-assets/iconify_654a1ef798a3.js" strategy="afterInteractive" />
       <Script src="/ds-assets/resource_3fa48481346f.es" strategy="afterInteractive" />
