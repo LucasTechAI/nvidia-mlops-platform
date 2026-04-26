@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import TopNav from "@/components/top-nav";
 import Footer from "@/components/footer";
+import HeroBackground from "@/components/hero-background";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,9 +17,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="bg-surface text-white antialiased">
-        <TopNav />
-        <main className="min-h-screen p-8">{children}</main>
-        <Footer />
+        <HeroBackground />
+        <div className="relative z-10">
+          <TopNav />
+          <main className="min-h-screen p-8">{children}</main>
+          <Footer />
+        </div>
       </body>
     </html>
   );

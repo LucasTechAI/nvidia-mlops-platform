@@ -247,7 +247,7 @@ class TestGetHPOResults:
         """Test 404 when no HPO data anywhere."""
         mock_load.return_value = {"hpo_best_params": {}}
         with patch(
-            "src.dashboard.components.metrics.load_hpo_results",
+            "src.api.routers.model_info._load_hpo_from_mlflow",
             side_effect=Exception("No HPO"),
         ):
             response = client.get("/model/hpo-results")

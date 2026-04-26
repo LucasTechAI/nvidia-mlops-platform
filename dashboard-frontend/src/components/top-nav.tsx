@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
@@ -37,13 +38,17 @@ export default function TopNav() {
   return (
     <header className="sticky top-0 z-50 flex h-14 items-center border-b border-teal-500/10 bg-[#0a0b0d]">
       {/* Logo */}
-      <div className="flex flex-shrink-0 items-center gap-2.5 border-r border-teal-500/10 px-5 h-full">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/15 ring-1 ring-teal-500/20">
-          <span className="text-sm font-bold text-teal-400">T</span>
-        </div>
-        <span className="hidden text-sm font-bold text-white sm:block whitespace-nowrap">
-          TradeOps
-        </span>
+      <div className="flex flex-shrink-0 items-center border-r border-teal-500/10 px-5 h-full">
+        <Link href="/home">
+          <Image
+            src="/logo.png"
+            alt="TradeOps"
+            width={200}
+            height={80}
+            className="h-20 w-auto object-contain"
+            priority
+          />
+        </Link>
       </div>
 
       {/* Nav items — centered */}
@@ -63,7 +68,7 @@ export default function TopNav() {
                   : "text-white/50 hover:text-white/90"
               )}
             >
-              <span className="whitespace-nowrap">{item.label}</span>
+              <span className="whitespace-nowrap uppercase tracking-wider">{item.label}</span>
               {/* Active underline */}
               {isActive && (
                 <span className="absolute bottom-0 left-1.5 right-1.5 h-0.5 rounded-full bg-teal-400" />

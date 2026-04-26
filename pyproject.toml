@@ -22,7 +22,6 @@ dependencies = [
     "scipy>=1.12.0",
     "fastapi>=0.110.0",
     "uvicorn>=0.27.0",
-    "streamlit>=1.30.0",
 ]
 
 [project.optional-dependencies]
@@ -54,13 +53,11 @@ markers = [
 
 [tool.coverage.run]
 omit = [
-    "src/dashboard/*",
     "src/view/*",
 ]
 
 [tool.coverage.report]
 omit = [
-    "src/dashboard/*",
     "src/view/*",
 ]
 
@@ -71,8 +68,6 @@ line-length = 120
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
 
-[tool.ruff.lint.per-file-ignores]
-"src/dashboard/**" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"

@@ -1,5 +1,5 @@
 """Tests for logs.py endpoints."""
-from pathlib import Path
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -255,9 +255,7 @@ class TestFileBasedLogs:
         mock_file_obj.__enter__ = MagicMock(return_value=mock_file_obj)
         mock_file_obj.__exit__ = MagicMock(return_value=False)
         mock_file_obj.readlines.return_value = log_content.splitlines(keepends=True)
-        with patch("pathlib.Path.exists", return_value=True), patch(
-            "builtins.open", return_value=mock_file_obj
-        ):
+        with patch("pathlib.Path.exists", return_value=True), patch("builtins.open", return_value=mock_file_obj):
             response = client.get("/logs/api")
         assert response.status_code == 200
         data = response.json()
@@ -265,9 +263,7 @@ class TestFileBasedLogs:
         assert "lines" in data
 
     def test_training_log_no_files_returns_fallback(self, client):
-        with patch("pathlib.Path.exists", return_value=True), patch(
-            "pathlib.Path.glob", return_value=[]
-        ):
+        with patch("pathlib.Path.exists", return_value=True), patch("pathlib.Path.glob", return_value=[]):
             response = client.get("/logs/training")
         assert response.status_code == 200
         data = response.json()
@@ -284,9 +280,7 @@ class TestFileBasedLogs:
         assert len(data["services"]) >= 1
 
     def test_system_log_no_files_returns_fallback(self, client):
-        with patch("pathlib.Path.exists", return_value=True), patch(
-            "pathlib.Path.glob", return_value=[]
-        ):
+        with patch("pathlib.Path.exists", return_value=True), patch("pathlib.Path.glob", return_value=[]):
             response = client.get("/logs/system")
         assert response.status_code == 200
         data = response.json()

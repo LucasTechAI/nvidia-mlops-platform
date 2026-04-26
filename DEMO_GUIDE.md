@@ -25,7 +25,7 @@ See the [run_all.sh](#full-pipeline-script-run_allsh) section for details.
 4. [Hyperparameter Optimization (HPO)](#4-hyperparameter-optimization)
 5. [Predictions](#5-predictions)
 6. [FastAPI REST API](#6-fastapi-rest-api)
-7. [Streamlit Dashboard](#7-streamlit-dashboard)
+7. [Next.js Dashboard](#7-nextjs-dashboard)
 8. [MLflow Tracking](#8-mlflow-tracking)
 9. [Monitoring Stack (Prometheus + Grafana)](#9-monitoring-stack)
 10. [Security Guardrails](#10-security-guardrails)
@@ -39,7 +39,7 @@ See the [run_all.sh](#full-pipeline-script-run_allsh) section for details.
 
 ## 1. Quality Gates
 
-### Tests (484 passing, 61% coverage)
+### Tests (594 passing, 60% coverage)
 
 ```bash
 # Run full test suite
@@ -51,12 +51,12 @@ pytest tests/ --tb=short -q
 
 **Expected output**:
 ```
-484 passed, 6 skipped in ~8s
+594 passed in ~10s
 ```
 
 **Highlight for the panel**:
-- ✅ 484 automated tests across 10+ modules
-- ✅ 61% coverage (threshold: 60%)
+- ✅ 594 automated tests across 12 modules
+- ✅ 60%+ coverage (threshold: 60%)
 - ✅ Tests cover: API endpoints, LSTM model, preprocessing, ETL, training, champion-challenger, drift detection, guardrails, PII detection, agent
 - ✅ CI/CD enforces coverage minimum — build fails below 60%
 
@@ -257,34 +257,42 @@ curl -s -X POST http://localhost:8000/predict \
 
 ---
 
-## 7. Streamlit Dashboard
+## 7. Next.js Dashboard
 
 ### What it does
-Interactive dashboard with 7 tabs for data exploration, predictions, metrics, and observability.
+Modern **Next.js 14** dashboard with **11 pages** and NVIDIA-themed dark UI for full platform visibility.
 
 ```bash
-bash scripts/run_dashboard.sh
+# Dev mode
+cd dashboard-frontend && npm run dev
+
+# Or via Docker
+docker compose up -d
 ```
 
-**URL**: http://localhost:8501
+**URL**: http://localhost:3001
 
-### Tabs to demonstrate
+### Pages to demonstrate
 
-| Tab | Content |
-|-----|---------|
-| **📈 Overview** | Current NVIDIA price, daily change, volume, candlestick chart |
-| **🔮 Predictions** | Interactive 30-day forecast with confidence intervals |
-| **📊 Metrics** | RMSE, MAE, MAPE, loss curves, training history |
-| **📋 Data Analysis** | Descriptive statistics, distributions, correlation matrix |
-| **🔍 Observability** | Drift detection status, champion-challenger results, telemetry links |
-| **📝 Evaluation** | RAGAS metrics, LLM-judge scores, explainability charts |
-| **🤖 AI Agent** | Interactive chat with the ReAct agent (RAG-powered) |
+| Page | Route | Content |
+|------|-------|---------|
+| **🏠 Home** | `/home` | Overview metrics, current NVDA price, daily change |
+| **📈 Predictions** | `/predictions` | 30-day forecast chart with confidence intervals |
+| **📊 Metrics** | `/metrics` | RMSE, MAE, MAPE, loss curves, training history |
+| **🔬 Evaluation** | `/evaluation` | Model Metrics · LIME Explainability · RAGAS + LLM-Judge |
+| **👁️ Observability** | `/observability` | Drift Detection · Champion-Challenger · Telemetry (6 services) |
+| **⚙️ MLOps** | `/mlops` | Model Registry · Business Metrics · SLA · P&L · Cost Analysis |
+| **🤖 AI Agent** | `/agent` | Interactive ReAct agent chat (RAG-powered, Markdown responses) |
+| **🏗️ Architecture** | `/architecture` | System architecture diagram |
+| **📋 Model Schema** | `/model-schema` | Model card with architecture details |
+| **📝 Logs** | `/logs` | Application and service logs viewer |
+| **🚀 Next Steps** | `/next-steps` | Roadmap with 10 planned features |
 
 **Highlight for the panel**:
-- ✅ NVIDIA-themed design (green #76B900)
-- ✅ Real-time data from SQLite / API
-- ✅ Observability tab shows monitoring integration
-- ✅ AI Agent tab demonstrates Phase 5 (LLM + RAG)
+- ✅ 11 pages with animated NVIDIA-themed dark UI (canvas particles + orbiting rings)
+- ✅ Real-time data from FastAPI backend (all data fetched via typed API client)
+- ✅ Observability tab shows all 6 services with live health checks
+- ✅ AI Agent page demonstrates Phase 5 (LLM + RAG + guardrails)
 
 ---
 
@@ -459,7 +467,7 @@ Open:   0.0467 (least important)
 ## 13. LLM Agent + RAG
 
 ### What it does
-ReAct agent (gpt-4o-mini) with 4 tools and RAG pipeline over 7 domain documents.
+ReAct agent (Gemini 2.0 Flash via OpenRouter) with 4 tools and RAG pipeline over 7 domain documents.
 
 ### Live demo (via Dashboard → AI Agent tab)
 
@@ -510,7 +518,7 @@ bash scripts/run_all.sh
 | 3 | MLflow Server | :5000 | persistent |
 | 4 | Model Training | — | ~2–5 min |
 | 5 | FastAPI API | :8000 | persistent |
-| 6 | Streamlit Dashboard | :8501 | persistent |
+| 6 | Next.js Dashboard | :3001 | persistent |
 | 7 | Prometheus | :9090 | persistent |
 | 8 | Grafana | :3000 | persistent |
 | 9 | Test Suite | — | ~10s |
@@ -521,7 +529,7 @@ bash scripts/run_all.sh
 | Service | URL |
 |---------|-----|
 | FastAPI (Swagger) | http://localhost:8000/docs |
-| Streamlit Dashboard | http://localhost:8501 |
+| Next.js Dashboard | http://localhost:3001 |
 | MLflow UI | http://localhost:5000 |
 | Prometheus | http://localhost:9090 |
 | Grafana | http://localhost:3000 (admin/admin) |
@@ -549,8 +557,8 @@ bash scripts/run_all.sh
 │                               │                                         │
 │   SERVING LAYER               ▼                                         │
 │   ┌────────────────┐   ┌──────────────┐   ┌─────────────────┐         │
-│   │ Nginx LB       │──▶│ FastAPI      │──▶│ Streamlit       │         │
-│   │ :80            │   │ :8000        │   │ :8501           │         │
+│   │ Nginx LB       │──▶│ FastAPI      │──▶│ Next.js         │         │
+│   │ :80            │   │ :8000        │   │ :3001           │         │
 │   └────────────────┘   └──────┬───────┘   └─────────────────┘         │
 │                               │                                         │
 │   MONITORING LAYER            ▼                                         │
@@ -568,7 +576,7 @@ bash scripts/run_all.sh
 │   AI LAYER                                                              │
 │   ┌────────────────┐   ┌──────────────┐   ┌─────────────────┐         │
 │   │ ReAct Agent    │──▶│ RAG Pipeline │   │ Evaluation      │         │
-│   │ gpt-4o-mini    │   │ ChromaDB     │   │ RAGAS + Judge   │         │
+│   │ Gemini 2.0     │   │ ChromaDB     │   │ RAGAS + Judge   │         │
 │   └────────────────┘   └──────────────┘   └─────────────────┘         │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -597,11 +605,11 @@ bash scripts/docker_helper.sh clean
 ## Demo Day Tips
 
 1. **Start `run_all.sh` 5 minutes before your slot** — everything will be ready
-2. **Open browser tabs in advance**: Swagger (:8000/docs), Dashboard (:8501), MLflow (:5000), Grafana (:3000)
+2. **Open browser tabs in advance**: Swagger (:8000/docs), Dashboard (:3001), MLflow (:5000), Grafana (:3000)
 3. **Show the Swagger UI first** — it's visually impressive and interactive
 4. **Use the AI Agent tab** to show real-time LLM interaction
 5. **Keep `pytest` output ready** — 484 tests passing is a strong signal
-6. **Mention the numbers**: 484 tests, 61% coverage, 10/10 OWASP, 91% attack block rate
+6. **Mention the numbers**: 594 tests, 60%+ coverage, 10/10 OWASP, 91% attack block rate
 7. **Have cURL commands ready** in a terminal to demo API endpoints live
 8. **Fallback**: If Docker fails, everything runs locally with `make serve` + `make dashboard`
 

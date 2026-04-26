@@ -3,7 +3,7 @@
 # NVIDIA MLOps Platform — Start All Services (Local, sem Docker)
 # =============================================================================
 # Sobe todos os serviços localmente usando o virtualenv do projeto:
-#   FastAPI  :8000  |  Streamlit :8501  |  MLflow :5000
+#   FastAPI  :8000  |  Next.js :3001  |  MLflow :5000
 #   Prometheus :9090  |  Grafana :3000
 #
 # Usage:

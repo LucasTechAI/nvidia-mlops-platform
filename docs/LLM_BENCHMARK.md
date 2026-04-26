@@ -13,8 +13,8 @@ LLM-as-judge evaluation, and A/B prompt testing.
 | Parameter | Value |
 |-----------|-------|
 | **Pattern** | ReAct (Reasoning + Acting) |
-| **Provider** | OpenAI / Groq (configurable) |
-| **Model** | gpt-4o-mini (default) |
+| **Provider** | OpenRouter |
+| **Model** | google/gemini-2.0-flash-001 |
 | **Temperature** | 0.1 |
 | **Max Iterations** | 8 |
 | **Tools** | 4 (query_stock_data, predict_stock_prices, get_model_metrics, search_documents) |
@@ -50,6 +50,8 @@ python -m evaluation.ragas_eval
 ```
 
 Results saved at: `outputs/evaluation/ragas_results.json`
+
+> **Note (April 2026):** The golden set (`data/golden_set/golden_set.json`) was rewritten with richer contexts (3 detailed sentences per item) and direct, context-grounded expected answers. Re-running this evaluation will reflect the improved dataset quality.
 
 ### Interpretation
 - **High Faithfulness**: Agent uses tool data and doesn't hallucinate

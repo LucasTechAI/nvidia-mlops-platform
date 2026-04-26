@@ -1,8 +1,9 @@
 """Unit tests for FeatureStore using a real SQLite database at tmp_path."""
+
 import pandas as pd
 import pytest
 
-from src.data.feature_store import FeatureStore, FeatureSetMeta
+from src.data.feature_store import FeatureSetMeta, FeatureStore
 
 
 @pytest.fixture(autouse=True)
@@ -198,12 +199,8 @@ class TestFeatureStoreLineage:
         assert lineage == []
 
     def test_get_lineage_by_version(self, store, sample_df):
-        store.register_feature_set(
-            "test_prices", sample_df, source_name="v1.db", source_type="raw"
-        )
-        store.register_feature_set(
-            "test_prices", sample_df, source_name="v2.db", source_type="raw"
-        )
+        store.register_feature_set("test_prices", sample_df, source_name="v1.db", source_type="raw")
+        store.register_feature_set("test_prices", sample_df, source_name="v2.db", source_type="raw")
         lineage_v1 = store.get_lineage("test_prices", version=1)
         lineage_v2 = store.get_lineage("test_prices", version=2)
         assert lineage_v1[0]["source_name"] == "v1.db"

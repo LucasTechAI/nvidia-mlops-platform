@@ -65,6 +65,25 @@ def _load_checkpoint() -> dict | None:
         return None
 
 
+def _load_hpo_from_mlflow() -> dict | None:
+    """Load HPO best params from MLflow experiment."""
+    import mlflow
+
+    client = mlflow.tracking.MlflowClient()
+    experiment = client.get_experiment_by_name("nvidia-lstm-hpo")
+    if experiment is None:
+        return None
+    runs = client.search_runs(
+        experiment_ids=[experiment.experiment_id],
+        filter_string="tags.mlflow.runName = 'hpo_summary'",
+        order_by=["start_time DESC"],
+        max_results=1,
+    )
+    if not runs:
+        return None
+    return dict(runs[0].data.params)
+
+
 def _count_parameters(model_state_dict: dict) -> dict:
     """Count model parameters by layer."""
     layers = {}
@@ -263,9 +282,7 @@ async def get_hpo_results():
 
     # Try MLflow
     try:
-        from src.dashboard.components.metrics import load_hpo_results
-
-        hpo_data = load_hpo_results()
+        hpo_data = _load_hpo_from_mlflow()
         if hpo_data:
             return {"source": "mlflow", "best_params": hpo_data}
     except Exception:

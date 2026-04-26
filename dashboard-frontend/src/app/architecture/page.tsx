@@ -170,7 +170,7 @@ export default function ArchitecturePage() {
   const [activeTab, setActiveTab] = useState<TabId>("general");
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="relative mx-auto max-w-7xl space-y-6">
       <PageHeader
         label="Arquitetura · Plataforma"
         title="Arquitetura do"

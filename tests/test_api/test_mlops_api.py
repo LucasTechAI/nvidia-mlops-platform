@@ -1,8 +1,9 @@
 """Tests for mlops_api.py endpoints."""
-import pandas as pd
-import pytest
+
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
+import pytest
 from fastapi.testclient import TestClient
 
 from src.api.main import app
@@ -286,9 +287,7 @@ class TestModelRegistryEndpoints:
     @patch("src.training.model_registry.ModelRegistry.get_instance")
     def test_promote_model_returns_200_when_gate_passes(self, mock_get, client):
         mock_registry = MagicMock()
-        gate = PromotionGateResult(
-            passed=True, version=1, current_stage="Staging", target_stage="Production"
-        )
+        gate = PromotionGateResult(passed=True, version=1, current_stage="Staging", target_stage="Production")
         mock_registry.check_promotion_gate.return_value = gate
         mock_registry.transition_stage.return_value = None
         mock_get.return_value = mock_registry
@@ -334,9 +333,7 @@ class TestModelRegistryEndpoints:
     @patch("src.training.model_registry.ModelRegistry.get_instance")
     def test_model_history_returns_200(self, mock_get, client):
         mock_registry = MagicMock()
-        mock_registry.get_transition_history.return_value = [
-            {"from_stage": "Staging", "to_stage": "Production"}
-        ]
+        mock_registry.get_transition_history.return_value = [{"from_stage": "Staging", "to_stage": "Production"}]
         mock_get.return_value = mock_registry
         response = client.get("/model-registry/test-model/history")
         assert response.status_code == 200
@@ -385,9 +382,7 @@ class TestCanaryEndpoints:
         mock_mgr = MagicMock()
         mock_mgr.start_canary.return_value = "dep-001"
         mock_get.return_value = mock_mgr
-        response = client.post(
-            "/canary/start?model_name=test-model&canary_version=2&baseline_version=1"
-        )
+        response = client.post("/canary/start?model_name=test-model&canary_version=2&baseline_version=1")
         assert response.status_code == 200
         data = response.json()
         assert data["deployment_id"] == "dep-001"
@@ -409,9 +404,7 @@ class TestCanaryEndpoints:
     @patch("src.monitoring.canary_deploy.CanaryDeployManager.get_instance")
     def test_canary_rollback_history_returns_200(self, mock_get, client):
         mock_mgr = MagicMock()
-        mock_mgr.get_rollback_history.return_value = [
-            {"deployment_id": "dep-001", "reason": "error rate exceeded"}
-        ]
+        mock_mgr.get_rollback_history.return_value = [{"deployment_id": "dep-001", "reason": "error rate exceeded"}]
         mock_get.return_value = mock_mgr
         response = client.get("/canary/rollback-history")
         assert response.status_code == 200
