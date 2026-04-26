@@ -7,16 +7,16 @@
 | **System Name** | NVIDIA MLOps Stock Prediction Platform |
 | **Version** | 1.0.0 |
 | **Purpose** | End-to-end ML platform for NVIDIA stock price prediction and analysis |
-| **Developed by** | Lucas (Datathon Fase 05) |
-| **Stack** | Python, PyTorch, FastAPI, Streamlit, MLflow, Docker |
+| **Developed by** | Lucas (FIAP Post-Tech MLET — Tech Challenge Fase 5) |
+| **Stack** | Python, PyTorch, FastAPI, Next.js 14, MLflow, Docker |
 
 ## Architecture
 
 ```
 ┌─────────────┐    ┌──────────────┐    ┌──────────────────┐
-│  Streamlit   │───▶│  FastAPI      │───▶│  LSTM Model      │
+│  Next.js 14  │───▶│  FastAPI      │───▶│  LSTM Model      │
 │  Dashboard   │    │  REST API     │    │  (PyTorch)       │
-│  (8501)      │    │  (8000)       │    └──────────────────┘
+│  (3001)      │    │  (8000)       │    └──────────────────┘
 └─────────────┘    │               │    ┌──────────────────┐
                    │  /predict     │───▶│  SQLite DB       │
                    │  /train       │    │  (Stock Data)    │
@@ -24,8 +24,8 @@
                    │  /data        │    ┌──────────────────┐
                    │  /health      │───▶│  ReAct Agent     │
                    └──────────────┘    │  + RAG Pipeline   │
-                                       │  + LLM (OpenAI/  │
-┌─────────────┐    ┌──────────────┐    │   Groq)          │
+                                       │  + LLM (OpenRouter│
+┌─────────────┐    ┌──────────────┐    │   Gemini 2.0)    │
 │  Prometheus  │───▶│  Grafana     │    └──────────────────┘
 │  (9090)      │    │  (3000)      │
 └─────────────┘    └──────────────┘    ┌──────────────────┐
@@ -55,13 +55,15 @@
 - **Providers**: OpenAI or Groq (configurable)
 
 ### 4. REST API (FastAPI)
-- **Endpoints**: /health, /predict, /train, /data, /agent/query
+- **Endpoints**: /health, /predict, /train, /data, /agent/query, /evaluation/*, /mlops/*, /monitoring/*
 - **Docs**: Swagger UI (/docs), ReDoc (/redoc)
 - **Auth**: CORS configured (production-ready)
 
-### 5. Dashboard (Streamlit)
-- **Views**: Predictions, historical data, model metrics, training
-- **Charts**: Plotly interactive visualizations
+### 5. Dashboard (Next.js 14)
+- **Framework**: Next.js 14 (App Router) + TypeScript + Tailwind CSS
+- **Pages**: 11 pages — Home, Predictions, Metrics, Evaluation, Observability, MLOps, AI Agent, Architecture, Model Schema, Logs, Next Steps
+- **URL**: http://localhost:3001
+- **Charts**: Recharts (Line, Bar, Area, Pie, Radar)
 
 ### 6. Monitoring
 - **Prometheus**: HTTP metrics, prediction latency, agent metrics
@@ -90,12 +92,11 @@
 ### Environment Variables
 | Variable | Purpose |
 |----------|---------|
-| `LLM_PROVIDER` | openai or groq |
-| `LLM_MODEL` | Model name (e.g., gpt-4o-mini) |
-| `OPENAI_API_KEY` | OpenAI API key |
-| `GROQ_API_KEY` | Groq API key |
-| `LANGFUSE_PUBLIC_KEY` | Langfuse telemetry |
-| `LANGFUSE_SECRET_KEY` | Langfuse telemetry |
+| `LLM_PROVIDER` | openrouter (default) |
+| `LLM_MODEL` | Model name (e.g., google/gemini-2.0-flash-001) |
+| `OPENROUTER_API_KEY` | OpenRouter API key |
+| `OPENROUTER_BASE_URL` | https://openrouter.ai/api/v1 |
+| `MLFLOW_TRACKING_URI` | SQLite tracking URI |
 | `DATABASE_PATH` | SQLite database path |
 
 ## Limitations

@@ -416,7 +416,7 @@ Compares prompt variations to identify the most effective formulation for the ag
 | **Prometheus** | Metrics collection | :9090 |
 | **Grafana** | Dashboards & alerts | :3000 |
 | **MLflow** | Experiment tracking | :5000 |
-| **Streamlit** | Interactive dashboard | :8501 |
+| **Next.js Dashboard** | Interactive UI (11 pages) | :3001 |
 
 ### 12.2 Drift Detection
 
@@ -430,10 +430,10 @@ Compares prompt variations to identify the most effective formulation for the ag
 
 ### 12.3 Dashboard Observability
 
-**Additional Streamlit tabs** (`src/dashboard/components/`):
-- **Observability**: Drift detection, champion-challenger status, telemetry links
-- **Evaluation**: Evaluation metrics, explainability, LLM-judge results
-- **AI Agent**: Interactive chat interface with RAG agent
+**Next.js 14 pages** (`dashboard-frontend/src/app/`):
+- **Observability** (`/observability`): Drift detection, champion-challenger status, telemetry links (4 tabs)
+- **Evaluation** (`/evaluation`): Evaluation metrics, explainability (LIME), LLM-judge results (3 tabs)
+- **AI Agent** (`/agent`): Interactive chat interface with RAG agent
 
 ### 12.4 Grafana Dashboards
 

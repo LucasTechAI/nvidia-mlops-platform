@@ -123,8 +123,8 @@ xdg-open outputs/explainability/lime_global_importance.png
 
 These scripts generate the data needed for the dashboard's Explainability tab:
 1. Run `./scripts/run_explainability.sh`
-2. Open the Streamlit dashboard
-3. Navigate to **📋 Evaluation → 🔍 Explainability**
+2. Open the Next.js dashboard at http://localhost:3001
+3. Navigate to **Evaluation** (`/evaluation`) → **Explainability** tab
 4. Click "🔬 Compute Feature Importance" to see permutation results
 5. Saved LIME plots will be displayed automatically
 

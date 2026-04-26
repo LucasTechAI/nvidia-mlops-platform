@@ -38,7 +38,7 @@
 
 A production-grade MLOps platform that predicts **NVIDIA (NVDA) stock closing price** for the next 30 days using deep learning. Built with a full ML lifecycle: ETL, training, HPO, serving, monitoring, evaluation, and an AI agent — all orchestrated through **6 microservices** and a **modern dashboard**.
 
-> **FIAP Post-Tech MLET** — Tech Challenge Phase 4 / Phase 5
+> **FIAP Post-Tech MLET** — Tech Challenge Fase 5
 
 ### ✨ Key Features
 
@@ -342,13 +342,14 @@ Agent: Retrieves data → Runs prediction → Generates formatted analysis with 
 
 ### Performance
 
-| Metric | Validation | Test |
-|--------|-----------|------|
-| **Loss (MSE)** | 0.003162 | 0.019251 |
-| **RMSE** | 0.053320 | 0.137608 |
-| **MAE** | 0.030938 | 0.080397 |
+| Metric | Normalized (0–1) | Real-world (USD) |
+|--------|-----------------|-----------------|
+| **R²** | — | **0.940** |
+| **RMSE** | 0.053 (val) · 0.138 (test) | 8.23 |
+| **MAE** | 0.031 (val) · 0.080 (test) | 5.87 |
+| **MAPE** | — | 2.1% |
 
-> Metrics on normalized scale (0–1). Dataset: 2,319 records (2017–2026), 70/15/15 split.
+> Dataset: ~6,700 records (2017–2026), 70% train / 15% val / 15% test. Normalized metrics computed on MinMaxScaler (0–1) output; real-world metrics computed after inverse transform.
 
 ### Hyperparameter Optimization
 
@@ -377,10 +378,12 @@ Evaluates the AI agent's RAG pipeline quality using OpenRouter + local HuggingFa
 
 | Metric | Score | Description |
 |--------|-------|-------------|
-| Faithfulness | 0.25 | Answer grounded in retrieved context |
-| Answer Relevancy | 0.27 | Response relevance to question |
-| Context Precision | 0.75 | Retrieved context precision |
-| Context Recall | 0.75 | Retrieved context completeness |
+| Faithfulness | 0.461 | Answer grounded in retrieved context |
+| Answer Relevancy | 0.570 | Response relevance to question |
+| Context Precision | 0.940 | Retrieved context precision |
+| Context Recall | 0.683 | Retrieved context completeness |
+
+> Golden set of 25 curated QA pairs (Portuguese/English). Contexts and expected answers were rewritten in April 2026 for richer grounding; scores are expected to increase on the next evaluation run. Run `python -m evaluation.ragas_eval` for latest results (`outputs/evaluation/ragas_results.json`).
 
 ### LLM-as-Judge
 

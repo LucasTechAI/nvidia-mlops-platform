@@ -257,43 +257,14 @@ else
 fi
 
 # ═════════════════════════════════════════════════════════════════════════════
-# STEP 8: Start Streamlit Dashboard
+# STEP 8: Start Next.js Dashboard
 # ═════════════════════════════════════════════════════════════════════════════
-step "Starting Streamlit Dashboard"
+step "Starting Next.js Dashboard"
 
-# Run dashboard as a Docker service
-docker run -d \
-    --name nvidia-lstm-dashboard \
-    --network host \
-    -v "$PROJECT_ROOT/data:/app/data:ro" \
-    -v "$PROJECT_ROOT/outputs:/app/outputs:ro" \
-    -v "$PROJECT_ROOT/mlruns:/app/mlruns:ro" \
-    -v "$PROJECT_ROOT/models:/app/models:ro" \
-    -v "$PROJECT_ROOT/src:/app/src:ro" \
-    -v "$PROJECT_ROOT/configs:/app/configs:ro" \
-    -e DATABASE_PATH=/app/data/nvidia_stock.db \
-    -e PYTHONPATH=/app \
-    $(docker compose images --format json 2>/dev/null | python3 -c "
-import sys, json
-try:
-    data = json.loads(sys.stdin.read())
-    for img in (data if isinstance(data, list) else [data]):
-        if 'nvidia-lstm' in str(img.get('Repository', img.get('repository', ''))):
-            print(img.get('Repository', img.get('repository', '')) + ':' + img.get('Tag', img.get('tag', 'latest')))
-            break
-    else:
-        print('nvidia-mlops-platform-dev:latest')
-except:
-    print('nvidia-mlops-platform-dev:latest')
-" 2>/dev/null || echo "nvidia-mlops-platform-dev:latest") \
-    streamlit run src/dashboard/app.py \
-        --server.port=8501 \
-        --server.address=0.0.0.0 \
-        --server.headless=true \
-        --browser.gatherUsageStats=false 2>&1 || true
+(cd "$PROJECT_ROOT/dashboard-frontend" && npm run dev > /dev/null 2>&1 &)
 
-wait_for_service "http://localhost:8501" "Dashboard" 20
-success "Dashboard → http://localhost:8501"
+wait_for_service "http://localhost:3001" "Dashboard" 20
+success "Dashboard → http://localhost:3001"
 
 # ═════════════════════════════════════════════════════════════════════════════
 # STEP 9: Start Monitoring Stack
@@ -343,7 +314,7 @@ echo "  ║   Service            URL                                  ║"
 echo "  ║   ─────────────────  ──────────────────────────────────   ║"
 echo "  ║   FastAPI API        http://localhost:8000                ║"
 echo "  ║   Swagger UI         http://localhost:8000/docs           ║"
-echo "  ║   Streamlit          http://localhost:8501                ║"
+echo "  ║   Next.js Dashboard  http://localhost:3001                ║"
 echo "  ║   MLflow UI          http://localhost:5000                ║"
 echo -e "  ║   Prometheus         http://localhost:9090                ║"
 echo "  ║   Grafana            http://localhost:3000  (admin/admin) ║"

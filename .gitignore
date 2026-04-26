@@ -43,11 +43,14 @@ venv.bak/
 *~
 
 # Data files (raw data managed by DVC)
+data/
 data/raw/
 data/processed/
+processed/
 *.csv
 *.h5
 *.hdf5
+*.npy
 *.db
 *.sqlite
 *.db-journal
@@ -99,6 +102,7 @@ Thumbs.db
 # Coverage
 .coverage
 coverage.xml
+coverage.json
 htmlcov/
 
 # Planning (internal notes)

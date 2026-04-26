@@ -286,7 +286,7 @@ export default function NextStepsPage() {
   ).sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="relative mx-auto max-w-7xl space-y-6">
       {/* Header */}
       <PageHeader
         label="Evolução · Roadmap"

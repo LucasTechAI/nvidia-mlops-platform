@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
@@ -53,17 +54,25 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div
         className={clsx(
           "flex items-center border-b border-teal-500/10 py-5 transition-all duration-300",
-          collapsed ? "justify-center px-0" : "gap-3 px-5"
+          collapsed ? "justify-center px-0" : "px-5"
         )}
       >
-        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-teal-500/15 ring-1 ring-teal-500/20">
-          <span className="text-base font-bold text-teal-400">N</span>
-        </div>
-        {!collapsed && (
-          <div className="min-w-0 overflow-hidden">
-            <h1 className="truncate text-sm font-bold text-white">TradeOps</h1>
-            <p className="truncate text-xs text-white/40">Stock Prediction Platform</p>
+        {collapsed ? (
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-teal-500/15 ring-1 ring-teal-500/20">
+            <span className="text-base font-bold text-teal-400">T</span>
           </div>
+        ) : (
+          <Link href="/home" className="min-w-0">
+            <Image
+              src="/logo.png"
+              alt="TradeOps"
+              width={200}
+              height={80}
+              className="h-20 w-auto object-contain"
+              priority
+            />
+            <p className="mt-0.5 truncate text-xs text-white/40">Stock Prediction Platform</p>
+          </Link>
         )}
       </div>
 
@@ -110,7 +119,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               )}
             >
               <Icon className="h-4 w-4 flex-shrink-0" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && <span className="truncate uppercase tracking-wider">{item.label}</span>}
             </Link>
           );
         })}
