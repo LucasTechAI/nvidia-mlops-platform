@@ -1,8 +1,8 @@
 """Tests for mlops_api.py endpoints."""
-import pandas as pd
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
+import pytest
 from fastapi.testclient import TestClient
 
 from src.api.main import app

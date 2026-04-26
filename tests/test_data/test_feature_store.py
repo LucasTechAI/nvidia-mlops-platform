@@ -2,7 +2,7 @@
 import pandas as pd
 import pytest
 
-from src.data.feature_store import FeatureStore, FeatureSetMeta
+from src.data.feature_store import FeatureSetMeta, FeatureStore
 
 
 @pytest.fixture(autouse=True)
