@@ -141,10 +141,9 @@ export default function PredictionsPage() {
         predicted: p.predicted_price,
         lower: p.lower_bound,
         upper: p.upper_bound,
-        bandWidth:
-          p.lower_bound != null && p.upper_bound != null
-            ? p.upper_bound - p.lower_bound
-            : undefined,
+        confidenceBand: p.lower_bound != null && p.upper_bound != null
+          ? [p.lower_bound, p.upper_bound]
+          : undefined,
         ...(liveClose != null ? { real: liveClose } : {}),
       };
     }),
@@ -352,7 +351,7 @@ export default function PredictionsPage() {
               <YAxis
                 tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }}
                 tickLine={false}
-                domain={[0, 300]}
+                domain={[0, "auto"]}
                 tickFormatter={(v) => `$${v}`}
               />
               <Tooltip
@@ -363,7 +362,9 @@ export default function PredictionsPage() {
                   color: "#fff",
                 }}
                 formatter={(value: unknown, name: string) => {
-                  if (name === "lower" || name === "bandWidth") return null;
+                  if (name === "confidenceBand" && Array.isArray(value)) {
+                    return [`$${Number(value[0]).toFixed(2)} – $${Number(value[1]).toFixed(2)}`, "Confiança 95%"];
+                  }
                   const num = Number(value);
                   const label =
                     name === "historical" ? "Histórico"
@@ -386,34 +387,17 @@ export default function PredictionsPage() {
                 ]}
               />
 
-              {/* Confidence band: stacked areas (lower transparent + bandWidth filled) */}
+              {/* Confidence band as a single area range */}
               {showConfidence && (
-                <>
-                  <Area
-                    type="monotone"
-                    dataKey="lower"
-                    stackId="band"
-                    stroke="rgba(118,185,0,0.6)"
-                    strokeWidth={1}
-                    strokeDasharray="4 2"
-                    fill="transparent"
-                    dot={false}
-                    legendType="none"
-                    name="lower"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="bandWidth"
-                    stackId="band"
-                    stroke="rgba(118,185,0,0.6)"
-                    strokeWidth={1}
-                    strokeDasharray="4 2"
-                    fill="rgba(118,185,0,0.15)"
-                    dot={false}
-                    legendType="none"
-                    name="bandWidth"
-                  />
-                </>
+                <Area
+                  type="monotone"
+                  dataKey="confidenceBand"
+                  stroke="rgba(118,185,0,0.4)"
+                  strokeWidth={1}
+                  fill="rgba(118,185,0,0.15)"
+                  name="confidenceBand"
+                  legendType="none"
+                />
               )}
 
               {/* Historical line */}
