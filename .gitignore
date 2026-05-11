@@ -43,9 +43,10 @@ venv.bak/
 *~
 
 # Data files (raw data managed by DVC)
-data/
 data/raw/
 data/processed/
+data/models/
+data/outputs/
 processed/
 *.csv
 *.h5
@@ -54,7 +55,6 @@ processed/
 *.db
 *.sqlite
 *.db-journal
-!data/golden_set/*.json
 
 # Model artifacts
 *.pth
