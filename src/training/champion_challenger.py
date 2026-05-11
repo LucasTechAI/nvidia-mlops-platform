@@ -22,6 +22,7 @@ References:
 
 import json
 import logging
+import math
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -697,9 +698,20 @@ def run_champion_challenger(
     return result
 
 
+def _sanitize_floats(obj: object) -> object:
+    """Recursively replace non-finite floats (inf, -inf, nan) with None."""
+    if isinstance(obj, float):
+        return None if not math.isfinite(obj) else obj
+    if isinstance(obj, dict):
+        return {k: _sanitize_floats(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_sanitize_floats(v) for v in obj]
+    return obj
+
+
 def _save_result(result: dict) -> None:
     """Save pipeline result to JSON."""
     output_path = RESULTS_DIR / "latest_comparison.json"
     with open(output_path, "w") as f:
-        json.dump(result, f, indent=2, default=str)
+        json.dump(_sanitize_floats(result), f, indent=2)
     logger.info("Results saved to %s", output_path)

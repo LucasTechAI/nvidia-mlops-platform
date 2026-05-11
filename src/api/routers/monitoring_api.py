@@ -360,7 +360,7 @@ async def get_runs_history():
     # Sort by start_time descending
     runs_list.sort(key=lambda r: r.get("start_time") or "", reverse=True)
 
-    return {"runs": runs_list, "total": len(runs_list)}
+    return _deep_serialize({"runs": runs_list, "total": len(runs_list)})
 
 
 @router.get("/champion-challenger")
@@ -389,17 +389,7 @@ async def run_champion_challenger():
         if results is None:
             raise HTTPException(status_code=500, detail="Pipeline returned no results")
 
-        # Serialize
-        serializable = {}
-        for key, val in results.items():
-            if hasattr(val, "item"):
-                serializable[key] = val.item()
-            elif hasattr(val, "tolist"):
-                serializable[key] = val.tolist()
-            else:
-                serializable[key] = val
-
-        return serializable
+        return _deep_serialize(results)
     except ImportError:
         raise HTTPException(status_code=501, detail="Champion-challenger module not available")
     except Exception as e:
