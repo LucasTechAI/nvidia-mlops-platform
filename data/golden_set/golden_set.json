@@ -1,0 +1,252 @@
+[
+  {
+    "id": 1,
+    "query": "Qual foi o preço de fechamento da NVIDIA ontem?",
+    "contexts": [
+      "O sistema armazena dados históricos diários da NVIDIA (NVDA) no banco SQLite, incluindo as colunas Open, High, Low, Close e Volume para cada dia de negociação.",
+      "O endpoint GET /data/historical retorna os preços mais recentes. O campo 'close' do último registro representa o preço de fechamento do dia útil mais recente.",
+      "A NVIDIA (NVDA) é negociada na NASDAQ. Os dados são atualizados diariamente via yfinance após o fechamento do mercado americano."
+    ],
+    "expected_answer": "O preço de fechamento mais recente da NVIDIA (NVDA) está disponível via o endpoint GET /data/historical, no campo 'close' do último registro do banco SQLite. Os dados são atualizados diariamente após o fechamento do mercado na NASDAQ."
+  },
+  {
+    "id": 2,
+    "query": "Qual é a previsão de preço da NVIDIA para os próximos 5 dias?",
+    "contexts": [
+      "O endpoint POST /predict retorna previsões para um horizonte configurável de até 30 dias. Para 5 dias, o campo 'predictions' contém uma lista de 5 valores de preço de fechamento estimados.",
+      "As previsões incluem intervalos de confiança calculados via Monte Carlo Dropout: cada previsão tem um limite inferior (lower_bound) e superior (upper_bound) representando 95% de confiança.",
+      "O modelo LSTM é treinado com dados históricos de Open, High, Low, Close e Volume da NVIDIA e gera previsões que devem ser interpretadas como estimativas estatísticas, não como recomendações de investimento."
+    ],
+    "expected_answer": "Para obter a previsão dos próximos 5 dias, utilize o endpoint POST /predict com horizonte 5. A resposta inclui 5 valores de preço de fechamento estimados com intervalos de confiança de 95% (lower_bound e upper_bound), calculados via Monte Carlo Dropout. As previsões são estimativas estatísticas e não constituem recomendação de investimento."
+  },
+  {
+    "id": 3,
+    "query": "Qual é a acurácia do modelo de previsão?",
+    "contexts": [
+      "O modelo LSTM nvda-lstm-v2 (champion) alcançou R²=0.940, RMSE=8.23, MAE=5.87 e MAPE=2.1% no conjunto de teste, que representa 15% dos dados históricos.",
+      "A divisão dos dados é 70% treino, 15% validação e 15% teste. As métricas são calculadas apenas no conjunto de teste para garantir avaliação imparcial.",
+      "O R² de 0.940 indica que o modelo explica 94% da variância dos preços. O MAPE de 2.1% significa que o erro percentual médio das previsões é de 2.1% em relação ao preço real."
+    ],
+    "expected_answer": "O modelo LSTM nvda-lstm-v2 (champion) alcança R²=0.940, RMSE=8.23, MAE=5.87 e MAPE=2.1% no conjunto de teste (15% dos dados). O R² de 0.940 significa que o modelo explica 94% da variância dos preços, e o MAPE de 2.1% indica que o erro percentual médio é de 2.1%."
+  },
+  {
+    "id": 4,
+    "query": "Qual é a tendência de preço da NVIDIA no último mês?",
+    "contexts": [
+      "A análise de tendência usa os preços de fechamento (Close) diários armazenados no banco SQLite. Tendências são classificadas como bullish (alta), bearish (baixa) ou lateral com base na variação percentual acumulada do período.",
+      "O endpoint GET /data/historical aceita parâmetro 'days' (ex.: days=30) para retornar o histórico do período desejado, permitindo calcular a variação entre o primeiro e o último preço de fechamento.",
+      "Se o preço de fechamento no fim do período for maior que no início, a tendência é bullish (alta). Se menor, é bearish (baixa). Variação inferior a 2% em ambas as direções é classificada como lateral."
+    ],
+    "expected_answer": "A tendência do último mês é determinada comparando o preço de fechamento inicial e final dos 30 dias via GET /data/historical?days=30. Se o último Close for maior que o primeiro, a tendência é bullish (alta); se menor, bearish (baixa); variações abaixo de 2% indicam movimento lateral."
+  },
+  {
+    "id": 5,
+    "query": "Quais features o modelo LSTM utiliza?",
+    "contexts": [
+      "O modelo LSTM recebe exatamente 5 features de entrada: Open (preço de abertura), High (máxima diária), Low (mínima diária), Close (preço de fechamento) e Volume (quantidade de ações negociadas).",
+      "Antes de entrar no modelo, todas as 5 features são normalizadas individualmente usando MinMaxScaler do scikit-learn, escalando os valores para o intervalo [0, 1].",
+      "O scaler é ajustado apenas nos dados de treino (70% do histórico) e aplicado também à validação e ao teste, evitando data leakage."
+    ],
+    "expected_answer": "O modelo LSTM usa 5 features: Open, High, Low, Close e Volume. Todas são normalizadas para [0, 1] via MinMaxScaler do scikit-learn, ajustado exclusivamente nos dados de treino para evitar data leakage."
+  },
+  {
+    "id": 6,
+    "query": "Qual é a arquitetura da rede neural?",
+    "contexts": [
+      "A arquitetura é um LSTM bidirecional com: input_size=5 (features), hidden_size=128 unidades ocultas, num_layers=2 camadas empilhadas, dropout=0.2 entre as camadas.",
+      "O sequence_length é de 60 dias: o modelo recebe uma janela de 60 dias consecutivos de dados (60×5 tensor) para gerar cada previsão.",
+      "A camada de saída é totalmente conectada (Linear) que mapeia as 128 unidades ocultas para 5 saídas (uma por feature: Open, High, Low, Close, Volume)."
+    ],
+    "expected_answer": "O modelo é um LSTM bidirecional com input_size=5, hidden_size=128, num_layers=2, dropout=0.2 e sequence_length=60 dias. A camada de saída é uma Linear(128→5) que prevê os 5 valores (Open, High, Low, Close, Volume) do próximo dia."
+  },
+  {
+    "id": 7,
+    "query": "Qual é o volume médio de negociação da NVIDIA?",
+    "contexts": [
+      "O Volume diário da NVIDIA (NVDA) representa o número de ações negociadas em cada sessão e é uma das 5 features armazenadas no banco SQLite.",
+      "O volume médio histórico da NVIDIA gira em torno de 40 a 60 milhões de ações por dia, podendo ultrapassar 100 milhões em dias de alta volatilidade ou após anúncios corporativos.",
+      "O endpoint GET /data/historical retorna o Volume em cada registro diário. A média pode ser calculada somando os valores de Volume e dividindo pelo número de dias do período consultado."
+    ],
+    "expected_answer": "O volume médio de negociação da NVIDIA gira em torno de 40 a 60 milhões de ações por dia, podendo ultrapassar 100 milhões em dias de alta volatilidade. O Volume diário é armazenado no banco SQLite e acessível via GET /data/historical."
+  },
+  {
+    "id": 8,
+    "query": "O modelo pode ser usado para decisões de investimento?",
+    "contexts": [
+      "AVISO DE RISCO: As previsões do modelo LSTM são estimativas estatísticas baseadas em dados históricos e NÃO constituem recomendações de investimento.",
+      "Modelos de machine learning para previsão financeira têm limitações: não capturam eventos imprevisíveis (black swans), mudanças de regulação ou crises econômicas.",
+      "O sistema inclui disclaimers obrigatórios em todas as respostas do agente e nas previsões: 'Este sistema é apenas para fins educacionais e de pesquisa. Consulte um profissional financeiro certificado antes de investir.'"
+    ],
+    "expected_answer": "Não. O modelo LSTM fornece estimativas estatísticas baseadas em dados históricos, mas NÃO deve ser usado como base única para decisões de investimento. Ele não captura eventos imprevisíveis (black swans), crises ou mudanças regulatórias. O sistema exibe este disclaimer: 'Este sistema é apenas para fins educacionais. Consulte um profissional financeiro certificado antes de investir.'"
+  },
+  {
+    "id": 9,
+    "query": "Como o modelo foi treinado?",
+    "contexts": [
+      "O treinamento usa dados históricos da NVIDIA desde 2017, divididos em 70% treino, 15% validação e 15% teste. O conjunto contém aproximadamente 6.700 registros diários.",
+      "Os hiperparâmetros de treino são: batch_size=32, epochs=100, learning_rate=0.001, otimizador Adam, função de perda MSE (Mean Squared Error).",
+      "Early stopping com patience=10 monitora a perda de validação e interrompe o treino se não houver melhora em 10 épocas consecutivas. O MLflow registra cada execução com parâmetros, métricas e o artefato do modelo (.pt)."
+    ],
+    "expected_answer": "O modelo é treinado com ~6.700 registros diários da NVIDIA desde 2017 (70% treino / 15% validação / 15% teste). Hiperparâmetros: batch_size=32, learning_rate=0.001, otimizador Adam, perda MSE, até 100 épocas com early stopping (patience=10). Cada execução é rastreada no MLflow."
+  },
+  {
+    "id": 10,
+    "query": "Qual é a posição da NVIDIA no mercado?",
+    "contexts": [
+      "NVIDIA Corporation (ticker: NVDA) é líder global no design de GPUs e semicondutores para IA, gaming, data centers e veículos autônomos, listada na NASDAQ.",
+      "Com a explosão da demanda por computação acelerada para IA generativa, a NVIDIA tornou-se uma das empresas de maior capitalização de mercado do mundo, com valuation acima de 1 trilhão de dólares.",
+      "A plataforma CUDA da NVIDIA é o padrão da indústria para treinamento de modelos de deep learning, o que cria uma vantagem competitiva sustentável (moat) em hardware para IA."
+    ],
+    "expected_answer": "A NVIDIA (NVDA) é líder global em GPUs e semicondutores para IA, gaming e data centers, listada na NASDAQ. Impulsionada pela demanda por IA generativa, atingiu capitalização de mercado acima de 1 trilhão de dólares. Sua plataforma CUDA é o padrão da indústria para treinamento de modelos de deep learning."
+  },
+  {
+    "id": 11,
+    "query": "Qual é a diferença entre o preço máximo e mínimo da NVIDIA hoje?",
+    "contexts": [
+      "High e Low são as colunas de preço máximo e mínimo atingidos durante a sessão de negociação de cada dia, armazenadas no banco SQLite.",
+      "O spread intradiário (High − Low) é um indicador de volatilidade do dia. Um spread maior indica maior variação de preço e maior risco intradiário.",
+      "O valor exato de High e Low do dia mais recente pode ser obtido via GET /data/historical?days=1, que retorna o registro mais recente com todas as colunas OHLCV."
+    ],
+    "expected_answer": "O spread intradiário é a diferença entre High (máximo) e Low (mínimo) do dia, indicando a volatilidade intradiária. Os valores exatos de High e Low do dia mais recente são obtidos via GET /data/historical?days=1. Um spread maior representa maior variação de preço e maior risco no período."
+  },
+  {
+    "id": 12,
+    "query": "Como funciona o pipeline RAG do sistema?",
+    "contexts": [
+      "O pipeline RAG (Retrieval-Augmented Generation) usa ChromaDB como vector store. Documentos sobre a NVIDIA e o sistema MLOps são indexados como embeddings via sentence-transformers.",
+      "Quando o usuário faz uma pergunta ao agente, o sistema realiza busca por similaridade semântica no ChromaDB para recuperar os k=3 documentos mais relevantes (top-k retrieval).",
+      "Os documentos recuperados são adicionados ao prompt do LLM como contexto, permitindo que o modelo responda com informações específicas do projeto sem precisar re-treinar o LLM."
+    ],
+    "expected_answer": "O pipeline RAG indexa documentos do projeto no ChromaDB usando embeddings de sentence-transformers. A cada consulta, o sistema recupera os k=3 documentos mais relevantes por similaridade semântica e os injeta no prompt do LLM como contexto, permitindo respostas fundamentadas no conhecimento específico do projeto sem re-treinar o modelo."
+  },
+  {
+    "id": 13,
+    "query": "Quais métricas de avaliação são usadas no modelo?",
+    "contexts": [
+      "As métricas calculadas no conjunto de teste são: RMSE (Root Mean Square Error), MAE (Mean Absolute Error), MAPE (Mean Absolute Percentage Error) e R² (coeficiente de determinação).",
+      "RMSE e MAE medem o erro absoluto das previsões em unidades de preço (USD). R² varia de 0 a 1; valores próximos de 1 indicam melhor ajuste. MAPE expressa o erro como porcentagem do valor real.",
+      "Todas as métricas são calculadas apenas no conjunto de teste (15% dos dados) e registradas automaticamente no MLflow para cada execução de treinamento, permitindo comparação entre versões do modelo."
+    ],
+    "expected_answer": "O modelo é avaliado por RMSE, MAE, MAPE e R² — todas calculadas no conjunto de teste (15% dos dados) e registradas no MLflow. RMSE e MAE medem o erro em USD, MAPE expressa o erro percentual em relação ao preço real, e R² (próximo a 1 é melhor) indica o quanto da variância o modelo explica."
+  },
+  {
+    "id": 14,
+    "query": "É possível retreinar o modelo com novos dados?",
+    "contexts": [
+      "O endpoint POST /train aceita uma requisição JSON com hiperparâmetros opcionais (epochs, learning_rate, batch_size) e inicia um novo ciclo de treinamento com os dados mais recentes do banco SQLite.",
+      "Novos dados históricos são obtidos automaticamente do Yahoo Finance via yfinance durante o pipeline de treinamento, atualizando o banco SQLite antes de treinar.",
+      "Cada execução de retreinamento é registrada no MLflow com um novo run_id, armazenando parâmetros, métricas (RMSE, MAE, R²) e o artefato do modelo. O MLflow Model Registry gerencia as versões champion/challenger."
+    ],
+    "expected_answer": "Sim. O endpoint POST /train inicia um novo treinamento com os dados mais recentes (obtidos automaticamente do Yahoo Finance). É possível passar hiperparâmetros opcionais como epochs e learning_rate. Cada execução é registrada no MLflow com parâmetros, métricas e o modelo, e o Model Registry gerencia as versões champion/challenger."
+  },
+  {
+    "id": 15,
+    "query": "O que é Monte Carlo Dropout e como é usado nas previsões?",
+    "contexts": [
+      "Monte Carlo Dropout (MC Dropout) é uma técnica que mantém as camadas de dropout ativas durante a inferência (ao invés de desativá-las como no modo padrão), transformando o modelo em um estimador bayesiano aproximado.",
+      "No sistema, são geradas N=100 amostras para cada previsão, cada uma com diferentes neurônios desativados aleatoriamente. A média das N amostras é a previsão final; o desvio padrão mede a incerteza.",
+      "Os intervalos de confiança de 95% são calculados como: lower_bound = média − 1.96×σ, upper_bound = média + 1.96×σ, onde σ é o desvio padrão das N amostras do MC Dropout."
+    ],
+    "expected_answer": "Monte Carlo Dropout mantém o dropout ativo na inferência, gerando N=100 previsões por requisição com diferentes neurônios desativados. A previsão final é a média das amostras; a incerteza é o desvio padrão σ. Os intervalos de confiança de 95% são calculados como média ± 1.96×σ (lower_bound e upper_bound)."
+  },
+  {
+    "id": 16,
+    "query": "Quais são os riscos de investir com base em previsões de IA?",
+    "contexts": [
+      "Modelos de ML para previsão financeira apresentam riscos estruturais: (1) overfitting a dados históricos, (2) incapacidade de prever eventos black swan (crises, pandemias, falências súbitas), (3) mudanças de regime de mercado que invalidam padrões históricos.",
+      "Outros riscos incluem: (4) correlações espúrias aprendidas nos dados de treino, (5) viés de seleção nos dados históricos, (6) não captura de fatores macroeconômicos externos ao ticker NVDA.",
+      "AVISO: Investimentos em ações carregam risco de perda total do capital. Resultados passados não garantem retornos futuros. Previsões de IA são ferramentas complementares e não substituem a análise de um profissional financeiro certificado."
+    ],
+    "expected_answer": "Os riscos incluem: (1) overfitting a dados históricos, (2) incapacidade de prever black swans como crises ou pandemias, (3) mudanças de regime que invalidam padrões históricos, (4) correlações espúrias nos dados de treino, (5) não captura de fatores macroeconômicos externos. Investimentos em ações carregam risco de perda total; resultados passados não garantem retornos futuros."
+  },
+  {
+    "id": 17,
+    "query": "Como o sistema detecta data drift?",
+    "contexts": [
+      "O sistema usa PSI (Population Stability Index) calculado pela biblioteca Evidently para comparar a distribuição dos dados de entrada atuais com a distribuição dos dados de treino.",
+      "Limiares de drift: PSI < 0.1 = estável (sem ação), 0.1 ≤ PSI < 0.2 = aviso (monitoramento aumentado), PSI ≥ 0.2 = drift severo (retreinamento automático disparado).",
+      "O cálculo de PSI é executado diariamente pelo scheduler e os resultados são registrados no Prometheus como a métrica 'model_psi_score', visualizável no Grafana."
+    ],
+    "expected_answer": "O sistema calcula o PSI (Population Stability Index) via Evidently diariamente, comparando a distribuição atual dos dados com a de treino. PSI < 0.1 indica estabilidade; 0.1 ≤ PSI < 0.2 gera aviso de monitoramento aumentado; PSI ≥ 0.2 dispara retreinamento automático. Os resultados são registrados como métrica 'model_psi_score' no Prometheus."
+  },
+  {
+    "id": 18,
+    "query": "Quais fontes de dados o sistema utiliza?",
+    "contexts": [
+      "A fonte primária de dados é o Yahoo Finance, acessado via biblioteca yfinance com o ticker 'NVDA'. Os dados incluem preços OHLCV (Open, High, Low, Close, Volume) diários desde 2017.",
+      "Os dados históricos são armazenados em um banco SQLite local (arquivo nvda_data.db), persistido no volume Docker para garantir disponibilidade mesmo sem conexão com a internet.",
+      "O pipeline de ingestão baixa automaticamente os dados mais recentes do Yahoo Finance durante o treinamento e pode ser acionado manualmente via endpoint POST /data/update."
+    ],
+    "expected_answer": "O sistema usa Yahoo Finance (via yfinance, ticker NVDA) como fonte primária de dados OHLCV diários desde 2017. Os dados são persistidos em um banco SQLite local (nvda_data.db) em volume Docker. O pipeline de ingestão atualiza os dados automaticamente durante o treinamento ou manualmente via POST /data/update."
+  },
+  {
+    "id": 19,
+    "query": "Qual sequence length é usada e por quê?",
+    "contexts": [
+      "O sequence_length é de 60 dias: o modelo recebe uma janela deslizante de 60 dias consecutivos de dados OHLCV como entrada para prever o próximo dia.",
+      "60 dias foram escolhidos para capturar padrões de médio prazo (~3 meses de dados de negociação), cobrindo ciclos típicos de earnings trimestrais e movimentos de tendência.",
+      "Valores menores (ex.: 30 dias) capturam apenas padrões de curto prazo; valores maiores (ex.: 120 dias) aumentam o custo computacional sem ganho proporcional nas métricas do conjunto de validação."
+    ],
+    "expected_answer": "O sequence_length é 60 dias: o modelo usa uma janela deslizante de 60 dias de dados OHLCV para prever cada dia seguinte. Esse valor foi escolhido para capturar padrões de médio prazo (~3 meses), cobrindo ciclos de earnings trimestrais. Valores menores perdem contexto; valores maiores aumentam custo sem ganho proporcional nas métricas de validação."
+  },
+  {
+    "id": 20,
+    "query": "Como posso acessar a API do sistema?",
+    "contexts": [
+      "A API FastAPI está disponível na porta 8000. Os principais endpoints são: GET /health (status do sistema), POST /predict (gerar previsões), POST /train (iniciar treinamento), GET /data/historical (dados históricos), POST /agent/query (agente conversacional).",
+      "A documentação interativa da API está disponível em /docs (Swagger UI) e /redoc. Ambas permitem testar os endpoints diretamente no navegador sem necessidade de cliente HTTP externo.",
+      "Para rodar localmente, execute: docker-compose up -d. A API estará acessível em http://localhost:8000. O token de autenticação (se configurado) deve ser passado no header Authorization: Bearer <token>."
+    ],
+    "expected_answer": "A API FastAPI está disponível em http://localhost:8000. Endpoints principais: GET /health, POST /predict, POST /train, GET /data/historical e POST /agent/query. A documentação interativa (Swagger UI) está em /docs. Para rodar localmente: docker-compose up -d."
+  },
+  {
+    "id": 21,
+    "query": "O modelo considera dividendos e desdobramentos de ações?",
+    "contexts": [
+      "O Yahoo Finance fornece dados com preços ajustados (Adj Close) que incorporam automaticamente splits e dividendos históricos. No entanto, o modelo LSTM usa os preços brutos (Open, High, Low, Close) e Volume, não o Adj Close.",
+      "Eventos corporativos como desdobramentos de ações (stock splits) podem causar descontinuidades nos dados históricos brutos, afetando os padrões aprendidos pelo modelo.",
+      "O pipeline de pré-processamento não inclui ajuste explícito por dividendos ou splits. Splits futuros podem degradar o desempenho do modelo até que ele seja retreinado com dados atualizados."
+    ],
+    "expected_answer": "O modelo usa preços brutos (Open, High, Low, Close) e Volume, não o Adj Close ajustado. O Yahoo Finance fornece preços ajustados, mas o pipeline não os utiliza. Portanto, eventos corporativos como stock splits podem causar descontinuidades nos padrões aprendidos e degradar o desempenho até o próximo retreinamento."
+  },
+  {
+    "id": 22,
+    "query": "Quais medidas de segurança protegem o agente?",
+    "contexts": [
+      "Guardrails de entrada: validação de tópico (apenas perguntas sobre NVIDIA/finanças/MLOps são aceitas), detecção de prompt injection com heurísticas de regex e limite de 2.000 caracteres por mensagem.",
+      "Guardrails de saída: detecção e anonimização de PII (informações pessoalmente identificáveis) usando a biblioteca Presidio antes de enviar qualquer resposta ao usuário.",
+      "O sistema segue as diretrizes OWASP LLM Top 10, implementando proteções contra LLM01 (prompt injection), LLM06 (sensitive information disclosure) e LLM09 (overreliance). Todas as interações são logadas para auditoria."
+    ],
+    "expected_answer": "O agente é protegido por: (1) guardrails de entrada com validação de tópico, detecção de prompt injection via regex e limite de 2.000 caracteres; (2) guardrails de saída com anonimização de PII usando Presidio; (3) conformidade com OWASP LLM Top 10 (LLM01, LLM06, LLM09); e (4) log de todas as interações para auditoria."
+  },
+  {
+    "id": 23,
+    "query": "Qual é a latência típica de uma previsão?",
+    "contexts": [
+      "Em ambiente de produção com CPU, uma previsão de 30 dias usando Monte Carlo Dropout (N=100 amostras) leva tipicamente entre 0,5 e 2 segundos, dependendo do hardware.",
+      "O agente ReAct envolve múltiplas chamadas ao LLM externo (via OpenRouter), aumentando a latência total para 5 a 15 segundos por consulta, dependendo do modelo LLM escolhido.",
+      "Métricas de latência são coletadas pelo Prometheus como 'prediction_latency_seconds' e 'agent_latency_seconds', visualizáveis no dashboard Grafana com percentis p50, p90 e p99."
+    ],
+    "expected_answer": "Uma previsão de 30 dias com MC Dropout (N=100) leva tipicamente 0,5 a 2 segundos em CPU. O agente ReAct demora 5 a 15 segundos por consulta devido às chamadas ao LLM externo. As métricas 'prediction_latency_seconds' e 'agent_latency_seconds' são coletadas pelo Prometheus e visualizadas no Grafana (p50, p90, p99)."
+  },
+  {
+    "id": 24,
+    "query": "Como o sistema lida com dados ausentes?",
+    "contexts": [
+      "O pipeline de pré-processamento aplica três etapas para tratar dados ausentes: (1) remoção de linhas onde as colunas Open, High, Low ou Close são NaN, pois esses valores são essenciais para o modelo.",
+      "Para lacunas pequenas na série temporal (feriados, fins de semana), o pipeline aplica forward fill: o último valor válido é propagado para preencher os dias ausentes antes da normalização.",
+      "Após o pré-processamento, uma validação de integridade verifica que não há NaN remanescentes nos tensores de entrada. Se a validação falhar, o pipeline lança uma exceção e interrompe o treinamento."
+    ],
+    "expected_answer": "O pipeline trata dados ausentes em três etapas: (1) remove linhas com NaN em Open, High, Low ou Close; (2) aplica forward fill para lacunas de feriados e fins de semana; (3) valida a integridade dos tensores — se ainda houver NaN após as etapas anteriores, o pipeline lança uma exceção e interrompe o treinamento."
+  },
+  {
+    "id": 25,
+    "query": "O que é MLflow e como é usado no projeto?",
+    "contexts": [
+      "MLflow é uma plataforma open-source para gerenciamento do ciclo de vida de ML. No projeto, a interface do MLflow está disponível na porta 5000 (http://localhost:5000).",
+      "O MLflow é usado para: (1) rastreamento de experimentos — cada execução de treinamento registra parâmetros (learning_rate, batch_size), métricas (RMSE, MAE, R²) e artefatos (modelo .pt, scaler .pkl); (2) Model Registry — gerencia as versões do modelo com estágios Staging, Production e Archived.",
+      "O estágio 'Production' no MLflow Registry identifica o modelo champion (atualmente nvda-lstm-v2 com R²=0.940). O estágio 'Staging' é o challenger. A promoção entre estágios é feita manualmente ou via endpoint POST /model/promote."
+    ],
+    "expected_answer": "MLflow é a plataforma de gerenciamento do ciclo de vida de ML do projeto, acessível em http://localhost:5000. É usado para: (1) rastrear cada execução de treinamento com parâmetros, métricas (RMSE, MAE, R²) e artefatos (.pt, .pkl); (2) gerenciar versões no Model Registry com estágios Production (champion, nvda-lstm-v2, R²=0.940), Staging (challenger) e Archived."
+  }
+]
