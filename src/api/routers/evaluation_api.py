@@ -37,10 +37,10 @@ async def get_evaluation_results():
         # If non-RMSE metrics are all zero, recalculate from the current model
         def _metrics_incomplete(m: dict) -> bool:
             return (
-                m.get("rmse", 0) > 0
-                and m.get("mae", 0) == 0
-                and m.get("r2", 0) == 0
-                and m.get("directional_accuracy", 0) == 0
+                (m.get("rmse") or 0) > 0
+                and (m.get("mae") or 0) == 0
+                and (m.get("r2") or 0) == 0
+                and (m.get("directional_accuracy") or 0) == 0
             )
 
         if _metrics_incomplete(champion) or _metrics_incomplete(challenger):
@@ -149,7 +149,7 @@ def _enrich_metrics_from_model(champion: dict, challenger: dict):
 
     # For challenger: scale metrics proportionally based on RMSE ratio
     # (since we don't have the challenger model loaded)
-    if challenger.get("rmse", 0) > 0 and champion.get("rmse", 0) > 0:
+    if (challenger.get("rmse") or 0) > 0 and (champion.get("rmse") or 0) > 0:
         ratio = challenger["rmse"] / champion["rmse"]
         enriched_challenger = {
             **challenger,
